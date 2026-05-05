@@ -12,6 +12,8 @@ Then set `NEXT_PUBLIC_WASM_ASSET_BASE` to that public URL (for this project: `ht
 
 For Netlify production, a more robust setup is to keep runtime same-origin (`/wasm/`) and rewrite only
 `/wasm/soffice.wasm` + `/wasm/soffice.data` to R2 in `netlify.toml`. This avoids cross-origin Worker issues.
+Production is also hardened in code to default to same-origin `/wasm/` unless
+`NEXT_PUBLIC_WASM_FORCE_SAME_ORIGIN=0` is explicitly set.
 
 ## Cloudflare R2 (recommended)
 
