@@ -8,7 +8,7 @@ function notFoundResponse() {
   return new NextResponse('Not Found', { status: 404 });
 }
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith(ADMIN_INTERNAL_PREFIX)) {

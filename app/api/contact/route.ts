@@ -1,6 +1,7 @@
-import { createHash } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
+
+export const runtime = 'edge';
 
 const MAX_NAME_LENGTH = 120;
 const MAX_EMAIL_LENGTH = 320;
@@ -10,9 +11,13 @@ function normalizeText(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function hashIpAddress(ipAddress: string | null, salt: string) {
+async function hashIpAddress(ipAddress: string | null, salt: string) {
   if (!ipAddress) return null;
-  return createHash('sha256').update(`${salt}:${ipAddress}`).digest('hex');
+  const input = new TextEncoder().encode(`${salt}:${ipAddress}`);
+  const digest = await crypto.subtle.digest('SHA-256', input);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 function getClientIp(request: NextRequest) {
@@ -67,7 +72,7 @@ export async function POST(request: NextRequest) {
   try {
     const client = createSupabaseServiceClient();
     const ipSalt = process.env.CONTACT_IP_SALT ?? 'docxform-contact';
-    const ipHash = hashIpAddress(getClientIp(request), ipSalt);
+    const ipHash = await hashIpAddress(getClientIp(request), ipSalt);
     const userAgent = normalizeText(request.headers.get('user-agent'));
 
     const { error } = await client.from('contact_submissions').insert({

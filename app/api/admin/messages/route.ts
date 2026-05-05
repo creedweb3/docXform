@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminUserFromCookies } from '@/lib/admin-api-auth';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
 
+export const runtime = 'edge';
+
 const VALID_STATUSES = new Set(['new', 'read', 'replied', 'archived']);
 
 function toPositiveInt(value: string | null, fallback: number) {

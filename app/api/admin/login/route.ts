@@ -4,6 +4,8 @@ import { ADMIN_SESSION_COOKIE } from '@/lib/admin-auth';
 import { getPublicAdminPath, isAllowedAdminEmail } from '@/lib/admin-config';
 import { createSupabaseAuthClient } from '@/lib/supabase-server';
 
+export const runtime = 'edge';
+
 function normalize(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
