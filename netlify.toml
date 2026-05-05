@@ -5,6 +5,13 @@ publish = ".next"
 [[plugins]]
 package = "@netlify/plugin-nextjs"
 
+# Ensure worker/WASM assets participate in cross-origin isolation.
+[[headers]]
+for = "/wasm/*"
+  [headers.values]
+  Cross-Origin-Embedder-Policy = "require-corp"
+  Cross-Origin-Resource-Policy = "cross-origin"
+
 # Keep `/wasm/*` same-origin for worker compatibility.
 # Netlify proxies heavy binaries from R2 so they don't live in Git.
 [[redirects]]
