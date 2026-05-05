@@ -5,6 +5,8 @@
  *
  * Set `NEXT_PUBLIC_WASM_ASSET_BASE` to the **public URL of the wasm folder**, including
  * path, e.g. `https://pub-xxxxx.r2.dev/wasm` or `https://wasm.yourdomain.com/wasm`.
+ * When set, **all** large assets load from that URL — copies under `public/wasm/` are not used
+ * for wasm/data (only same-origin `/wasm/` is used if this is unset or not an http(s) URL).
  * Omit or leave empty to keep using same-origin `/wasm/`.
  *
  * R2 checklist: public access (or signed URLs not supported here), CORS `GET` from your

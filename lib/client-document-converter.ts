@@ -65,7 +65,7 @@ function emitProgress(progress: WasmLoadProgress | ClientConversionProgress) {
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error(`${label} timed out. Please try again with a smaller or simpler file.`));
+      reject(new Error(`${label} timed out after ${Math.round(timeoutMs / 1000)}s.`));
     }, timeoutMs);
 
     promise
@@ -146,10 +146,16 @@ async function getConverter(onProgress?: ProgressHandler) {
         '@matbee/libreoffice-converter/browser'
       );
 
+      const debugWasm = process.env.NEXT_PUBLIC_DEBUG_WASM === '1';
+
       const converter = new WorkerBrowserConverter({
         ...createWasmPaths(getWasmAssetBaseForCreatePaths()),
         browserWorkerJs: getBrowserWorkerJsUrl(),
         onProgress: emitProgress,
+        verbose: debugWasm,
+        onError: (err) => {
+          if (debugWasm) console.error('[DocXform] LibreOffice worker/onError:', err);
+        },
       });
 
       await withTimeout(converter.initialize(), INITIALIZE_TIMEOUT_MS, 'Converter initialization');
@@ -157,6 +163,9 @@ async function getConverter(onProgress?: ProgressHandler) {
       return converter;
     })().catch((error) => {
       void resetConverter();
+      if (process.env.NEXT_PUBLIC_DEBUG_WASM === '1') {
+        console.error('[DocXform] getConverter failed:', error);
+      }
       throw error;
     });
   }
@@ -317,7 +326,34 @@ export async function convertDocumentFile(
   }
 }
 
+const MATBEE_ERROR_CODES = new Set([
+  'UNKNOWN',
+  'INVALID_INPUT',
+  'UNSUPPORTED_FORMAT',
+  'CORRUPTED_DOCUMENT',
+  'PASSWORD_REQUIRED',
+  'WASM_NOT_INITIALIZED',
+  'CONVERSION_FAILED',
+  'LOAD_FAILED',
+]);
+
+function matbeeConversionErrorLine(error: unknown): string | null {
+  if (typeof error !== 'object' || error === null) return null;
+  const o = error as { code?: unknown; message?: unknown; details?: unknown };
+  if (typeof o.code !== 'string' || !MATBEE_ERROR_CODES.has(o.code)) return null;
+  const msg = typeof o.message === 'string' ? o.message.trim() : '';
+  const det = typeof o.details === 'string' ? o.details.trim() : '';
+  const parts = [o.code, msg, det ? `Details: ${det}` : ''].filter(Boolean);
+  return parts.join(' — ');
+}
+
 export function conversionErrorMessage(error: unknown) {
+  const matbeeLine = matbeeConversionErrorLine(error);
+  if (matbeeLine) {
+    const single = matbeeLine.replace(/\s+/g, ' ').trim();
+    return single.length > 620 ? `${single.slice(0, 620).trim()}…` : single;
+  }
+
   const rawMessage =
     error instanceof Error
       ? error.message
@@ -334,6 +370,14 @@ export function conversionErrorMessage(error: unknown) {
     lowerMessage.includes('cross-origin isolation')
   ) {
     return 'Browser blocked shared memory for the converter. Ensure the site is served with COOP/COEP (see next.config.js) and reload.';
+  }
+
+  if (lowerMessage.includes('worker load timeout')) {
+    return 'The converter worker did not become ready within 10s (library limit). Check DevTools → Network for browser.worker.global.js and the console for worker errors; slow DNS or a blocked cross-origin worker often causes this.';
+  }
+
+  if (lowerMessage.includes('converter initialization')) {
+    return 'The LibreOffice engine took too long to download or start (WASM + data are large). Use a stable connection, reload, or try from a network that does not block R2/CDN.';
   }
 
   if (
