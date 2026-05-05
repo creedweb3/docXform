@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BrandLogoMark } from '@/components/brand-logo-mark';
+import Image from 'next/image';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Logout01Icon, Menu01Icon } from '@hugeicons/core-free-icons';
 import {
@@ -31,8 +31,16 @@ export function AdminBrandHeader({
       <div className="flex flex-col gap-y-2 md:relative md:flex-row md:items-center md:justify-between">
         <div className="w-full md:w-auto flex items-center justify-between md:justify-start">
           <div className="flex h-10 items-center gap-2.5 md:shrink-0">
-            <div className="w-10 h-10 flex items-center justify-center" aria-hidden>
-              <BrandLogoMark />
+            <div className="w-10 h-10 flex items-center justify-center">
+              <Image
+                src="/brand/docxform-logo-icon.png"
+                alt=""
+                width={40}
+                height={40}
+                className="w-10 h-10 object-contain"
+                sizes="40px"
+                priority
+              />
             </div>
             <div className="flex h-10 flex-col items-center justify-center gap-[5px] leading-none text-center -translate-y-px">
               <span className="block text-[20px] font-extrabold leading-[0.85] tracking-[-0.025em]" aria-label="docXform">

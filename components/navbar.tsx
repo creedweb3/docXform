@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { BrandLogoMark } from '@/components/brand-logo-mark';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Menu01Icon } from '@hugeicons/core-free-icons';
 import {
@@ -28,8 +28,16 @@ export function Navbar() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-5 pb-2 pointer-events-auto">
         <nav className="glass-navbar rounded-2xl px-4 sm:px-5 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-4 gap-y-2 sm:gap-y-0">
           <Link href="/" className="flex min-h-12 items-center gap-2.5 shrink-0 py-1" aria-label="docXform home">
-            <div className="w-10 h-10 flex shrink-0 items-center justify-center" aria-hidden>
-              <BrandLogoMark />
+            <div className="w-10 h-10 flex shrink-0 items-center justify-center">
+              <Image
+                src="/brand/docxform-logo-icon.png"
+                alt=""
+                width={40}
+                height={40}
+                className="w-10 h-10 object-contain"
+                sizes="40px"
+                priority
+              />
             </div>
             <div className="flex h-10 flex-col items-center justify-center gap-[5px] leading-none text-center -translate-y-px">
               <span className="block text-[20px] font-extrabold leading-[0.85] tracking-[-0.025em]" aria-label="docXform">
