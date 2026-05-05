@@ -153,6 +153,8 @@ function selectedFilesLabel(fileCount: number) {
 
 function converterStatusLabel(message: string) {
   if (message === 'Converter ready') return 'Converter ready';
+  // Avoid matching our own fallback (used to contain "will load" and looked like an endless load).
+  if (message.includes('Preload skipped')) return 'Ready on demand';
   if (message.toLowerCase().includes('will load')) return 'Loads on convert';
   return 'Preparing converter';
 }
@@ -185,6 +187,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const hasQueuedItems = items.length > 0;
   const visibleConverterStatus = converterStatusLabel(warmMessage);
   const converterReady = warmMessage === 'Converter ready';
+  const warmPreloadFailed = warmMessage.includes('Preload skipped');
   const showChips = hasQueuedItems && !notice?.transient;
   const noticeKind = isValidating ? 'info' : notice?.kind ?? 'info';
   const noticeToneClass =
@@ -238,9 +241,11 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       .then(() => {
         setWarmMessage('Converter ready');
       })
-      .catch(() => {
+      .catch((err) => {
         warmStartedRef.current = false;
-        setWarmMessage('Converter will load when you convert.');
+        console.error('[DocXform] Converter warm-up failed:', err);
+        setWarmMessage('Preload skipped — use Convert to load the engine.');
+        showNotice(conversionErrorMessage(err), { kind: 'error' });
       });
   }, []);
 
@@ -636,7 +641,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   icon={converterReady ? CheckmarkCircle01Icon : RefreshIcon}
                   size={12}
                   strokeWidth={2}
-                  className={`${config.iconClass} ${converterReady ? '' : 'animate-spin'}`}
+                  className={`${config.iconClass} ${converterReady || warmPreloadFailed ? '' : 'animate-spin'}`}
                 />
                 {visibleConverterStatus}
               </span>

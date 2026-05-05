@@ -319,9 +319,20 @@ export function conversionErrorMessage(error: unknown) {
   if (
     lowerMessage.includes('failed to fetch') ||
     lowerMessage.includes('networkerror') ||
-    lowerMessage.includes('load')
+    (lowerMessage.includes('load') &&
+      !lowerMessage.includes('upload') &&
+      !lowerMessage.includes('download'))
   ) {
     return 'The converter engine could not load. Refresh the page and try again.';
+  }
+
+  if (
+    lowerMessage.includes('cors') ||
+    lowerMessage.includes('cross-origin') ||
+    lowerMessage.includes('coep') ||
+    lowerMessage.includes('corp')
+  ) {
+    return 'WASM blocked (CORS or security headers). Check Cloudflare R2 CORS for your site and CORP on wasm responses, and Netlify NEXT_PUBLIC_WASM_ASSET_BASE.';
   }
 
   if (!message || message.length > 180) {
