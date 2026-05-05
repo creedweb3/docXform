@@ -73,8 +73,10 @@ interface ShowNoticeOptions {
 type WarmState = 'idle' | 'warming' | 'ready' | 'failed';
 
 const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
-const TRANSIENT_NOTICE_DURATION = 1600;
+/** Brief flash for “N files added” / duplicate skipped */
+const TRANSIENT_NOTICE_DURATION = 900;
 const DEFAULT_NOTICE_DURATION = 3500;
+const chipMotion = { duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] as const };
 
 const converterConfig = {
   'word-to-pdf': {
@@ -190,7 +192,16 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const visibleConverterStatus = converterStatusLabel(warmState);
   const converterReady = warmState === 'ready';
   const warmPreloadFailed = warmState === 'failed';
-  const showChips = hasQueuedItems && !notice?.transient;
+  const showQueueStatusRow = hasQueuedItems;
+  const inlineTransientSuccess =
+    Boolean(
+      notice?.transient &&
+        notice.kind === 'success' &&
+        hasQueuedItems &&
+        notice.message
+    );
+  const showTopNoticeRow =
+    isValidating || (notice && (!notice.transient || !hasQueuedItems));
   const noticeKind = isValidating ? 'info' : notice?.kind ?? 'info';
   const noticeToneClass =
     noticeKind === 'error'
@@ -445,85 +456,102 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     void addFilesFromArray(files, true);
   }, [addFilesFromArray, duplicatePrompt?.files]);
 
-  const handleConvert = useCallback(async () => {
-    if (!canConvert) return;
-
-    const targets = items.filter(
-      (item) => item.status === 'queued' || item.status === 'failed'
-    );
-
-    if (targets.length === 0) return;
-
-    setIsConverting(true);
-    showNotice('');
-
-    for (const target of targets) {
-      setItems((current) =>
-        current.map((item) =>
-          item.id === target.id
-            ? {
-                ...item,
-                status: 'converting',
-                progress: 0,
-                message: 'Preparing document...',
-                error: undefined,
-                output: undefined,
-              }
-            : item
-        )
+  const runConversionForTargets = useCallback(
+    async (queueSnapshot: QueuedFile[]) => {
+      const targets = queueSnapshot.filter(
+        (item) => item.status === 'queued' || item.status === 'failed'
       );
 
-      try {
-        const converted = await convertDocumentFile(
-          target.file,
-          config.outputFormat,
-          ({ percent, message }) => {
-            setItems((current) =>
-              current.map((item) =>
-                item.id === target.id
-                  ? {
-                      ...item,
-                      progress: Math.min(99, percent),
-                      message,
-                    }
-                  : item
-              )
-            );
-          }
-        );
+      if (targets.length === 0) return;
 
+      setIsConverting(true);
+      showNotice('');
+
+      for (const target of targets) {
         setItems((current) =>
           current.map((item) =>
             item.id === target.id
               ? {
                   ...item,
-                  status: 'converted',
-                  progress: 100,
-                  message: 'Conversion complete',
-                  output: converted,
-                }
-              : item
-          )
-        );
-      } catch (error) {
-        setItems((current) =>
-          current.map((item) =>
-            item.id === target.id
-              ? {
-                  ...item,
-                  status: 'failed',
+                  status: 'converting',
                   progress: 0,
-                  message: undefined,
-                  error: conversionErrorMessage(error),
+                  message: 'Preparing document...',
+                  error: undefined,
+                  output: undefined,
                 }
               : item
           )
         );
-      }
-    }
 
-    setIsConverting(false);
-  }, [canConvert, config.outputFormat, items, showNotice]);
+        try {
+          const converted = await convertDocumentFile(
+            target.file,
+            config.outputFormat,
+            ({ percent, message }) => {
+              setItems((current) =>
+                current.map((item) =>
+                  item.id === target.id
+                    ? {
+                        ...item,
+                        progress: Math.min(99, percent),
+                        message,
+                      }
+                    : item
+                )
+              );
+            }
+          );
+
+          setItems((current) =>
+            current.map((item) =>
+              item.id === target.id
+                ? {
+                    ...item,
+                    status: 'converted',
+                    progress: 100,
+                    message: 'Conversion complete',
+                    output: converted,
+                  }
+                : item
+            )
+          );
+        } catch (error) {
+          setItems((current) =>
+            current.map((item) =>
+              item.id === target.id
+                ? {
+                    ...item,
+                    status: 'failed',
+                    progress: 0,
+                    message: undefined,
+                    error: conversionErrorMessage(error),
+                  }
+                : item
+            )
+          );
+        }
+      }
+
+      setIsConverting(false);
+    },
+    [config.outputFormat, showNotice]
+  );
+
+  const handleConvert = useCallback(async () => {
+    if (!canConvert) return;
+    await runConversionForTargets(items);
+  }, [canConvert, items, runConversionForTargets]);
+
+  const allConvertedSuccessfully =
+    items.length > 0 && items.every((item) => item.status === 'converted');
+  const downloadPrimary = allConvertedSuccessfully && !isConverting;
+  const hasConvertedOutput = convertedItems.length > 0;
+  const downloadReady = hasConvertedOutput && !isConverting;
+  const primaryCtaClass = `inline-flex min-h-12 min-w-0 flex-1 basis-0 select-none items-center justify-center gap-2 self-stretch rounded-xl bg-gradient-to-br ${config.primaryButtonClass} box-border px-4 py-3 text-center text-xs font-semibold leading-snug text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45`;
+  const secondaryCtaClass =
+    'inline-flex min-h-12 min-w-0 flex-1 basis-0 select-none items-center justify-center gap-2 self-stretch rounded-xl border border-border/40 bg-white/60 box-border px-4 py-3 text-center text-xs font-semibold leading-snug text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-45';
+  const downloadHintClass =
+    'border-dashed border-muted-foreground/25 bg-muted/25 text-muted-foreground shadow-none';
 
   const handleDownloadSingle = useCallback((file: ConvertedDocument) => {
     const url = URL.createObjectURL(file.blob);
@@ -620,40 +648,22 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       </motion.div>
 
       <AnimatePresence>
-        {(notice || isValidating || duplicatePrompt) && (
+        {showTopNoticeRow && (
           <motion.div
-            initial={{ opacity: 0, y: -6 }}
+            layout
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={chipMotion}
             className="flex justify-center px-2 py-0.5"
           >
-            {duplicatePrompt ? (
-              <div className={`flex w-fit max-w-full flex-col gap-3 rounded-2xl border px-4 py-3 text-xs text-muted-foreground shadow-sm backdrop-blur-md sm:flex-row sm:items-center sm:justify-between ${config.chipClass}`}>
-                <p className="leading-relaxed">{duplicatePrompt.message}</p>
-                <div className="flex shrink-0 gap-2">
-                  <button
-                    type="button"
-                    onClick={handleSkipDuplicates}
-                    className="rounded-lg border border-border/40 bg-white/60 px-3 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:bg-white/80"
-                  >
-                    Skip
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAddDuplicates}
-                    className={`rounded-lg bg-gradient-to-br ${config.primaryButtonClass} px-3 py-1.5 text-[11px] font-medium text-white transition-opacity hover:opacity-90`}
-                  >
-                    Add again
-                  </button>
-                </div>
-              </div>
-            ) : isValidating ? (
+            {isValidating ? (
               <span className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] shadow-sm backdrop-blur-md ${noticeToneClass}`}>
                 <HugeiconsIcon icon={RefreshIcon} size={12} strokeWidth={2} className={`${noticeIconClass} animate-spin`} />
                 Checking file type and size before conversion...
               </span>
             ) : (
-              <span className={`inline-flex max-w-full items-center justify-center gap-1.5 border px-3 py-1.5 text-center text-[11px] leading-relaxed shadow-sm backdrop-blur-md ${notice?.transient ? 'rounded-full' : 'rounded-2xl'} ${noticeToneClass}`}>
+              <span className={`inline-flex max-w-full items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-center text-[11px] leading-snug shadow-sm backdrop-blur-md ${noticeToneClass}`}>
                 {notice?.kind === 'success' && (
                   <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={2} className={noticeIconClass} />
                 )}
@@ -664,16 +674,34 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {showChips && (
+      <AnimatePresence mode="popLayout">
+        {showQueueStatusRow && (
           <motion.div
-            initial={{ opacity: 0, y: -6 }}
+            layout
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={chipMotion}
             className="px-2 py-0.5"
           >
             <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground">
-              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
+              <AnimatePresence mode="popLayout">
+                {inlineTransientSuccess && notice && (
+                  <motion.span
+                    key={notice.message}
+                    layout
+                    initial={{ opacity: 0, scale: 0.94 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.94 }}
+                    transition={chipMotion}
+                    className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass} text-muted-foreground`}
+                  >
+                    <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={2} className={noticeIconClass} />
+                    {notice.message}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+              <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
                 <HugeiconsIcon
                   icon={converterReady ? CheckmarkCircle01Icon : RefreshIcon}
                   size={12}
@@ -681,18 +709,53 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   className={`${config.iconClass} ${converterReady || warmPreloadFailed ? '' : 'animate-spin'}`}
                 />
                 {visibleConverterStatus}
-              </span>
-              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
+              </motion.span>
+              <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
                 <HugeiconsIcon icon={File01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 {items.length} / {MAX_CONVERSION_BATCH_FILES} files
-              </span>
-              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
+              </motion.span>
+              <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
                 {formatBytes(totalBytes)} selected
-              </span>
-              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
+              </motion.span>
+              <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
                 <HugeiconsIcon icon={Shield01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 Private local conversion
-              </span>
+              </motion.span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {duplicatePrompt && (
+          <motion.div
+            layout
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={chipMotion}
+            className="flex justify-center px-2 py-0.5"
+          >
+            <div
+              className={`flex w-full max-w-2xl flex-wrap items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm backdrop-blur-md sm:flex-nowrap sm:gap-2.5 ${config.chipClass}`}
+            >
+              <p className="min-w-0 flex-1 leading-snug">{duplicatePrompt.message}</p>
+              <div className="flex shrink-0 gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleSkipDuplicates}
+                  className="rounded-full border border-border/40 bg-white/60 px-3 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-white/80"
+                >
+                  Skip
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddDuplicates}
+                  className={`rounded-full bg-gradient-to-br ${config.primaryButtonClass} px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-90`}
+                >
+                  Add again
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -703,9 +766,9 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={spring}
-          className="glass rounded-3xl p-5 sm:p-6 space-y-4"
+          className="glass flex flex-col gap-3 rounded-3xl p-5 sm:p-6"
         >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-3 pl-1 pr-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-sm font-semibold text-foreground">{config.queuedTitle}</h3>
               <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
@@ -734,32 +797,36 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
             </div>
           </div>
 
-          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-            {items.map((item) => (
+          {/* One column: same vertical gap between file rows and between last row + CTAs.
+              Do not use scrollbar-gutter on the list only — it narrows the list vs the CTA row below. */}
+          <div className="flex min-h-0 flex-1 w-full min-w-0 flex-col gap-2 px-1">
+            <div className="max-h-72 min-h-0 w-full min-w-0 overflow-y-auto overflow-x-hidden">
+              <div className="flex w-full min-w-0 flex-col gap-2 py-0.5 pr-4">
+                {items.map((item) => (
               <div
                 key={item.id}
-                className="rounded-xl border border-border/35 bg-white/55 px-3 py-3"
+                className="min-h-12 rounded-xl border border-border/45 bg-white/60 px-2.5 py-2 box-border"
               >
-                <div className="flex items-start gap-3">
-                  <div className={`mt-0.5 h-9 w-9 shrink-0 rounded-xl ${config.iconBoxClass} flex items-center justify-center`}>
+                <div className="flex w-full items-center gap-2.5">
+                  <div className={`h-8 w-8 shrink-0 rounded-lg ${config.iconBoxClass} flex items-center justify-center`}>
                     <HugeiconsIcon
                       icon={item.status === 'converted' ? CheckmarkCircle01Icon : item.status === 'converting' ? RefreshIcon : File01Icon}
-                      size={17}
+                      size={15}
                       strokeWidth={1.7}
                       className={`${config.iconClass} ${item.status === 'converting' ? 'animate-spin' : ''}`}
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-medium text-foreground" title={item.file.name}>
+                        <p className="truncate text-xs font-medium text-foreground leading-tight" title={item.file.name}>
                           {item.file.name}
                         </p>
-                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug">
                           {formatBytes(item.file.size)} - {statusLabel(item)}
                         </p>
                       </div>
-                      <div className="flex shrink-0 flex-wrap gap-2">
+                      <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:justify-end">
                         {item.output && (
                           <button
                             type="button"
@@ -782,7 +849,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                       </div>
                     </div>
                     {item.status === 'converting' && (
-                      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
+                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
                         <motion.div
                           className={`h-full rounded-full bg-gradient-to-r ${config.progressClass}`}
                           animate={{ width: `${Math.min(item.progress, 100)}%` }}
@@ -798,32 +865,74 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+                ))}
+              </div>
+            </div>
 
-          <div className="flex flex-col gap-2.5 sm:flex-row">
+            <div className="flex w-full min-w-0 flex-col gap-2 pr-4 sm:flex-row sm:items-stretch">
             <button
               type="button"
-              onClick={() => void handleConvert()}
-              disabled={!canConvert}
-              className={`inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-br ${config.primaryButtonClass} px-4 py-3 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45`}
+              onClick={() => {
+                if (allConvertedSuccessfully) {
+                  handleClear();
+                } else {
+                  void handleConvert();
+                }
+              }}
+              disabled={
+                allConvertedSuccessfully ? busy : isConverting || !canConvert
+              }
+              className={`${downloadPrimary ? secondaryCtaClass : primaryCtaClass} ${downloadPrimary ? 'order-2 sm:order-2' : 'order-1 sm:order-1'}`}
             >
-              <HugeiconsIcon icon={isConverting ? RefreshIcon : File01Icon} size={15} strokeWidth={2} className={isConverting ? 'animate-spin' : ''} />
+              <HugeiconsIcon
+                icon={isConverting || allConvertedSuccessfully ? RefreshIcon : File01Icon}
+                size={15}
+                strokeWidth={2}
+                className={`shrink-0 ${isConverting ? 'animate-spin' : ''}`}
+              />
               {isConverting
                 ? 'Converting...'
                 : pendingCount > 0
                   ? `Convert ${pendingCount} ${pendingCount === 1 ? 'file' : 'files'}`
-                  : 'All files converted'}
+                  : allConvertedSuccessfully
+                    ? 'Start again'
+                    : 'All files converted'}
             </button>
             <button
               type="button"
               onClick={() => void handleDownloadAll()}
-              disabled={convertedItems.length === 0 || isConverting}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-border/40 bg-white/60 px-4 py-3 text-xs font-semibold text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-45"
+              disabled={!downloadReady}
+              aria-busy={isConverting}
+              className={`${downloadPrimary ? primaryCtaClass : secondaryCtaClass} ${downloadPrimary ? 'order-1 sm:order-1' : 'order-2 sm:order-2'} ${
+                !downloadPrimary && !downloadReady ? downloadHintClass : ''
+              } ${!downloadReady ? 'disabled:opacity-100' : ''}`}
             >
-              <HugeiconsIcon icon={isBulkDownload ? Archive01Icon : Download01Icon} size={15} strokeWidth={2} />
-              {isBulkDownload ? 'Download converted ZIP' : `Download ${config.outputLabel}`}
+              {downloadReady ? (
+                <HugeiconsIcon
+                  icon={isBulkDownload ? Archive01Icon : Download01Icon}
+                  size={15}
+                  strokeWidth={2}
+                  className="shrink-0"
+                />
+              ) : isConverting ? (
+                <HugeiconsIcon
+                  icon={RefreshIcon}
+                  size={15}
+                  strokeWidth={2}
+                  className="shrink-0 animate-spin opacity-70"
+                />
+              ) : (
+                <HugeiconsIcon icon={File01Icon} size={15} strokeWidth={2} className="shrink-0 opacity-60" />
+              )}
+              {isConverting
+                ? `Your ${config.outputLabel} will appear here shortly`
+                : hasConvertedOutput
+                  ? isBulkDownload
+                    ? 'Download converted ZIP'
+                    : `Download ${config.outputLabel}`
+                  : `Save ${config.outputLabel} here after converting`}
             </button>
+            </div>
           </div>
         </motion.div>
       )}
