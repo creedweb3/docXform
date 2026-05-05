@@ -15,7 +15,7 @@
 # production
 /build
 
-# large runtime binaries (host externally, e.g. R2/CDN)
+# large LibreOffice WASM binaries (keep locally under public/wasm/, not in git)
 public/soffice.wasm
 public/soffice.data
 *.wasm

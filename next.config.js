@@ -23,8 +23,7 @@ const nextConfig = {
           // `credentialless` still enables cross-origin isolation (SharedArrayBuffer / WASM) with
           // COOP same-origin, but avoids the strictest `require-corp` embedding rules. Some
           // Chromium builds fail to composite `backdrop-filter` on the main document with
-          // `require-corp` + document-level CORP — if WASM/R2 breaks, try `require-corp` again
-          // and ensure R2 objects send `Cross-Origin-Resource-Policy: cross-origin`.
+          // If WASM or workers misbehave with third-party scripts, try `require-corp` again.
           {
             key: 'Cross-Origin-Embedder-Policy',
             value: 'credentialless',

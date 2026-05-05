@@ -1,37 +1,21 @@
 /**
- * LibreOffice WASM assets (`soffice.*`, workers) normally live under `/public/wasm/`.
- * For production you can serve them from Cloudflare R2 (or any HTTPS URL) to shrink
- * the Netlify deploy and cache at the edge.
+ * LibreOffice WASM assets are served from `/public/wasm/` at the URL prefix `/wasm/`.
  *
- * Set `NEXT_PUBLIC_WASM_ASSET_BASE` to the **public URL of the wasm folder**, including
- * path, e.g. `https://pub-xxxxx.r2.dev/wasm` or `https://wasm.yourdomain.com/wasm`.
- * When set, **all** large assets load from that URL — copies under `public/wasm/` are not used
- * for wasm/data (only same-origin `/wasm/` is used if this is unset or not an http(s) URL).
- * Omit or leave empty to keep using same-origin `/wasm/`.
- *
- * R2 checklist: public access (or signed URLs not supported here), CORS `GET` from your
- * site origin, `Content-Type: application/wasm` for `.wasm`, and for COEP sites add
- * `Cross-Origin-Resource-Policy: cross-origin` on object responses (Transform Rules).
+ * Large binaries (`soffice.wasm`, `soffice.data`) are gitignored; copy them into `public/wasm/`
+ * alongside the small scripts from `@matbee/libreoffice-converter` so the browser converter can start.
  */
 export function getWasmAssetBaseForCreatePaths(): string {
-  const raw = process.env.NEXT_PUBLIC_WASM_ASSET_BASE?.trim();
-  if (!raw || !/^https?:\/\//i.test(raw)) {
-    return '/wasm/';
-  }
-  return raw.endsWith('/') ? raw : `${raw}/`;
+  return '/wasm/';
 }
 
 export function getBrowserWorkerJsUrl(): string {
-  return `${getWasmAssetBaseForCreatePaths()}browser.worker.global.js`;
+  return '/wasm/browser.worker.global.js';
 }
 
-/** Resolve an asset under the wasm folder to an absolute URL (client: uses `window.location` for same-origin `/wasm/`). */
+/** Resolve an asset under the wasm folder to an absolute URL (client: uses `window.location` origin). */
 export function getWasmAssetFileUrl(fileName: string): string {
   const base = getWasmAssetBaseForCreatePaths();
   const name = fileName.replace(/^\//, '');
-  if (base.startsWith('http')) {
-    return new URL(name, base).href;
-  }
   if (typeof window !== 'undefined') {
     return new URL(name, `${window.location.origin}${base}`).href;
   }

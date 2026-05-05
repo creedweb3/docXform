@@ -5,7 +5,7 @@ import { getBrowserWorkerJsUrl, getWasmAssetBaseForCreatePaths } from '@/lib/was
 
 declare global {
   interface Window {
-    /** WASM URL prefix from NEXT_PUBLIC_WASM_ASSET_BASE at build time (`/wasm/` if unset). */
+    /** Same-origin WASM URL prefix (always `/wasm/`). */
     __DOCXFORM_WASM_BASE__?: string;
   }
 }

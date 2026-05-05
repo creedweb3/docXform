@@ -31,7 +31,7 @@ let converterInstance: WorkerBrowserConverter | null = null;
 let activeProgressHandler: ProgressHandler | null = null;
 let conversionQueue: Promise<void> = Promise.resolve();
 
-/** First load can pull ~250MB from R2 on a cold connection; keep generous. */
+/** First load can pull large wasm/data from same-origin `/wasm/`; keep generous on slow links. */
 const INITIALIZE_TIMEOUT_MS = 180_000;
 const CONVERSION_TIMEOUT_MS = 240_000;
 
@@ -98,14 +98,11 @@ async function resetConverter() {
 }
 
 /**
- * Fail fast with a clear message: repo `.gitignore` omits large `soffice.wasm` / `soffice.data`,
- * and R2/CDN requires CORS for the exact browser origin (including port).
+ * Fail fast with a clear message: repo `.gitignore` omits large `soffice.wasm` / `soffice.data`;
+ * they must exist under `public/wasm/` for same-origin `/wasm/*` requests to succeed.
  */
 async function assertCoreWasmAssetsReachable(): Promise<void> {
   if (typeof window === 'undefined') return;
-
-  const base = getWasmAssetBaseForCreatePaths();
-  const crossOrigin = /^https?:\/\//i.test(base);
 
   for (const name of ['soffice.wasm', 'soffice.data'] as const) {
     const url = getWasmAssetFileUrl(name);
@@ -116,20 +113,14 @@ async function assertCoreWasmAssetsReachable(): Promise<void> {
       });
       if (res.status !== 200 && res.status !== 206) {
         throw new Error(
-          `WASM file returned HTTP ${res.status} for ${url}. ` +
-            (crossOrigin
-              ? 'Confirm the file exists on your CDN/R2 and CORS allows this origin (including port, e.g. http://localhost:3001).'
-              : 'Large binaries are not committed: copy soffice.wasm and soffice.data into public/wasm/, or set NEXT_PUBLIC_WASM_ASSET_BASE to a URL that serves them.')
+          `WASM file returned HTTP ${res.status} for ${url}. Copy soffice.wasm and soffice.data into public/wasm/ (see .env.example).`
         );
       }
     } catch (e) {
       if (e instanceof Error && e.message.startsWith('WASM file returned')) throw e;
       const inner = e instanceof Error ? e.message : String(e);
       throw new Error(
-        `Cannot fetch ${name} from ${url}: ${inner}. ` +
-          (crossOrigin
-            ? 'Typical fix: add this exact page origin to Cloudflare R2 CORS AllowedOrigins, then hard-refresh.'
-            : 'Typical fix: run from project root with NEXT_PUBLIC_WASM_ASSET_BASE pointed at R2, or place soffice.wasm + soffice.data in public/wasm/ (see .env.example).')
+        `Cannot fetch ${name} from ${url}: ${inner}. Ensure both files exist in public/wasm/ and restart the dev server.`
       );
     }
   }
@@ -377,7 +368,7 @@ export function conversionErrorMessage(error: unknown) {
   }
 
   if (lowerMessage.includes('converter initialization')) {
-    return 'The LibreOffice engine took too long to download or start (WASM + data are large). Use a stable connection, reload, or try from a network that does not block R2/CDN.';
+    return 'The LibreOffice engine took too long to download or start (WASM + data are large). Use a stable connection, reload, or try again on a faster link.';
   }
 
   if (
@@ -437,7 +428,7 @@ export function conversionErrorMessage(error: unknown) {
     lowerMessage.includes('coep') ||
     lowerMessage.includes('corp')
   ) {
-    return 'WASM blocked (CORS or security headers). Check Cloudflare R2 CORS for your site and CORP on wasm responses, and Netlify NEXT_PUBLIC_WASM_ASSET_BASE.';
+    return 'WASM blocked (CORS or security headers). Same-origin /wasm/ should not need CORS; check next.config.js COOP/COEP and any CDN headers on static assets.';
   }
 
   if (
@@ -448,7 +439,7 @@ export function conversionErrorMessage(error: unknown) {
     lowerMessage.includes('linkerror') ||
     lowerMessage.includes('emscripten')
   ) {
-    return 'WebAssembly failed to load or start. Open the browser console (F12). If assets are on R2, confirm CORS allows this exact origin (including port, e.g. http://localhost:3001) and restart dev after changing NEXT_PUBLIC_WASM_ASSET_BASE.';
+    return 'WebAssembly failed to load or start. Open the browser console (F12), confirm public/wasm contains the full bundle, and restart `next dev` after adding files.';
   }
 
   if (!message) {
