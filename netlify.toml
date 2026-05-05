@@ -1,0 +1,9 @@
+[build]
+command = "npx next build"
+publish = ".next"
+
+[[plugins]]
+package = "@netlify/plugin-nextjs"
+
+# Optional: set NEXT_PUBLIC_WASM_ASSET_BASE in Netlify → Site configuration → Environment variables
+# (see .env.example) so LibreOffice WASM is loaded from Cloudflare R2 instead of the deploy bundle.
