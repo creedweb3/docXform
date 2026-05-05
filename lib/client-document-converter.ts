@@ -10,7 +10,6 @@ import type {
 import {
   getBrowserWorkerJsUrl,
   getWasmAssetBaseForCreatePaths,
-  getWasmAssetFileUrl,
 } from '@/lib/wasm-asset-base';
 
 export interface ClientConversionProgress {
@@ -34,6 +33,7 @@ let conversionQueue: Promise<void> = Promise.resolve();
 /** First load can pull large wasm/data from same-origin `/wasm/`; keep generous on slow links. */
 const INITIALIZE_TIMEOUT_MS = 180_000;
 const CONVERSION_TIMEOUT_MS = 240_000;
+const FALLBACK_WASM_CDN_BASE = 'https://wasm.docxform.com/wasm/';
 
 const MIME_TYPES: Record<OutputFormat, string> = {
   pdf: 'application/pdf',
@@ -101,14 +101,21 @@ async function resetConverter() {
  * Fail fast with a clear message: repo `.gitignore` omits large `soffice.wasm` / `soffice.data`;
  * they must exist under `public/wasm/` for same-origin `/wasm/*` requests to succeed.
  */
-async function assertCoreWasmAssetsReachable(): Promise<void> {
-  if (typeof window === 'undefined') return;
+function resolveWasmUrl(base: string, name: string): string {
+  const normalizedBase = base.endsWith('/') ? base : `${base}/`;
+  if (/^https?:\/\//i.test(normalizedBase)) {
+    return new URL(name, normalizedBase).href;
+  }
+  if (typeof window !== 'undefined') {
+    return new URL(name, `${window.location.origin}${normalizedBase}`).href;
+  }
+  return `${normalizedBase}${name}`;
+}
 
-  const base = getWasmAssetBaseForCreatePaths();
+async function probeCoreWasmAssets(base: string): Promise<void> {
   const crossOrigin = /^https?:\/\//i.test(base);
-
   for (const name of ['soffice.wasm', 'soffice.data'] as const) {
-    const url = getWasmAssetFileUrl(name);
+    const url = resolveWasmUrl(base, name);
     try {
       const res = await fetch(url, {
         method: 'GET',
@@ -135,19 +142,56 @@ async function assertCoreWasmAssetsReachable(): Promise<void> {
   }
 }
 
+async function assertCoreWasmAssetsReachable(): Promise<string> {
+  if (typeof window === 'undefined') return getWasmAssetBaseForCreatePaths();
+
+  const base = getWasmAssetBaseForCreatePaths();
+  try {
+    await probeCoreWasmAssets(base);
+    return base;
+  } catch (primaryError) {
+    const canFallbackToCdn =
+      process.env.NODE_ENV === 'production' &&
+      base.startsWith('/wasm/') &&
+      typeof window !== 'undefined';
+
+    if (!canFallbackToCdn) {
+      throw primaryError;
+    }
+
+    const envBase = process.env.NEXT_PUBLIC_WASM_ASSET_BASE?.trim();
+    const fallbackBase =
+      envBase && /^https?:\/\//i.test(envBase)
+        ? (envBase.endsWith('/') ? envBase : `${envBase}/`)
+        : FALLBACK_WASM_CDN_BASE;
+
+    try {
+      await probeCoreWasmAssets(fallbackBase);
+      console.warn(
+        `[DocXform] Falling back to CDN WASM base because same-origin /wasm/ probe failed: ${String(
+          primaryError
+        )}`
+      );
+      return fallbackBase;
+    } catch {
+      throw primaryError;
+    }
+  }
+}
+
 async function getConverter(onProgress?: ProgressHandler) {
   activeProgressHandler = onProgress ?? null;
 
   if (!converterPromise) {
     converterPromise = (async () => {
-      await assertCoreWasmAssetsReachable();
+      const resolvedBase = await assertCoreWasmAssetsReachable();
 
       const { WorkerBrowserConverter, createWasmPaths } = await import(
         '@matbee/libreoffice-converter/browser'
       );
 
       const converter = new WorkerBrowserConverter({
-        ...createWasmPaths(getWasmAssetBaseForCreatePaths()),
+        ...createWasmPaths(resolvedBase),
         browserWorkerJs: getBrowserWorkerJsUrl(),
         onProgress: emitProgress,
       });
