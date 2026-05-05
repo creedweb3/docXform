@@ -479,4 +479,39 @@
   .scrollbar-hidden::-webkit-scrollbar {
     display: none;
   }
+
+  /**
+   * Converter queue file list (WebKit/Blink): no arrow buttons, slim thumb.
+   * Firefox: thin scrollbar. Thumb tint from --queue-* (set per tool on the element).
+   * Classic OS scrollbars may still show native chrome.
+   */
+  .queue-list-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--queue-scrollbar-thumb, hsl(var(--muted-foreground) / 0.45))
+      transparent;
+  }
+  .queue-list-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  .queue-list-scrollbar::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  .queue-list-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .queue-list-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: var(
+      --queue-scrollbar-thumb,
+      hsl(var(--muted-foreground) / 0.45)
+    );
+  }
+  .queue-list-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(
+      --queue-scrollbar-thumb-hover,
+      hsl(var(--muted-foreground) / 0.65)
+    );
+  }
 }

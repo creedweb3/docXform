@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent, DragEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeEvent, CSSProperties, DragEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -77,6 +77,8 @@ const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
 const TRANSIENT_NOTICE_DURATION = 900;
 const DEFAULT_NOTICE_DURATION = 3500;
 const chipMotion = { duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] as const };
+/** Only enable list scrolling (and scrollbar width sync) after this many files. */
+const QUEUE_SCROLL_AFTER_FILE_COUNT = 6;
 
 const converterConfig = {
   'word-to-pdf': {
@@ -95,6 +97,9 @@ const converterConfig = {
     progressClass: 'from-blue-400 to-cyan-400',
     linkClass: 'text-blue-600 hover:text-blue-700',
     chipClass: 'border-blue-200/70 bg-white/65',
+    /* Match drop-zone card wash / border (converter-main-card-blue), not CTA blue */
+    queueScrollbarThumb: 'rgba(147, 197, 253, 0.78)',
+    queueScrollbarThumbHover: 'rgba(125, 211, 252, 0.88)',
   },
   'pdf-to-word': {
     accept: '.pdf',
@@ -112,6 +117,9 @@ const converterConfig = {
     progressClass: 'from-rose-400 to-pink-400',
     linkClass: 'text-rose-600 hover:text-rose-700',
     chipClass: 'border-rose-200/70 bg-white/65',
+    /* Match drop-zone card wash / border (converter-main-card-rose) */
+    queueScrollbarThumb: 'rgba(251, 182, 206, 0.78)',
+    queueScrollbarThumbHover: 'rgba(253, 164, 175, 0.88)',
   },
 } satisfies Record<ConversionMode, Record<string, string> & {
   outputFormat: 'pdf' | 'docx';
@@ -176,6 +184,8 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const fileIdRef = useRef(0);
   const warmStartedRef = useRef(false);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queueListScrollRef = useRef<HTMLDivElement>(null);
+  const [queueScrollbarPadPx, setQueueScrollbarPadPx] = useState(0);
 
   const totalBytes = useMemo(
     () => items.reduce((total, item) => total + item.file.size, 0),
@@ -202,6 +212,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     );
   const showTopNoticeRow =
     isValidating || (notice && (!notice.transient || !hasQueuedItems));
+  const queueListUsesScrollRegion = items.length > QUEUE_SCROLL_AFTER_FILE_COUNT;
   const noticeKind = isValidating ? 'info' : notice?.kind ?? 'info';
   const noticeToneClass =
     noticeKind === 'error'
@@ -292,6 +303,25 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       }
     };
   }, [startWarmConverter]);
+
+  useLayoutEffect(() => {
+    const el = queueListScrollRef.current;
+    if (!el || !queueListUsesScrollRegion) {
+      setQueueScrollbarPadPx(0);
+      return;
+    }
+
+    const update = () => {
+      setQueueScrollbarPadPx(Math.max(0, el.offsetWidth - el.clientWidth));
+    };
+
+    update();
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(update);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [queueListUsesScrollRegion, items]);
 
   const addFilesFromArray = useCallback(
     async (incoming: File[], allowDuplicateNames = false) => {
@@ -768,40 +798,57 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
           transition={spring}
           className="glass flex flex-col gap-3 rounded-3xl p-5 sm:p-6"
         >
-          <div className="flex flex-col gap-3 pl-1 pr-5 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">{config.queuedTitle}</h3>
-              <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-                Queue: {items.length} of {MAX_CONVERSION_BATCH_FILES} files. Selected total: {formatBytes(totalBytes)} / {getDynamicBatchLimitLabel(items.length)} allowed for these {selectedFilesLabel(items.length)}.
-              </p>
+          <div className="flex w-full flex-col gap-3 px-1">
+            <div className="flex w-full flex-col gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
+              <div className="min-w-0 w-full sm:w-auto sm:text-left">
+                <h3 className="text-sm font-semibold text-foreground">{config.queuedTitle}</h3>
+                <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+                  Queue: {items.length} of {MAX_CONVERSION_BATCH_FILES} files. Selected total: {formatBytes(totalBytes)} /{' '}
+                  {getDynamicBatchLimitLabel(items.length)} allowed for these {selectedFilesLabel(items.length)}.
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  disabled={busy || items.length >= MAX_CONVERSION_BATCH_FILES}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
+                  Add files
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  disabled={busy}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
+                  Clear all
+                </button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                disabled={busy || items.length >= MAX_CONVERSION_BATCH_FILES}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
-                Add files
-              </button>
-              <button
-                type="button"
-                onClick={handleClear}
-                disabled={busy}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
-                Clear all
-              </button>
-            </div>
-          </div>
 
-          {/* One column: same vertical gap between file rows and between last row + CTAs.
-              Do not use scrollbar-gutter on the list only — it narrows the list vs the CTA row below. */}
-          <div className="flex min-h-0 flex-1 w-full min-w-0 flex-col gap-2 px-1">
-            <div className="max-h-72 min-h-0 w-full min-w-0 overflow-y-auto overflow-x-hidden">
-              <div className="flex w-full min-w-0 flex-col gap-2 py-0.5 pr-4">
+            {/* Scroll only after QUEUE_SCROLL_AFTER_FILE_COUNT files; pad CTAs by measured scrollbar so edges stay aligned. */}
+            <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-2">
+              <div
+                ref={queueListScrollRef}
+                className={`min-h-0 w-full min-w-0 overflow-x-hidden ${
+                  queueListUsesScrollRegion
+                    ? 'queue-list-scrollbar max-h-72 overflow-y-auto'
+                    : 'max-h-none overflow-y-visible'
+                }`}
+                style={
+                  queueListUsesScrollRegion
+                    ? ({
+                        '--queue-scrollbar-thumb': config.queueScrollbarThumb,
+                        '--queue-scrollbar-thumb-hover':
+                          config.queueScrollbarThumbHover,
+                      } as CSSProperties)
+                    : undefined
+                }
+              >
+                <div className="flex w-full min-w-0 flex-col gap-2 py-0.5 pr-4">
                 {items.map((item) => (
               <div
                 key={item.id}
@@ -869,7 +916,14 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               </div>
             </div>
 
-            <div className="flex w-full min-w-0 flex-col gap-2 pr-4 sm:flex-row sm:items-stretch">
+            <div
+              className="flex w-full min-w-0 flex-col gap-2 pr-4 sm:flex-row sm:items-stretch"
+              style={
+                queueListUsesScrollRegion
+                  ? { paddingRight: `calc(1rem + ${queueScrollbarPadPx}px)` }
+                  : undefined
+              }
+            >
             <button
               type="button"
               onClick={() => {
@@ -932,6 +986,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                     : `Download ${config.outputLabel}`
                   : `Save ${config.outputLabel} here after converting`}
             </button>
+            </div>
             </div>
           </div>
         </motion.div>
