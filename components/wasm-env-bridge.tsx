@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getBrowserWorkerJsUrl, getWasmAssetBaseForCreatePaths } from '@/lib/wasm-asset-base';
+import { getWasmAssetBaseForCreatePaths } from '@/lib/wasm-asset-base';
 
 declare global {
   interface Window {
@@ -14,10 +14,6 @@ declare global {
 export function WasmEnvBridge() {
   useEffect(() => {
     window.__DOCXFORM_WASM_BASE__ = getWasmAssetBaseForCreatePaths();
-    if (process.env.NEXT_PUBLIC_DEBUG_WASM === '1') {
-      console.info('[DocXform] WASM asset base:', window.__DOCXFORM_WASM_BASE__);
-      console.info('[DocXform] Worker script URL:', getBrowserWorkerJsUrl());
-    }
   }, []);
 
   return null;

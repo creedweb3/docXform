@@ -2,7 +2,19 @@
 const nextConfig = {
   devIndicators: false,
   images: { unoptimized: true },
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
   async headers() {
+    const securityHeaders = [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(), geolocation=()',
+      },
+    ];
+
     return [
       {
         source: '/wasm/:path*',
@@ -14,16 +26,31 @@ const nextConfig = {
         ],
       },
       {
+        source: '/brand/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/og/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
+      },
+      {
         source: '/:path*',
         headers: [
+          ...securityHeaders,
           {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
           },
-          // `credentialless` still enables cross-origin isolation (SharedArrayBuffer / WASM) with
-          // COOP same-origin, but avoids the strictest `require-corp` embedding rules. Some
-          // Chromium builds fail to composite `backdrop-filter` on the main document with
-          // If WASM or workers misbehave with third-party scripts, try `require-corp` again.
           {
             key: 'Cross-Origin-Embedder-Policy',
             value: 'credentialless',

@@ -137,16 +137,10 @@ async function getConverter(onProgress?: ProgressHandler) {
         '@matbee/libreoffice-converter/browser'
       );
 
-      const debugWasm = process.env.NEXT_PUBLIC_DEBUG_WASM === '1';
-
       const converter = new WorkerBrowserConverter({
         ...createWasmPaths(getWasmAssetBaseForCreatePaths()),
         browserWorkerJs: getBrowserWorkerJsUrl(),
         onProgress: emitProgress,
-        verbose: debugWasm,
-        onError: (err) => {
-          if (debugWasm) console.error('[DocXform] LibreOffice worker/onError:', err);
-        },
       });
 
       await withTimeout(converter.initialize(), INITIALIZE_TIMEOUT_MS, 'Converter initialization');
@@ -154,9 +148,6 @@ async function getConverter(onProgress?: ProgressHandler) {
       return converter;
     })().catch((error) => {
       void resetConverter();
-      if (process.env.NEXT_PUBLIC_DEBUG_WASM === '1') {
-        console.error('[DocXform] getConverter failed:', error);
-      }
       throw error;
     });
   }
