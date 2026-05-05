@@ -27,7 +27,8 @@ let converterInstance: WorkerBrowserConverter | null = null;
 let activeProgressHandler: ProgressHandler | null = null;
 let conversionQueue: Promise<void> = Promise.resolve();
 
-const INITIALIZE_TIMEOUT_MS = 90_000;
+/** First load can pull ~250MB from R2 on a cold connection; keep generous. */
+const INITIALIZE_TIMEOUT_MS = 180_000;
 const CONVERSION_TIMEOUT_MS = 240_000;
 
 const MIME_TYPES: Record<OutputFormat, string> = {
@@ -284,10 +285,17 @@ export function conversionErrorMessage(error: unknown) {
   const lowerMessage = message.toLowerCase();
 
   if (
+    lowerMessage.includes('sharedarraybuffer') ||
+    lowerMessage.includes('crossoriginisolated') ||
+    lowerMessage.includes('cross-origin isolation')
+  ) {
+    return 'Browser blocked shared memory for the converter. Ensure the site is served with COOP/COEP (see next.config.js) and reload.';
+  }
+
+  if (
     lowerMessage.includes('timed out') ||
     lowerMessage.includes('timeout') ||
-    lowerMessage.includes('timeoput') ||
-    lowerMessage.includes('worker')
+    lowerMessage.includes('timeoput')
   ) {
     return 'Conversion timed out in your browser. Please retry with a smaller or simpler file.';
   }
