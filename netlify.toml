@@ -7,3 +7,4 @@ package = "@netlify/plugin-nextjs"
 
 # Optional: set NEXT_PUBLIC_WASM_ASSET_BASE in Netlify → Site configuration → Environment variables
 # (see .env.example) so LibreOffice WASM is loaded from Cloudflare R2 instead of the deploy bundle.
+# After changing any NEXT_PUBLIC_* var: Deploy → Trigger deploy → Clear cache and deploy site.

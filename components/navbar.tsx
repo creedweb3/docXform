@@ -24,7 +24,7 @@ export function Navbar() {
   const pathname = usePathname();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+    <header className="fixed top-0 left-0 right-0 z-50 overflow-visible pointer-events-none">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-5 pb-2 pointer-events-auto">
         <nav className="glass-navbar rounded-2xl px-4 sm:px-5 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-4 gap-y-2 sm:gap-y-0">
           <Link href="/" className="flex h-10 items-center gap-2.5 shrink-0">

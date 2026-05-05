@@ -82,10 +82,31 @@
     @apply backdrop-blur-2xl border border-white/40;
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
   }
+  /* Blur on ::before: some Chromium builds fail to composite @apply backdrop-blur on the same box
+     as flex children / COEP pages; a dedicated layer usually restores the frosted effect. */
   .glass-navbar {
-    background: rgba(255, 255, 255, 0.78);
-    @apply backdrop-blur-2xl border border-white/75;
+    position: relative;
+    background: transparent;
+    border: 1px solid rgb(255 255 255 / 0.75);
     box-shadow: 0 12px 36px rgba(15, 23, 42, 0.09), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+  .glass-navbar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: rgb(255 255 255 / 0.68);
+    /* Chrome: invalid/inherited mask can disable backdrop-filter compositing */
+    -webkit-mask-image: none;
+    mask-image: none;
+    -webkit-backdrop-filter: blur(28px) saturate(1.35);
+    backdrop-filter: blur(28px) saturate(1.35);
+  }
+  .glass-navbar > * {
+    position: relative;
+    z-index: 1;
   }
   .bg-dot-grid {
     background-color: hsl(var(--background));

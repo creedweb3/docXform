@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import { JsonLd } from '@/components/json-ld';
+import { WasmEnvBridge } from '@/components/wasm-env-bridge';
 import {
   createPageMetadata,
   organizationJsonLd,
@@ -58,6 +59,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <WasmEnvBridge />
         <JsonLd
           id="site-schema"
           data={schemaGraph([organizationJsonLd(), websiteJsonLd()])}
@@ -67,7 +69,7 @@ export default function RootLayout({
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7154775313079570"
           crossOrigin="anonymous"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
         {children}
       </body>
