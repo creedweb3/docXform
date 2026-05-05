@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -248,6 +248,34 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
         showNotice(conversionErrorMessage(err), { kind: 'error' });
       });
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let cancelled = false;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    let idleId: number | null = null;
+
+    const warm = () => {
+      if (!cancelled) startWarmConverter();
+    };
+
+    if ('requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(warm, { timeout: 1800 });
+    } else {
+      fallbackTimer = setTimeout(warm, 500);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleId !== null && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+      }
+    };
+  }, [startWarmConverter]);
 
   const addFilesFromArray = useCallback(
     async (incoming: File[], allowDuplicateNames = false) => {
@@ -540,11 +568,15 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
           } ${busy ? 'cursor-default opacity-85' : 'cursor-pointer'}`}
           onDragOver={(event) => {
             event.preventDefault();
+            startWarmConverter();
             if (!busy) setDragOver(true);
           }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
+          onPointerEnter={startWarmConverter}
+          onTouchStart={startWarmConverter}
           onClick={() => {
+            startWarmConverter();
             if (!busy) inputRef.current?.click();
           }}
         >
