@@ -104,6 +104,9 @@ async function resetConverter() {
 async function assertCoreWasmAssetsReachable(): Promise<void> {
   if (typeof window === 'undefined') return;
 
+  const base = getWasmAssetBaseForCreatePaths();
+  const crossOrigin = /^https?:\/\//i.test(base);
+
   for (const name of ['soffice.wasm', 'soffice.data'] as const) {
     const url = getWasmAssetFileUrl(name);
     try {
@@ -113,14 +116,20 @@ async function assertCoreWasmAssetsReachable(): Promise<void> {
       });
       if (res.status !== 200 && res.status !== 206) {
         throw new Error(
-          `WASM file returned HTTP ${res.status} for ${url}. Copy soffice.wasm and soffice.data into public/wasm/ (see .env.example).`
+          `WASM file returned HTTP ${res.status} for ${url}. ` +
+            (crossOrigin
+              ? 'Confirm objects exist on the WASM host and CORS allows this origin (scheme + host + port).'
+              : 'Copy soffice.wasm and soffice.data into public/wasm/, or set NEXT_PUBLIC_WASM_ASSET_BASE for production (see .env.example).')
         );
       }
     } catch (e) {
       if (e instanceof Error && e.message.startsWith('WASM file returned')) throw e;
       const inner = e instanceof Error ? e.message : String(e);
       throw new Error(
-        `Cannot fetch ${name} from ${url}: ${inner}. Ensure both files exist in public/wasm/ and restart the dev server.`
+        `Cannot fetch ${name} from ${url}: ${inner}. ` +
+          (crossOrigin
+            ? 'Typical fix: CORS on your WASM CDN must include this exact page origin; redeploy after changing NEXT_PUBLIC_WASM_ASSET_BASE.'
+            : 'Typical fix: add binaries under public/wasm/ or point NEXT_PUBLIC_WASM_ASSET_BASE at a deployed /wasm/ mirror.')
       );
     }
   }

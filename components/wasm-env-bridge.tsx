@@ -5,7 +5,7 @@ import { getWasmAssetBaseForCreatePaths } from '@/lib/wasm-asset-base';
 
 declare global {
   interface Window {
-    /** Same-origin WASM URL prefix (always `/wasm/`). */
+    /** Resolved WASM URL prefix (`/wasm/` or NEXT_PUBLIC_WASM_ASSET_BASE). */
     __DOCXFORM_WASM_BASE__?: string;
   }
 }

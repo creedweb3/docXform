@@ -43,5 +43,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // Skip middleware for static WASM (large files); no auth logic needed there.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|wasm/).*)'],
 };

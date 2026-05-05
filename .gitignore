@@ -15,11 +15,9 @@
 # production
 /build
 
-# large LibreOffice WASM binaries (keep locally under public/wasm/, not in git)
+# Wrong location (binaries belong in public/wasm/)
 public/soffice.wasm
 public/soffice.data
-*.wasm
-*.data
 
 # misc
 .DS_Store

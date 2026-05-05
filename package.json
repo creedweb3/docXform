@@ -8,8 +8,10 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "clean:local": "node scripts/cleanup-local-artifacts.mjs",
     "test:e2e": "playwright test",
-    "wasm:diagnose": "node scripts/diagnose-wasm-assets.mjs"
+    "wasm:diagnose": "node scripts/diagnose-wasm-assets.mjs",
+    "wasm:r2:upload": "node scripts/upload-wasm-r2.mjs"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.1.1",
