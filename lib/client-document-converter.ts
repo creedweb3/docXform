@@ -120,6 +120,7 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
       const res = await fetch(url, {
         method: 'GET',
         headers: { Range: 'bytes=0-0' },
+        cache: 'no-store',
       });
       if (res.status !== 200 && res.status !== 206) {
         throw new Error(
@@ -142,7 +143,7 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
   }
 }
 
-async function assertCoreWasmAssetsReachable(): Promise<string> {
+async function resolveBinaryAssetBase(): Promise<string> {
   if (typeof window === 'undefined') return getWasmAssetBaseForCreatePaths();
 
   const base = getWasmAssetBaseForCreatePaths();
@@ -184,14 +185,24 @@ async function getConverter(onProgress?: ProgressHandler) {
 
   if (!converterPromise) {
     converterPromise = (async () => {
-      const resolvedBase = await assertCoreWasmAssetsReachable();
+      const binaryBase = await resolveBinaryAssetBase();
 
       const { WorkerBrowserConverter, createWasmPaths } = await import(
         '@matbee/libreoffice-converter/browser'
       );
 
+      /**
+       * Keep JS loader and worker scripts same-origin for reliability (and to avoid client blockers
+       * on cross-origin script URLs), while allowing large binaries to fallback to CDN if needed.
+       */
+      const wasmPaths = createWasmPaths('/wasm/');
+      if (/^https?:\/\//i.test(binaryBase)) {
+        wasmPaths.sofficeWasm = resolveWasmUrl(binaryBase, 'soffice.wasm');
+        wasmPaths.sofficeData = resolveWasmUrl(binaryBase, 'soffice.data');
+      }
+
       const converter = new WorkerBrowserConverter({
-        ...createWasmPaths(resolvedBase),
+        ...wasmPaths,
         browserWorkerJs: getBrowserWorkerJsUrl(),
         onProgress: emitProgress,
       });
