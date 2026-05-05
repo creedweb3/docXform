@@ -260,16 +260,29 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-xs font-medium">
-                <Link href="/faq" className="text-blue-600 hover:text-blue-700">
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-sm font-medium">
+                <Link
+                  href="/faq"
+                  className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50/80"
+                >
                   Read the FAQ
                 </Link>
-                <span className="text-muted-foreground">/</span>
-                <Link href="/articles" className="text-blue-600 hover:text-blue-700">
+                <span className="hidden sm:inline text-muted-foreground" aria-hidden>
+                  /
+                </span>
+                <Link
+                  href="/articles"
+                  className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50/80"
+                >
                   Browse conversion guides
                 </Link>
-                <span className="text-muted-foreground">/</span>
-                <Link href="/about" className="text-blue-600 hover:text-blue-700">
+                <span className="hidden sm:inline text-muted-foreground" aria-hidden>
+                  /
+                </span>
+                <Link
+                  href="/about"
+                  className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50/80"
+                >
                   Learn about browser processing
                 </Link>
               </div>

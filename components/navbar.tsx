@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { BrandLogoMark } from '@/components/brand-logo-mark';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Menu01Icon } from '@hugeicons/core-free-icons';
 import {
@@ -27,16 +27,9 @@ export function Navbar() {
     <header className="fixed top-0 left-0 right-0 z-50 overflow-visible pointer-events-none">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-5 pb-2 pointer-events-auto">
         <nav className="glass-navbar rounded-2xl px-4 sm:px-5 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-4 gap-y-2 sm:gap-y-0">
-          <Link href="/" className="flex h-10 items-center gap-2.5 shrink-0">
-            <div className="w-10 h-10 flex items-center justify-center">
-              <Image
-                src="/brand/docxform-logo-icon.png"
-                alt="docXform logo"
-                width={40}
-                height={40}
-                className="w-10 h-10 object-contain"
-                priority
-              />
+          <Link href="/" className="flex min-h-12 items-center gap-2.5 shrink-0 py-1" aria-label="docXform home">
+            <div className="w-10 h-10 flex shrink-0 items-center justify-center" aria-hidden>
+              <BrandLogoMark />
             </div>
             <div className="flex h-10 flex-col items-center justify-center gap-[5px] leading-none text-center -translate-y-px">
               <span className="block text-[20px] font-extrabold leading-[0.85] tracking-[-0.025em]" aria-label="docXform">
@@ -44,7 +37,7 @@ export function Navbar() {
                 <span className="text-[#2563eb] font-extrabold">X</span>
                 <span className="text-slate-800">form</span>
               </span>
-              <span className="block pl-[0.24em] text-center text-[10.5px] font-bold uppercase leading-[0.8] tracking-[0.24em] text-slate-500">
+              <span className="block pl-[0.24em] text-center text-xs font-bold uppercase leading-[0.8] tracking-[0.24em] text-slate-500">
                 Converter
               </span>
             </div>
@@ -58,7 +51,7 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap ${
+                  className={`min-h-12 px-3 py-2.5 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap inline-flex items-center justify-center ${
                     isActive
                       ? 'bg-foreground/90 text-background shadow-sm'
                       : 'text-muted-foreground hover:text-foreground hover:bg-white/45'
@@ -76,7 +69,7 @@ export function Navbar() {
                 <button
                   type="button"
                   aria-label="Open navigation menu"
-                  className="inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-white/50 transition-colors"
+                  className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/50 transition-colors"
                 >
                   <HugeiconsIcon icon={Menu01Icon} size={20} strokeWidth={2} />
                 </button>

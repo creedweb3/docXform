@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import { BrandLogoMark } from '@/components/brand-logo-mark';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Logout01Icon, Menu01Icon } from '@hugeicons/core-free-icons';
 import {
@@ -31,15 +31,8 @@ export function AdminBrandHeader({
       <div className="flex flex-col gap-y-2 md:relative md:flex-row md:items-center md:justify-between">
         <div className="w-full md:w-auto flex items-center justify-between md:justify-start">
           <div className="flex h-10 items-center gap-2.5 md:shrink-0">
-            <div className="w-10 h-10 flex items-center justify-center">
-              <Image
-                src="/brand/docxform-logo-icon.png"
-                alt="docXform logo"
-                width={40}
-                height={40}
-                className="w-10 h-10 object-contain"
-                priority
-              />
+            <div className="w-10 h-10 flex items-center justify-center" aria-hidden>
+              <BrandLogoMark />
             </div>
             <div className="flex h-10 flex-col items-center justify-center gap-[5px] leading-none text-center -translate-y-px">
               <span className="block text-[20px] font-extrabold leading-[0.85] tracking-[-0.025em]" aria-label="docXform">
@@ -47,7 +40,7 @@ export function AdminBrandHeader({
                 <span className="text-[#2563eb] font-extrabold">X</span>
                 <span className="text-slate-800">form</span>
               </span>
-              <span className="block pl-[0.24em] text-center text-[10.5px] font-bold uppercase leading-[0.8] tracking-[0.24em] text-slate-500">
+              <span className="block pl-[0.24em] text-center text-xs font-bold uppercase leading-[0.8] tracking-[0.24em] text-slate-500">
                 Admin
               </span>
             </div>
@@ -59,7 +52,7 @@ export function AdminBrandHeader({
                 <button
                   type="button"
                   aria-label="Open admin menu"
-                  className="inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-white/50 transition-colors"
+                  className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/50 transition-colors"
                 >
                   <HugeiconsIcon icon={Menu01Icon} size={20} strokeWidth={2} />
                 </button>

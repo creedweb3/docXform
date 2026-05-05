@@ -51,7 +51,13 @@ export const metadata: Metadata = {
   creator: SITE_NAME,
   publisher: SITE_NAME,
   icons: {
-    icon: '/brand/docxform-logo-icon.png',
+    icon: [{ url: '/brand/docxform-logo-icon.png', sizes: '512x512', type: 'image/png' }],
+    apple: [{ url: '/brand/docxform-logo-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: SITE_NAME,
+    statusBarStyle: 'default',
   },
   other: {
     'google-adsense-account': 'ca-pub-7154775313079570',

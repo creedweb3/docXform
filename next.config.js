@@ -1,9 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   devIndicators: false,
-  images: { unoptimized: true },
+  images: {
+    unoptimized: false,
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 48, 64, 96],
+  },
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: ['lucide-react', '@hugeicons/react'],
+    /** Inlines global CSS to cut render-blocking `<link rel="stylesheet">` (App Router). */
+    inlineCss: true,
   },
   async headers() {
     const securityHeaders = [
