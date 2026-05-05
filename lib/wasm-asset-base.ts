@@ -16,7 +16,11 @@ export function getWasmAssetBaseForCreatePaths(): string {
 }
 
 export function getBrowserWorkerJsUrl(): string {
-  return `${getWasmAssetBaseForCreatePaths()}browser.worker.global.js`;
+  /**
+   * Worker entry script must stay same-origin for broad browser compatibility.
+   * Keep this tiny loader in `public/wasm/`, while heavy `.wasm`/`.data` can live on CDN.
+   */
+  return '/wasm/browser.worker.global.js';
 }
 
 /** Resolve an asset under the wasm folder to an absolute URL (client: uses `window.location` for same-origin `/wasm/`). */
