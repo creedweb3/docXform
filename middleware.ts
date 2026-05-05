@@ -11,6 +11,19 @@ function notFoundResponse() {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Keep converter runtime URLs same-origin while offloading heavy binaries to R2.
+  if (pathname === '/wasm/soffice.wasm') {
+    return NextResponse.rewrite(
+      'https://wasm.docxform.com/wasm/soffice.wasm'
+    );
+  }
+
+  if (pathname === '/wasm/soffice.data') {
+    return NextResponse.rewrite(
+      'https://wasm.docxform.com/wasm/soffice.data'
+    );
+  }
+
   if (pathname.startsWith(ADMIN_INTERNAL_PREFIX)) {
     return notFoundResponse();
   }
@@ -43,6 +56,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Skip middleware for static WASM (large files); no auth logic needed there.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|wasm/).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

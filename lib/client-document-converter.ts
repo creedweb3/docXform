@@ -341,8 +341,17 @@ function matbeeConversionErrorLine(error: unknown): string | null {
 export function conversionErrorMessage(error: unknown) {
   const matbeeLine = matbeeConversionErrorLine(error);
   if (matbeeLine) {
-    const single = matbeeLine.replace(/\s+/g, ' ').trim();
-    return single.length > 620 ? `${single.slice(0, 620).trim()}…` : single;
+    const lower = matbeeLine.toLowerCase();
+    if (lower.includes('wasm_not_initialized') || lower.includes('load_failed')) {
+      return 'Converter service is temporarily unavailable. Please refresh and try again shortly.';
+    }
+    if (lower.includes('unsupported_format')) {
+      return 'This file type is not supported for this conversion.';
+    }
+    if (lower.includes('corrupted_document') || lower.includes('invalid_input')) {
+      return 'This file appears invalid or damaged. Please try another file.';
+    }
+    return 'Conversion failed. Please try again in a moment.';
   }
 
   const rawMessage =
@@ -364,7 +373,7 @@ export function conversionErrorMessage(error: unknown) {
   }
 
   if (lowerMessage.includes('worker load timeout')) {
-    return 'The converter worker did not become ready within 10s (library limit). Check DevTools → Network for browser.worker.global.js and the console for worker errors; slow DNS or a blocked cross-origin worker often causes this.';
+    return 'Converter is temporarily unavailable. Please refresh the page and try again.';
   }
 
   if (lowerMessage.includes('converter initialization')) {
@@ -409,7 +418,11 @@ export function conversionErrorMessage(error: unknown) {
     lowerMessage.includes('cannot fetch soffice.wasm') ||
     lowerMessage.includes('cannot fetch soffice.data')
   ) {
-    return message.length > 520 ? `${message.slice(0, 520).trim()}…` : message;
+    return 'Converter files are currently unavailable. We are working on it - please try again shortly.';
+  }
+
+  if (lowerMessage.includes('importscripts') || lowerMessage.includes('workerglobalscope')) {
+    return 'Converter service is temporarily unavailable. Please try again in a few minutes.';
   }
 
   if (

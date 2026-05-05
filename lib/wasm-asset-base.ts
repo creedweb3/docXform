@@ -8,12 +8,8 @@
  * **CORS:** if you use a separate origin for WASM, allow your site origin on that host (GET, HEAD).
  */
 export function getWasmAssetBaseForCreatePaths(): string {
-  /**
-   * Production hardening: prefer same-origin `/wasm/` to avoid cross-origin worker edge cases.
-   * You can opt out by setting NEXT_PUBLIC_WASM_FORCE_SAME_ORIGIN=0.
-   */
-  const forceSameOrigin = process.env.NEXT_PUBLIC_WASM_FORCE_SAME_ORIGIN !== '0';
-  if (process.env.NODE_ENV === 'production' && forceSameOrigin) {
+  // Production hardening: always prefer same-origin `/wasm/` for worker reliability.
+  if (process.env.NODE_ENV === 'production') {
     return '/wasm/';
   }
 
