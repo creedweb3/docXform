@@ -5,9 +5,16 @@ publish = ".next"
 [[plugins]]
 package = "@netlify/plugin-nextjs"
 
-# Converter: if `public/wasm/soffice.wasm` is not in the deployed repo (GitHub 100MB limit),
-# set NEXT_PUBLIC_WASM_ASSET_BASE to an HTTPS URL of a folder containing the same /wasm/ files,
-# then clear cache and redeploy.
+# Keep `/wasm/*` same-origin for worker compatibility.
+# Netlify proxies heavy binaries from R2 so they don't live in Git.
+[[redirects]]
+from = "/wasm/soffice.wasm"
+to = "https://wasm.docxform.com/wasm/soffice.wasm"
+status = 200
+force = true
 
-[context.production.environment]
-NEXT_PUBLIC_WASM_ASSET_BASE = "https://wasm.docxform.com/wasm"
+[[redirects]]
+from = "/wasm/soffice.data"
+to = "https://wasm.docxform.com/wasm/soffice.data"
+status = 200
+force = true

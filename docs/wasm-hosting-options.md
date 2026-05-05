@@ -10,6 +10,9 @@ The converter needs a public `/wasm/` mirror containing:
 
 Then set `NEXT_PUBLIC_WASM_ASSET_BASE` to that public URL (for this project: `https://wasm.docxform.com/wasm`).
 
+For Netlify production, a more robust setup is to keep runtime same-origin (`/wasm/`) and rewrite only
+`/wasm/soffice.wasm` + `/wasm/soffice.data` to R2 in `netlify.toml`. This avoids cross-origin Worker issues.
+
 ## Cloudflare R2 (recommended)
 
 Cloudflare has a generous free tier and works well with large files.
