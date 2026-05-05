@@ -20,13 +20,17 @@ test.describe('WASM assets (browser)', () => {
       const resolveUrl = (name: string) =>
         new URL(name, baseRoot.startsWith('http') ? baseRoot : `${window.location.origin}${baseRoot}`).href;
 
-      const names = ['soffice.js', 'browser.worker.global.js'];
+      const names = ['soffice.js', 'browser.worker.global.js', 'soffice.wasm', 'soffice.data'];
       const rows: Array<Record<string, unknown>> = [];
 
       for (const name of names) {
         const url = resolveUrl(name);
         try {
-          const r = await fetch(url, { signal: AbortSignal.timeout(45_000) });
+          const isBinary = name.endsWith('.wasm') || name.endsWith('.data');
+          const r = await fetch(url, {
+            signal: AbortSignal.timeout(45_000),
+            headers: isBinary ? { Range: 'bytes=0-0' } : undefined,
+          });
           rows.push({
             name,
             url,
@@ -58,6 +62,9 @@ test.describe('WASM assets (browser)', () => {
     for (const row of result.rows) {
       expect(row.error, `fetch ${row.name}: ${row.error || ''}`).toBeUndefined();
       expect(row.ok, `HTTP ok for ${row.name}`).toBe(true);
+      if (String(row.name).endsWith('.wasm') || String(row.name).endsWith('.data')) {
+        expect([200, 206]).toContain(row.status);
+      }
     }
 
     expect(consoleErrors.filter((m) => !m.includes('favicon') && !m.includes('ads'))).toEqual([]);

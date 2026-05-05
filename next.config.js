@@ -12,6 +12,26 @@ const nextConfig = {
     /** Inlines global CSS to cut render-blocking `<link rel="stylesheet">` (App Router). */
     inlineCss: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/wasm/soffice.js',
+        destination: 'https://wasm.docxform.com/wasm/soffice.js',
+      },
+      {
+        source: '/wasm/browser.worker.global.js',
+        destination: 'https://wasm.docxform.com/wasm/browser.worker.global.js',
+      },
+      {
+        source: '/wasm/soffice.wasm',
+        destination: 'https://wasm.docxform.com/wasm/soffice.wasm',
+      },
+      {
+        source: '/wasm/soffice.data',
+        destination: 'https://wasm.docxform.com/wasm/soffice.data',
+      },
+    ];
+  },
   async headers() {
     const securityHeaders = [
       { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -28,7 +48,8 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            // Avoid sticky browser-cached 404s during deploy/routing changes.
+            value: 'public, max-age=600, stale-while-revalidate=86400',
           },
         ],
       },

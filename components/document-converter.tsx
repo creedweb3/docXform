@@ -70,6 +70,8 @@ interface ShowNoticeOptions {
   transient?: boolean;
 }
 
+type WarmState = 'idle' | 'warming' | 'ready' | 'failed';
+
 const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
 const TRANSIENT_NOTICE_DURATION = 1600;
 const DEFAULT_NOTICE_DURATION = 3500;
@@ -151,12 +153,11 @@ function selectedFilesLabel(fileCount: number) {
   return `${fileCount} ${fileCount === 1 ? 'file' : 'files'}`;
 }
 
-function converterStatusLabel(message: string) {
-  if (message === 'Converter ready') return 'Converter ready';
-  // Avoid matching our own fallback (used to contain "will load" and looked like an endless load).
-  if (message.includes('Preload skipped')) return 'Ready on demand';
-  if (message.toLowerCase().includes('will load')) return 'Loads on convert';
-  return 'Preparing converter';
+function converterStatusLabel(state: WarmState) {
+  if (state === 'ready') return 'Converter ready';
+  if (state === 'failed') return 'Service unavailable';
+  if (state === 'warming') return 'Preparing converter';
+  return 'Ready on demand';
 }
 
 export function DocumentConverter({ mode }: DocumentConverterProps) {
@@ -165,6 +166,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [duplicatePrompt, setDuplicatePrompt] = useState<DuplicatePrompt | null>(null);
   const [warmMessage, setWarmMessage] = useState('');
+  const [warmState, setWarmState] = useState<WarmState>('idle');
   const [dragOver, setDragOver] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
@@ -185,9 +187,9 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const canConvert = pendingCount > 0 && !busy;
   const isBulkDownload = convertedItems.length > 1;
   const hasQueuedItems = items.length > 0;
-  const visibleConverterStatus = converterStatusLabel(warmMessage);
-  const converterReady = warmMessage === 'Converter ready';
-  const warmPreloadFailed = warmMessage.includes('Preload skipped');
+  const visibleConverterStatus = converterStatusLabel(warmState);
+  const converterReady = warmState === 'ready';
+  const warmPreloadFailed = warmState === 'failed';
   const showChips = hasQueuedItems && !notice?.transient;
   const noticeKind = isValidating ? 'info' : notice?.kind ?? 'info';
   const noticeToneClass =
@@ -233,18 +235,21 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     if (warmStartedRef.current) return;
 
     warmStartedRef.current = true;
+    setWarmState('warming');
     setWarmMessage('Preparing converter in the background...');
 
     void warmConverter(({ message }) => {
       setWarmMessage(message);
     })
       .then(() => {
+        setWarmState('ready');
         setWarmMessage('Converter ready');
       })
       .catch((err) => {
         warmStartedRef.current = false;
         console.error('[DocXform] Converter warm-up failed:', err);
-        setWarmMessage('Preload skipped — use Convert to load the engine.');
+        setWarmState('failed');
+        setWarmMessage('Converter warm-up unavailable');
         showNotice(conversionErrorMessage(err), { kind: 'error' });
       });
   }, []);
