@@ -7,7 +7,11 @@ import type {
   WasmLoadProgress,
   WorkerBrowserConverter,
 } from '@matbee/libreoffice-converter/browser';
-import { getBrowserWorkerJsUrl, getWasmAssetBaseForCreatePaths } from '@/lib/wasm-asset-base';
+import {
+  getBrowserWorkerJsUrl,
+  getWasmAssetBaseForCreatePaths,
+  getWasmAssetFileUrl,
+} from '@/lib/wasm-asset-base';
 
 export interface ClientConversionProgress {
   percent: number;
@@ -93,11 +97,51 @@ async function resetConverter() {
   }
 }
 
+/**
+ * Fail fast with a clear message: repo `.gitignore` omits large `soffice.wasm` / `soffice.data`,
+ * and R2/CDN requires CORS for the exact browser origin (including port).
+ */
+async function assertCoreWasmAssetsReachable(): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  const base = getWasmAssetBaseForCreatePaths();
+  const crossOrigin = /^https?:\/\//i.test(base);
+
+  for (const name of ['soffice.wasm', 'soffice.data'] as const) {
+    const url = getWasmAssetFileUrl(name);
+    try {
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { Range: 'bytes=0-0' },
+      });
+      if (res.status !== 200 && res.status !== 206) {
+        throw new Error(
+          `WASM file returned HTTP ${res.status} for ${url}. ` +
+            (crossOrigin
+              ? 'Confirm the file exists on your CDN/R2 and CORS allows this origin (including port, e.g. http://localhost:3001).'
+              : 'Large binaries are not committed: copy soffice.wasm and soffice.data into public/wasm/, or set NEXT_PUBLIC_WASM_ASSET_BASE to a URL that serves them.')
+        );
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('WASM file returned')) throw e;
+      const inner = e instanceof Error ? e.message : String(e);
+      throw new Error(
+        `Cannot fetch ${name} from ${url}: ${inner}. ` +
+          (crossOrigin
+            ? 'Typical fix: add this exact page origin to Cloudflare R2 CORS AllowedOrigins, then hard-refresh.'
+            : 'Typical fix: run from project root with NEXT_PUBLIC_WASM_ASSET_BASE pointed at R2, or place soffice.wasm + soffice.data in public/wasm/ (see .env.example).')
+      );
+    }
+  }
+}
+
 async function getConverter(onProgress?: ProgressHandler) {
   activeProgressHandler = onProgress ?? null;
 
   if (!converterPromise) {
     converterPromise = (async () => {
+      await assertCoreWasmAssetsReachable();
+
       const { WorkerBrowserConverter, createWasmPaths } = await import(
         '@matbee/libreoffice-converter/browser'
       );
@@ -322,6 +366,15 @@ export function conversionErrorMessage(error: unknown) {
 
   if (lowerMessage.includes('valid docx')) {
     return 'Conversion did not produce a valid DOCX. Please try a different source file.';
+  }
+
+  // Preflight / asset errors (must run before generic "failed to fetch" — those strings often include it).
+  if (
+    lowerMessage.includes('wasm file returned http') ||
+    lowerMessage.includes('cannot fetch soffice.wasm') ||
+    lowerMessage.includes('cannot fetch soffice.data')
+  ) {
+    return message.length > 520 ? `${message.slice(0, 520).trim()}…` : message;
   }
 
   if (

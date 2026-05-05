@@ -22,3 +22,16 @@ export function getWasmAssetBaseForCreatePaths(): string {
 export function getBrowserWorkerJsUrl(): string {
   return `${getWasmAssetBaseForCreatePaths()}browser.worker.global.js`;
 }
+
+/** Resolve an asset under the wasm folder to an absolute URL (client: uses `window.location` for same-origin `/wasm/`). */
+export function getWasmAssetFileUrl(fileName: string): string {
+  const base = getWasmAssetBaseForCreatePaths();
+  const name = fileName.replace(/^\//, '');
+  if (base.startsWith('http')) {
+    return new URL(name, base).href;
+  }
+  if (typeof window !== 'undefined') {
+    return new URL(name, `${window.location.origin}${base}`).href;
+  }
+  return `${base}${name}`;
+}
