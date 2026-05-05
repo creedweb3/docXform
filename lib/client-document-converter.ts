@@ -343,8 +343,24 @@ export function conversionErrorMessage(error: unknown) {
     return 'WASM blocked (CORS or security headers). Check Cloudflare R2 CORS for your site and CORP on wasm responses, and Netlify NEXT_PUBLIC_WASM_ASSET_BASE.';
   }
 
-  if (!message || message.length > 180) {
-    return 'The document could not be converted. Please try a smaller or simpler file.';
+  if (
+    lowerMessage.includes('webassembly') ||
+    lowerMessage.includes('wasm') ||
+    lowerMessage.includes('instantiate') ||
+    lowerMessage.includes('compileerror') ||
+    lowerMessage.includes('linkerror') ||
+    lowerMessage.includes('emscripten')
+  ) {
+    return 'WebAssembly failed to load or start. Open the browser console (F12). If assets are on R2, confirm CORS allows this exact origin (including port, e.g. http://localhost:3001) and restart dev after changing NEXT_PUBLIC_WASM_ASSET_BASE.';
+  }
+
+  if (!message) {
+    return 'Conversion failed with no error text. Open the browser console (F12), retry, and look for errors from the converter or worker.';
+  }
+
+  // Long engine/stack messages used to be replaced by a misleading "smaller file" hint — show a prefix instead.
+  if (message.length > 220) {
+    return `${message.slice(0, 220).trim()}… (truncated — see F12 console for full error.)`;
   }
 
   return message;
