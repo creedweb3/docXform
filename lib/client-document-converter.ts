@@ -11,6 +11,7 @@ import {
   getBrowserWorkerJsUrl,
   getWasmAssetBaseForCreatePaths,
 } from '@/lib/wasm-asset-base';
+import { showDevConverterLoadOverlay } from '@/lib/dev-converter-flags';
 import { getCachedPerfProfile, getConverterTimeouts } from '@/lib/perf-profile';
 
 export interface ClientConversionProgress {
@@ -260,7 +261,20 @@ async function getConverter(onProgress?: ProgressHandler) {
 
   if (!converterPromise) {
     converterPromise = (async () => {
+      if (showDevConverterLoadOverlay()) {
+        activeProgressHandler?.({
+          percent: 2,
+          message: 'Probing WASM URLs (soffice.wasm / soffice.data)…',
+        });
+      }
       const binaryBase = await resolveBinaryAssetBase();
+
+      if (showDevConverterLoadOverlay()) {
+        activeProgressHandler?.({
+          percent: 8,
+          message: 'Loading converter module and worker…',
+        });
+      }
 
       const { WorkerBrowserConverter, createWasmPaths } = await import(
         '@matbee/libreoffice-converter/browser'

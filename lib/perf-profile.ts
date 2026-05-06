@@ -110,24 +110,29 @@ export interface ConverterTimeouts {
 }
 
 export function getConverterTimeouts(profile: PerfProfile): ConverterTimeouts {
+  /**
+   * LibreOffice WASM + .data are very large. DevTools “Slow/Fast 4G” usually does **not**
+   * change `navigator.connection.effectiveType`, so “high” tier must not use short init
+   * caps — otherwise warm-up appears stuck or fails while bytes are still downloading.
+   */
   switch (profile) {
     case 'low':
       return {
-        initializeMs: 300_000,
+        initializeMs: 600_000,
         conversionMs: 360_000,
-        wasmProbeMs: 45_000,
+        wasmProbeMs: 60_000,
       };
     case 'high':
       return {
-        initializeMs: 150_000,
+        initializeMs: 480_000,
         conversionMs: 240_000,
-        wasmProbeMs: 15_000,
+        wasmProbeMs: 45_000,
       };
     default:
       return {
-        initializeMs: 180_000,
+        initializeMs: 480_000,
         conversionMs: 240_000,
-        wasmProbeMs: 20_000,
+        wasmProbeMs: 45_000,
       };
   }
 }

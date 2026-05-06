@@ -34,6 +34,7 @@ import {
 } from '@/lib/client-file-validation';
 import type { QueuedFile } from '@/lib/converter-queue-types';
 import { useConverterQueue } from '@/components/converter-queue-provider';
+import { showDevConverterLoadOverlay } from '@/lib/dev-converter-flags';
 import { getCachedPerfProfile, getMotionBudget, getWarmScheduling } from '@/lib/perf-profile';
 
 interface DocumentConverterProps {
@@ -174,6 +175,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     () => getMotionBudget(perfProfile, Boolean(reducedMotion)),
     [perfProfile, reducedMotion]
   );
+  const showDevConverterOverlay = useMemo(() => showDevConverterLoadOverlay(), []);
   const [items, setItems] = useConverterQueue(mode);
   const downloadIdleHintRollRef = useRef(false);
   const [downloadSecondaryIdleHint, setDownloadSecondaryIdleHint] = useState<
@@ -182,6 +184,9 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [duplicatePrompt, setDuplicatePrompt] = useState<DuplicatePrompt | null>(null);
   const [warmMessage, setWarmMessage] = useState('');
+  /** Dev overlay only: engine-reported load progress (0–100). */
+  const [warmProgressPercent, setWarmProgressPercent] = useState(0);
+  const [warmElapsedSec, setWarmElapsedSec] = useState(0);
   const [warmState, setWarmState] = useState<WarmState>('idle');
   const [dragOver, setDragOver] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
@@ -265,22 +270,27 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     warmStartedRef.current = true;
     setWarmState('warming');
     setWarmMessage('Preparing converter in the background...');
+    setWarmProgressPercent(0);
+    if (showDevConverterOverlay) setWarmElapsedSec(0);
 
-    void warmConverter(({ message }) => {
+    void warmConverter(({ message, percent }) => {
       setWarmMessage(message);
+      setWarmProgressPercent(Math.round(Math.max(0, Math.min(100, percent))));
     })
       .then(() => {
         setWarmState('ready');
         setWarmMessage('Converter ready');
+        setWarmProgressPercent(100);
       })
       .catch((err) => {
         warmStartedRef.current = false;
         console.error('[docXform] Converter warm-up failed:', err);
         setWarmState('failed');
         setWarmMessage('Converter warm-up unavailable');
+        setWarmProgressPercent(0);
         showNotice(conversionErrorMessage(err), { kind: 'error' });
       });
-  }, []);
+  }, [showDevConverterOverlay]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -311,6 +321,12 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       }
     };
   }, [startWarmConverter]);
+
+  useEffect(() => {
+    if (!showDevConverterOverlay || warmState !== 'warming') return;
+    const id = window.setInterval(() => setWarmElapsedSec((s) => s + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [showDevConverterOverlay, warmState]);
 
   useEffect(() => {
     if (downloadIdleHintRollRef.current) return;
@@ -695,6 +711,36 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
           </div>
         </div>
       </motion.div>
+
+      {showDevConverterOverlay && warmState === 'warming' && (
+        <div
+          className="rounded-2xl border border-dashed border-amber-500/50 bg-amber-50/50 px-4 py-3 text-left dark:border-amber-400/40 dark:bg-amber-950/25"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200">
+            Dev only — converter load
+          </p>
+          <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-amber-200/80 dark:bg-amber-900/60">
+            <div
+              className="h-full rounded-full bg-amber-600 transition-[width] duration-300 ease-out dark:bg-amber-400"
+              style={{ width: `${Math.min(100, Math.max(0, warmProgressPercent))}%` }}
+            />
+          </div>
+          <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2 text-[11px] text-amber-950/95 dark:text-amber-50/95">
+            <span className="font-mono tabular-nums">
+              {warmProgressPercent}% · {warmElapsedSec}s elapsed
+            </span>
+            <span className="min-w-0 flex-1 truncate text-right" title={warmMessage}>
+              {warmMessage || 'Starting…'}
+            </span>
+          </div>
+          <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
+            Local dev or set NEXT_PUBLIC_DEV_CONVERTER_PROGRESS=1. Slow climbing % usually means WASM/data
+            download; flat 0% for a long time often means network/CORS/probe before the worker reports progress.
+          </p>
+        </div>
+      )}
 
       <AnimatePresence>
         {showTopNoticeRow && (
