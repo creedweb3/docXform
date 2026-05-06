@@ -33,6 +33,7 @@ let conversionQueue: Promise<void> = Promise.resolve();
 /** First load can pull large wasm/data from same-origin `/wasm/`; keep generous on slow links. */
 const INITIALIZE_TIMEOUT_MS = 180_000;
 const CONVERSION_TIMEOUT_MS = 240_000;
+const WASM_PROBE_TIMEOUT_MS = 20_000;
 const FALLBACK_WASM_CDN_BASE = 'https://wasm.docxform.com/wasm/';
 
 /**
@@ -50,6 +51,20 @@ function wasmBinaryUrlWithRevision(url: string): string {
   const key = '_wx';
   const v = encodeURIComponent(WASM_ASSET_REVISION);
   return `${url}${url.includes('?') ? '&' : '?'}${key}=${v}`;
+}
+
+function withUrlParam(url: string, key: string, value: string): string {
+  return `${url}${url.includes('?') ? '&' : '?'}${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+}
+
+async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 const MIME_TYPES: Record<OutputFormat, string> = {
@@ -134,11 +149,15 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
   for (const name of ['soffice.wasm', 'soffice.data'] as const) {
     const url = wasmBinaryUrlWithRevision(resolveWasmUrl(base, name));
     try {
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(
+        url,
+        {
         method: 'GET',
         headers: { Range: 'bytes=0-0' },
         cache: 'no-store',
-      });
+        },
+        WASM_PROBE_TIMEOUT_MS
+      );
       if (res.status !== 200 && res.status !== 206) {
         throw new Error(
           `WASM file returned HTTP ${res.status} for ${url}. ` +
@@ -150,8 +169,12 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
     } catch (e) {
       if (e instanceof Error && e.message.startsWith('WASM file returned')) throw e;
       const inner = e instanceof Error ? e.message : String(e);
+      const timeoutHint =
+        e instanceof Error && e.name === 'AbortError'
+          ? ` (request timed out after ${Math.round(WASM_PROBE_TIMEOUT_MS / 1000)}s)`
+          : '';
       throw new Error(
-        `Cannot fetch ${name} from ${url}: ${inner}. ` +
+        `Cannot fetch ${name} from ${url}: ${inner}${timeoutHint}. ` +
           (crossOrigin
             ? 'Typical fix: CORS on your WASM CDN must include this exact page origin; redeploy after changing NEXT_PUBLIC_WASM_ASSET_BASE.'
             : 'Typical fix: add binaries under public/wasm/ or point NEXT_PUBLIC_WASM_ASSET_BASE at a deployed /wasm/ mirror.')
@@ -212,19 +235,20 @@ function buildWasmPathsForBinaryBase(
     sofficeData: string;
     sofficeWorkerJs: string;
   },
-  binaryBase: string
+  binaryBase: string,
+  attemptToken?: string
 ) {
   const wasmPaths = createWasmPaths('/wasm/');
   if (/^https?:\/\//i.test(binaryBase)) {
-    wasmPaths.sofficeWasm = wasmBinaryUrlWithRevision(
-      resolveWasmUrl(binaryBase, 'soffice.wasm')
-    );
-    wasmPaths.sofficeData = wasmBinaryUrlWithRevision(
-      resolveWasmUrl(binaryBase, 'soffice.data')
-    );
+    const wasmUrl = wasmBinaryUrlWithRevision(resolveWasmUrl(binaryBase, 'soffice.wasm'));
+    const dataUrl = wasmBinaryUrlWithRevision(resolveWasmUrl(binaryBase, 'soffice.data'));
+    wasmPaths.sofficeWasm = attemptToken ? withUrlParam(wasmUrl, '_wr', attemptToken) : wasmUrl;
+    wasmPaths.sofficeData = attemptToken ? withUrlParam(dataUrl, '_wr', attemptToken) : dataUrl;
   } else {
-    wasmPaths.sofficeWasm = wasmBinaryUrlWithRevision(wasmPaths.sofficeWasm);
-    wasmPaths.sofficeData = wasmBinaryUrlWithRevision(wasmPaths.sofficeData);
+    const wasmUrl = wasmBinaryUrlWithRevision(wasmPaths.sofficeWasm);
+    const dataUrl = wasmBinaryUrlWithRevision(wasmPaths.sofficeData);
+    wasmPaths.sofficeWasm = attemptToken ? withUrlParam(wasmUrl, '_wr', attemptToken) : wasmUrl;
+    wasmPaths.sofficeData = attemptToken ? withUrlParam(dataUrl, '_wr', attemptToken) : dataUrl;
   }
   return wasmPaths;
 }
@@ -241,7 +265,8 @@ async function getConverter(onProgress?: ProgressHandler) {
       );
 
       const createAndInitialize = async (base: string) => {
-        const wasmPaths = buildWasmPathsForBinaryBase(createWasmPaths, base);
+        const attemptToken = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const wasmPaths = buildWasmPathsForBinaryBase(createWasmPaths, base, attemptToken);
         const converter = new WorkerBrowserConverter({
           ...wasmPaths,
           browserWorkerJs: getBrowserWorkerJsUrl(),

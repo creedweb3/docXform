@@ -10,9 +10,9 @@ The converter needs a public `/wasm/` mirror containing:
 
 Then set `NEXT_PUBLIC_WASM_ASSET_BASE` to that public URL (for this project: `https://wasm.docxform.com/wasm`).
 
-For Netlify production, a more robust setup is to keep runtime same-origin (`/wasm/`) and rewrite only
-`/wasm/soffice.wasm` + `/wasm/soffice.data` to R2 in `netlify.toml`. This avoids cross-origin Worker issues.
-Production is also hardened in code to default to same-origin `/wasm/` unless
+For production, the robust setup is to keep runtime same-origin (`/wasm/`) and proxy only
+`/wasm/soffice.wasm` + `/wasm/soffice.data` to R2/CDN via middleware. This avoids cross-origin Worker issues.
+Code is also hardened to default to same-origin `/wasm/` unless
 `NEXT_PUBLIC_WASM_FORCE_SAME_ORIGIN=0` is explicitly set.
 
 ## Cloudflare R2 (recommended)
@@ -41,7 +41,7 @@ Run:
 npm run wasm:r2:upload
 ```
 
-### 3) Configure Netlify
+### 3) Configure Cloudflare deployment
 
 Set:
 
@@ -49,7 +49,7 @@ Set:
 NEXT_PUBLIC_WASM_ASSET_BASE=https://wasm.docxform.com/wasm
 ```
 
-Then do **Clear cache and deploy**.
+Then deploy and clear cache if your platform has cached old WASM responses.
 
 ### 4) Verify
 

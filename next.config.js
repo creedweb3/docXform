@@ -2,7 +2,6 @@
 const buildId =
   process.env.CF_PAGES_COMMIT_SHA ||
   process.env.VERCEL_GIT_COMMIT_SHA ||
-  process.env.COMMIT_REF ||
   process.env.npm_package_version ||
   'local';
 
@@ -38,26 +37,7 @@ const nextConfig = {
     /** Inlines global CSS to cut render-blocking `<link rel="stylesheet">` (App Router). */
     inlineCss: true,
   },
-  async rewrites() {
-    return [
-      {
-        source: '/wasm/soffice.js',
-        destination: 'https://wasm.docxform.com/wasm/soffice.js',
-      },
-      {
-        source: '/wasm/browser.worker.global.js',
-        destination: 'https://wasm.docxform.com/wasm/browser.worker.global.js',
-      },
-      {
-        source: '/wasm/soffice.wasm',
-        destination: 'https://wasm.docxform.com/wasm/soffice.wasm',
-      },
-      {
-        source: '/wasm/soffice.data',
-        destination: 'https://wasm.docxform.com/wasm/soffice.data',
-      },
-    ];
-  },
+  // WASM: .wasm/.data are proxied by middleware.ts to CDN; JS stays in public/wasm/.
   async headers() {
     const securityHeaders = [
       { key: 'X-Content-Type-Options', value: 'nosniff' },
