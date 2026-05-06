@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, CSSProperties, DragEvent } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Add01Icon,
@@ -34,6 +34,7 @@ import {
 } from '@/lib/client-file-validation';
 import type { QueuedFile } from '@/lib/converter-queue-types';
 import { useConverterQueue } from '@/components/converter-queue-provider';
+import { getCachedPerfProfile, getMotionBudget, getWarmScheduling } from '@/lib/perf-profile';
 
 interface DocumentConverterProps {
   mode: ConversionMode;
@@ -62,11 +63,9 @@ interface ShowNoticeOptions {
 
 type WarmState = 'idle' | 'warming' | 'ready' | 'failed';
 
-const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
 /** Brief flash for “N files added” / duplicate skipped */
 const TRANSIENT_NOTICE_DURATION = 900;
 const DEFAULT_NOTICE_DURATION = 3500;
-const chipMotion = { duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] as const };
 /** Only enable list scrolling (and scrollbar width sync) after this many files. */
 const QUEUE_SCROLL_AFTER_FILE_COUNT = 6;
 
@@ -169,6 +168,12 @@ function converterStatusLabel(state: WarmState) {
 
 export function DocumentConverter({ mode }: DocumentConverterProps) {
   const config = converterConfig[mode];
+  const reducedMotion = useReducedMotion();
+  const perfProfile = useMemo(() => getCachedPerfProfile(), []);
+  const { spring, chipMotion, rowExpand } = useMemo(
+    () => getMotionBudget(perfProfile, Boolean(reducedMotion)),
+    [perfProfile, reducedMotion]
+  );
   const [items, setItems] = useConverterQueue(mode);
   const downloadIdleHintRollRef = useRef(false);
   const [downloadSecondaryIdleHint, setDownloadSecondaryIdleHint] = useState<
@@ -288,10 +293,12 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       if (!cancelled) startWarmConverter();
     };
 
+    const { idleTimeoutMs, fallbackMs } = getWarmScheduling(getCachedPerfProfile());
+
     if ('requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(warm, { timeout: 1800 });
+      idleId = window.requestIdleCallback(warm, { timeout: idleTimeoutMs });
     } else {
-      fallbackTimer = setTimeout(warm, 500);
+      fallbackTimer = setTimeout(warm, fallbackMs);
     }
 
     return () => {
@@ -912,7 +919,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                         <motion.div
                           className={`h-full rounded-full bg-gradient-to-r ${config.progressClass}`}
                           animate={{ width: `${Math.min(item.progress, 100)}%` }}
-                          transition={{ duration: 0.3 }}
+                          transition={rowExpand}
                         />
                       </div>
                     )}

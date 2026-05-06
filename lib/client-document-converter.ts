@@ -11,6 +11,7 @@ import {
   getBrowserWorkerJsUrl,
   getWasmAssetBaseForCreatePaths,
 } from '@/lib/wasm-asset-base';
+import { getCachedPerfProfile, getConverterTimeouts } from '@/lib/perf-profile';
 
 export interface ClientConversionProgress {
   percent: number;
@@ -30,11 +31,11 @@ let converterInstance: WorkerBrowserConverter | null = null;
 let activeProgressHandler: ProgressHandler | null = null;
 let conversionQueue: Promise<void> = Promise.resolve();
 
-/** First load can pull large wasm/data from same-origin `/wasm/`; keep generous on slow links. */
-const INITIALIZE_TIMEOUT_MS = 180_000;
-const CONVERSION_TIMEOUT_MS = 240_000;
-const WASM_PROBE_TIMEOUT_MS = 20_000;
 const FALLBACK_WASM_CDN_BASE = 'https://wasm.docxform.com/wasm/';
+
+function converterTimeouts() {
+  return getConverterTimeouts(getCachedPerfProfile());
+}
 
 /**
  * Appended to soffice.{wasm,data} fetch URLs so poisoned disk cache (HTML 404/challenge
@@ -146,6 +147,7 @@ function resolveWasmUrl(base: string, name: string): string {
 
 async function probeCoreWasmAssets(base: string): Promise<void> {
   const crossOrigin = /^https?:\/\//i.test(base);
+  const probeMs = converterTimeouts().wasmProbeMs;
   for (const name of ['soffice.wasm', 'soffice.data'] as const) {
     const url = wasmBinaryUrlWithRevision(resolveWasmUrl(base, name));
     try {
@@ -156,7 +158,7 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
         headers: { Range: 'bytes=0-0' },
         cache: 'no-store',
         },
-        WASM_PROBE_TIMEOUT_MS
+        probeMs
       );
       if (res.status !== 200 && res.status !== 206) {
         throw new Error(
@@ -171,7 +173,7 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
       const inner = e instanceof Error ? e.message : String(e);
       const timeoutHint =
         e instanceof Error && e.name === 'AbortError'
-          ? ` (request timed out after ${Math.round(WASM_PROBE_TIMEOUT_MS / 1000)}s)`
+          ? ` (request timed out after ${Math.round(probeMs / 1000)}s)`
           : '';
       throw new Error(
         `Cannot fetch ${name} from ${url}: ${inner}${timeoutHint}. ` +
@@ -272,7 +274,11 @@ async function getConverter(onProgress?: ProgressHandler) {
           browserWorkerJs: getBrowserWorkerJsUrl(),
           onProgress: emitProgress,
         });
-        await withTimeout(converter.initialize(), INITIALIZE_TIMEOUT_MS, 'Converter initialization');
+        await withTimeout(
+          converter.initialize(),
+          converterTimeouts().initializeMs,
+          'Converter initialization'
+        );
         return converter;
       };
 
@@ -399,6 +405,7 @@ export async function convertDocumentFile(
   outputFormat: OutputFormat,
   onProgress?: ProgressHandler
 ): Promise<ConvertedDocument> {
+  const conversionTimeoutMs = converterTimeouts().conversionMs;
   const runConversion = async (): Promise<ConvertedDocument> => {
     activeProgressHandler = onProgress ?? null;
     emitProgress({ percent: 1, message: 'Preparing document...' });
@@ -419,7 +426,7 @@ export async function convertDocumentFile(
           { inputFormat: 'pdf', outputFormat: 'html' },
           file.name
         ),
-        CONVERSION_TIMEOUT_MS,
+        conversionTimeoutMs,
         'PDF to HTML conversion'
       );
 
@@ -430,7 +437,7 @@ export async function convertDocumentFile(
           { inputFormat: 'html', outputFormat: 'docx' },
           replaceExtension(file.name, 'html')
         ),
-        CONVERSION_TIMEOUT_MS,
+        conversionTimeoutMs,
         'HTML to DOCX conversion'
       );
     } else {
@@ -445,7 +452,7 @@ export async function convertDocumentFile(
           },
           file.name
         ),
-        CONVERSION_TIMEOUT_MS,
+        conversionTimeoutMs,
         'Document conversion'
       );
     }
