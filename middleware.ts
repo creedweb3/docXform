@@ -14,18 +14,30 @@ function withIsolationHeaders(response: NextResponse) {
   return response;
 }
 
+/**
+ * WASM binaries are fetched/embedded under COEP `require-corp`. Without
+ * `Cross-Origin-Resource-Policy: cross-origin`, some browsers block the proxied
+ * R2 body even when the URL is same-origin (edge rewrite). Worker JS already
+ * gets CORP via static config; match that for .wasm / .data rewrites.
+ */
+function withWasmBinaryIsolation(response: NextResponse) {
+  withIsolationHeaders(response);
+  response.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  return response;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Keep converter runtime URLs same-origin while offloading heavy binaries to R2.
   if (pathname === '/wasm/soffice.wasm') {
-    return withIsolationHeaders(
+    return withWasmBinaryIsolation(
       NextResponse.rewrite('https://wasm.docxform.com/wasm/soffice.wasm')
     );
   }
 
   if (pathname === '/wasm/soffice.data') {
-    return withIsolationHeaders(
+    return withWasmBinaryIsolation(
       NextResponse.rewrite('https://wasm.docxform.com/wasm/soffice.data')
     );
   }

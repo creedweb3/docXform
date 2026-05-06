@@ -51,6 +51,10 @@ const nextConfig = {
             // Avoid sticky browser-cached 404s during deploy/routing changes.
             value: 'public, max-age=600, stale-while-revalidate=86400',
           },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
         ],
       },
       {
