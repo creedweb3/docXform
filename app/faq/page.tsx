@@ -14,9 +14,9 @@ import {
 } from '@/lib/seo';
 import { JsonLd } from '@/components/json-ld';
 
-const title = 'FAQ - Private Word and PDF Conversion Questions | DocXform';
+const title = 'FAQ - Private Word and PDF Conversion Questions | docXform';
 const description =
-  'Answers about DocXform browser-based Word to PDF and PDF to Word conversion, privacy, supported files, limits, and output quality.';
+  'Answers about docXform browser-based Word to PDF and PDF to Word conversion, privacy, supported files, limits, and output quality.';
 
 export const metadata: Metadata = createPageMetadata({
   title,
@@ -59,7 +59,7 @@ export default function FaqPage() {
                       Frequently Asked Questions
                     </h1>
                     <p className="text-sm text-muted-foreground">
-                      Everything you need to know about DocXform&apos;s
+                      Everything you need to know about docXform&apos;s
                       browser-based Word to PDF and PDF to Word tools.
                     </p>
                   </div>
@@ -84,13 +84,13 @@ export default function FaqPage() {
                   </div>
                   <div className="mt-12 text-center">
                     <p className="text-xs text-muted-foreground mb-3">
-                      Need business help with DocXform?
+                      Need business help with docXform?
                     </p>
                     <Link
                       href="/contact"
                       className="inline-flex items-center gap-2 bg-gradient-to-br from-slate-800 to-slate-600 text-white rounded-xl px-5 py-2.5 font-medium text-xs hover:opacity-90 transition-opacity"
                     >
-                      Contact DocXform
+                      Contact docXform
                     </Link>
                   </div>
                   <div className="mt-10 xl:hidden">

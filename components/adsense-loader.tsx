@@ -24,8 +24,6 @@ export function AdsenseLoader() {
     }
 
     let cancelled = false;
-    let timeoutId: number | null = null;
-    let idleId: number | null = null;
 
     const load = () => {
       if (cancelled || window.__docxformAdsenseLoaded) return;
@@ -46,26 +44,16 @@ export function AdsenseLoader() {
     const removeIntentListeners = () => {
       window.removeEventListener('pointerdown', onFirstIntent);
       window.removeEventListener('keydown', onFirstIntent);
-      window.removeEventListener('scroll', onFirstIntent);
+      window.removeEventListener('touchstart', onFirstIntent);
     };
 
     window.addEventListener('pointerdown', onFirstIntent, { passive: true, once: true });
     window.addEventListener('keydown', onFirstIntent, { passive: true, once: true });
-    window.addEventListener('scroll', onFirstIntent, { passive: true, once: true });
-
-    // Keep ads off the critical rendering path; still load eventually.
-    timeoutId = window.setTimeout(load, 6000);
-    if ('requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(load, { timeout: 3500 });
-    }
+    window.addEventListener('touchstart', onFirstIntent, { passive: true, once: true });
 
     return () => {
       cancelled = true;
       removeIntentListeners();
-      if (timeoutId !== null) window.clearTimeout(timeoutId);
-      if (idleId !== null && 'cancelIdleCallback' in window) {
-        window.cancelIdleCallback(idleId);
-      }
     };
   }, []);
 

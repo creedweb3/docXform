@@ -1,4 +1,13 @@
 /** @type {import('next').NextConfig} */
+const buildId =
+  process.env.CF_PAGES_COMMIT_SHA ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.COMMIT_REF ||
+  process.env.npm_package_version ||
+  'local';
+
+const buildStamp = new Date().toISOString();
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -57,6 +66,8 @@ const nextConfig = {
       { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' },
       { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
       { key: 'Content-Security-Policy', value: contentSecurityPolicy },
+      { key: 'X-Docxform-Build', value: String(buildId).slice(0, 64) },
+      { key: 'X-Docxform-Build-Time', value: buildStamp },
       {
         key: 'Permissions-Policy',
         value: 'camera=(), microphone=(), geolocation=()',

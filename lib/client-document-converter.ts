@@ -186,7 +186,7 @@ async function resolveBinaryAssetBase(): Promise<string> {
     try {
       await probeCoreWasmAssets(fallbackBase);
       console.warn(
-        `[DocXform] Falling back to CDN WASM base because same-origin /wasm/ probe failed: ${String(
+        `[docXform] Falling back to CDN WASM base because same-origin /wasm/ probe failed: ${String(
           primaryError
         )}`
       );
@@ -195,6 +195,38 @@ async function resolveBinaryAssetBase(): Promise<string> {
       throw primaryError;
     }
   }
+}
+
+function getCdnBinaryBase(): string {
+  const envBase = process.env.NEXT_PUBLIC_WASM_ASSET_BASE?.trim();
+  if (envBase && /^https?:\/\//i.test(envBase)) {
+    return envBase.endsWith('/') ? envBase : `${envBase}/`;
+  }
+  return FALLBACK_WASM_CDN_BASE;
+}
+
+function buildWasmPathsForBinaryBase(
+  createWasmPaths: (base?: string) => {
+    sofficeJs: string;
+    sofficeWasm: string;
+    sofficeData: string;
+    sofficeWorkerJs: string;
+  },
+  binaryBase: string
+) {
+  const wasmPaths = createWasmPaths('/wasm/');
+  if (/^https?:\/\//i.test(binaryBase)) {
+    wasmPaths.sofficeWasm = wasmBinaryUrlWithRevision(
+      resolveWasmUrl(binaryBase, 'soffice.wasm')
+    );
+    wasmPaths.sofficeData = wasmBinaryUrlWithRevision(
+      resolveWasmUrl(binaryBase, 'soffice.data')
+    );
+  } else {
+    wasmPaths.sofficeWasm = wasmBinaryUrlWithRevision(wasmPaths.sofficeWasm);
+    wasmPaths.sofficeData = wasmBinaryUrlWithRevision(wasmPaths.sofficeData);
+  }
+  return wasmPaths;
 }
 
 async function getConverter(onProgress?: ProgressHandler) {
@@ -208,32 +240,50 @@ async function getConverter(onProgress?: ProgressHandler) {
         '@matbee/libreoffice-converter/browser'
       );
 
-      /**
-       * Keep JS loader and worker scripts same-origin for reliability (and to avoid client blockers
-       * on cross-origin script URLs), while allowing large binaries to fallback to CDN if needed.
-       */
-      const wasmPaths = createWasmPaths('/wasm/');
-      if (/^https?:\/\//i.test(binaryBase)) {
-        wasmPaths.sofficeWasm = wasmBinaryUrlWithRevision(
-          resolveWasmUrl(binaryBase, 'soffice.wasm')
-        );
-        wasmPaths.sofficeData = wasmBinaryUrlWithRevision(
-          resolveWasmUrl(binaryBase, 'soffice.data')
-        );
-      } else {
-        wasmPaths.sofficeWasm = wasmBinaryUrlWithRevision(wasmPaths.sofficeWasm);
-        wasmPaths.sofficeData = wasmBinaryUrlWithRevision(wasmPaths.sofficeData);
+      const createAndInitialize = async (base: string) => {
+        const wasmPaths = buildWasmPathsForBinaryBase(createWasmPaths, base);
+        const converter = new WorkerBrowserConverter({
+          ...wasmPaths,
+          browserWorkerJs: getBrowserWorkerJsUrl(),
+          onProgress: emitProgress,
+        });
+        await withTimeout(converter.initialize(), INITIALIZE_TIMEOUT_MS, 'Converter initialization');
+        return converter;
+      };
+
+      try {
+        const converter = await createAndInitialize(binaryBase);
+        converterInstance = converter;
+        return converter;
+      } catch (primaryInitError) {
+        const shouldTryCdnFallback =
+          process.env.NODE_ENV === 'production' &&
+          binaryBase.startsWith('/wasm/') &&
+          typeof window !== 'undefined';
+
+        if (!shouldTryCdnFallback) {
+          throw primaryInitError;
+        }
+
+        const fallbackBase = getCdnBinaryBase();
+        if (fallbackBase === binaryBase) {
+          throw primaryInitError;
+        }
+
+        try {
+          await probeCoreWasmAssets(fallbackBase);
+          const converter = await createAndInitialize(fallbackBase);
+          console.warn(
+            `[docXform] Initialized converter via CDN fallback after same-origin init failed: ${String(
+              primaryInitError
+            )}`
+          );
+          converterInstance = converter;
+          return converter;
+        } catch {
+          throw primaryInitError;
+        }
       }
-
-      const converter = new WorkerBrowserConverter({
-        ...wasmPaths,
-        browserWorkerJs: getBrowserWorkerJsUrl(),
-        onProgress: emitProgress,
-      });
-
-      await withTimeout(converter.initialize(), INITIALIZE_TIMEOUT_MS, 'Converter initialization');
-      converterInstance = converter;
-      return converter;
     })().catch((error) => {
       void resetConverter();
       throw error;

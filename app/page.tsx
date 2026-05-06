@@ -21,9 +21,9 @@ import {
   webPageJsonLd,
 } from '@/lib/seo';
 
-const title = 'DocXform | Private Word to PDF and PDF to Word Converter';
+const title = 'docXform | Private Word to PDF and PDF to Word Converter';
 const description =
-  'Convert Word to PDF and PDF to Word in your browser. DocXform keeps document processing on your device with no file uploads.';
+  'Convert Word to PDF and PDF to Word in your browser. docXform keeps document processing on your device with no file uploads.';
 
 export const metadata: Metadata = createPageMetadata({
   title,
@@ -96,7 +96,7 @@ export default function Home() {
               </div>
 
               <h1 className="text-4xl sm:text-6xl lg:text-7xl tracking-tight leading-[1.08] mb-8">
-                <span className="block" aria-label="DocXform">
+                <span className="block" aria-label="docXform">
                   <span className="text-[#333333] font-semibold">doc</span>
                   <span className="text-[#2563eb] font-extrabold">X</span>
                   <span className="text-[#333333] font-semibold">form</span>
@@ -232,10 +232,10 @@ export default function Home() {
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-3">
-                  What DocXform does
+                  What docXform does
                 </h2>
                 <p className="text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                  DocXform is built for common document workflows: creating PDFs
+                  docXform is built for common document workflows: creating PDFs
                   from Word files, extracting editable DOCX files from PDFs, and
                   keeping the conversion process on your device.
                 </p>

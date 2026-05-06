@@ -5,9 +5,9 @@ export interface SiteFaq {
 
 export const SITE_FAQS: SiteFaq[] = [
   {
-    question: 'Is DocXform free to use?',
+    question: 'Is docXform free to use?',
     answer:
-      'Yes. DocXform is free to use, with no account required for Word to PDF or PDF to Word conversion.',
+      'Yes. docXform is free to use, with no account required for Word to PDF or PDF to Word conversion.',
   },
   {
     question: 'Where are my documents processed?',
@@ -15,14 +15,14 @@ export const SITE_FAQS: SiteFaq[] = [
       'Document conversion runs in your browser using WebAssembly. The converter reads the file locally, processes it on your device, and creates the download in the browser.',
   },
   {
-    question: 'Are my files uploaded to DocXform servers?',
+    question: 'Are my files uploaded to docXform servers?',
     answer:
-      'No. The Word, PDF, DOC, and DOCX files you convert are not uploaded to DocXform servers. The contact form is separate and only sends the message details you submit.',
+      'No. The Word, PDF, DOC, and DOCX files you convert are not uploaded to docXform servers. The contact form is separate and only sends the message details you submit.',
   },
   {
-    question: 'What file formats does DocXform support?',
+    question: 'What file formats does docXform support?',
     answer:
-      'DocXform supports Word to PDF conversion for DOCX and DOC files, and PDF to Word conversion that creates editable DOCX files.',
+      'docXform supports Word to PDF conversion for DOCX and DOC files, and PDF to Word conversion that creates editable DOCX files.',
   },
   {
     question: 'What is the file size limit?',
@@ -32,11 +32,11 @@ export const SITE_FAQS: SiteFaq[] = [
   {
     question: 'Will formatting be preserved?',
     answer:
-      'DocXform aims to preserve layout, fonts, images, and spacing where the source document allows it. Very complex layouts, uncommon fonts, scanned PDFs, or embedded objects can require manual review after conversion.',
+      'docXform aims to preserve layout, fonts, images, and spacing where the source document allows it. Very complex layouts, uncommon fonts, scanned PDFs, or embedded objects can require manual review after conversion.',
   },
   {
     question: 'Do I need to install software?',
     answer:
-      'No installation is required. DocXform works in modern browsers including Chrome, Edge, Firefox, and Safari, as long as WebAssembly is available.',
+      'No installation is required. docXform works in modern browsers including Chrome, Edge, Firefox, and Safari, as long as WebAssembly is available.',
   },
 ];

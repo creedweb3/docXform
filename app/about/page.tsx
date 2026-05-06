@@ -17,9 +17,9 @@ import {
   webPageJsonLd,
 } from '@/lib/seo';
 
-const title = 'About DocXform - Browser-Based Document Conversion';
+const title = 'About docXform - Browser-Based Document Conversion';
 const description =
-  'Learn how DocXform converts Word and PDF documents in your browser with WebAssembly, no account requirement, and no file upload for conversion.';
+  'Learn how docXform converts Word and PDF documents in your browser with WebAssembly, no account requirement, and no file upload for conversion.';
 
 export const metadata: Metadata = createPageMetadata({
   title,
@@ -32,7 +32,7 @@ const features = [
   {
     icon: Shield01Icon,
     label: 'No Server-Side File Conversion',
-    desc: 'The selected document is processed by the browser-based converter instead of being uploaded to DocXform for conversion.',
+    desc: 'The selected document is processed by the browser-based converter instead of being uploaded to docXform for conversion.',
     boxClass: 'icon-box-blue',
     iconClass: 'text-blue-500',
   },
@@ -53,7 +53,7 @@ const features = [
   {
     icon: LockKeyIcon,
     label: 'No Account Required',
-    desc: 'Convert documents without creating an account or giving DocXform access to your document storage.',
+    desc: 'Convert documents without creating an account or giving docXform access to your document storage.',
     boxClass: 'icon-box-mint',
     iconClass: 'text-emerald-500',
   },
@@ -83,17 +83,17 @@ export default function AboutPage() {
           <section className="px-6 pt-4 sm:pt-6 pb-14 sm:pb-16">
             <div className="max-w-2xl mx-auto">
               <h1 className="text-3xl sm:text-[2.75rem] font-bold tracking-tight text-foreground mb-3 text-center">
-                About DocXform
+                About docXform
               </h1>
               <div className="space-y-4 text-muted-foreground leading-relaxed mb-14 text-center">
                 <p>
-                  DocXform exists to make everyday document conversion more private.
+                  docXform exists to make everyday document conversion more private.
                   Traditional online converters usually require uploading files to
-                  remote servers. DocXform takes a different approach: conversion
+                  remote servers. docXform takes a different approach: conversion
                   runs directly in your browser.
                 </p>
                 <p>
-                  Using WebAssembly (WASM), DocXform runs a document conversion
+                  Using WebAssembly (WASM), docXform runs a document conversion
                   engine on your device. Your selected files are processed locally,
                   and the converted output is generated for download in the browser.
                 </p>
@@ -129,14 +129,14 @@ export default function AboutPage() {
           <section className="px-6 py-16 bg-gradient-to-b from-transparent to-white/5">
             <div className="max-w-2xl mx-auto text-center">
               <h2 className="text-2xl font-bold text-foreground mb-4">
-                The DocXform Approach
+                The docXform Approach
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Your documents are your property. DocXform is designed so conversion
+                Your documents are your property. docXform is designed so conversion
                 files stay on your device during Word to PDF and PDF to Word workflows.
                 The site may still use standard web services such as advertising or
                 the contact form, but the documents you convert are not sent to
-                DocXform for processing.
+                docXform for processing.
               </p>
             </div>
           </section>

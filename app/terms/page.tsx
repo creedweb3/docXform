@@ -11,9 +11,9 @@ import {
   webPageJsonLd,
 } from '@/lib/seo';
 
-const title = 'Terms of Service | DocXform';
+const title = 'Terms of Service | docXform';
 const description =
-  'Terms for using DocXform browser-based Word to PDF and PDF to Word conversion tools.';
+  'Terms for using docXform browser-based Word to PDF and PDF to Word conversion tools.';
 
 export const metadata: Metadata = createPageMetadata({
   title,
@@ -50,9 +50,9 @@ export default function TermsPage() {
             </div>
             <div className="prose prose-neutral max-w-none space-y-5 text-sm text-muted-foreground leading-relaxed">
               <h2 className="text-lg font-semibold text-foreground pt-2">Acceptance</h2>
-              <p>By using DocXform, you agree to these terms. If you disagree, do not use the service.</p>
+              <p>By using docXform, you agree to these terms. If you disagree, do not use the service.</p>
               <h2 className="text-lg font-semibold text-foreground pt-2">Service Description</h2>
-              <p>DocXform provides free, browser-based document conversion. All processing occurs locally in your browser. The service is provided &quot;as is&quot; without warranties.</p>
+              <p>docXform provides free, browser-based document conversion. All processing occurs locally in your browser. The service is provided &quot;as is&quot; without warranties.</p>
               <h2 className="text-lg font-semibold text-foreground pt-2">Use Restrictions</h2>
               <ul className="list-disc pl-5 space-y-1.5 text-sm">
                 <li>Do not use the service for illegal purposes</li>
@@ -60,11 +60,11 @@ export default function TermsPage() {
                 <li>Do not use automated bots that exceed reasonable usage</li>
               </ul>
               <h2 className="text-lg font-semibold text-foreground pt-2">Intellectual Property</h2>
-              <p>The service is owned by DocXform and protected by applicable laws. Your documents remain your property at all times.</p>
+              <p>The service is owned by docXform and protected by applicable laws. Your documents remain your property at all times.</p>
               <h2 className="text-lg font-semibold text-foreground pt-2">No Liability for Output</h2>
               <p>We strive for high-quality conversions but do not guarantee identical output in all cases. You are responsible for reviewing converted documents.</p>
               <h2 className="text-lg font-semibold text-foreground pt-2">Limitation of Liability</h2>
-              <p>DocXform shall not be liable for any indirect, incidental, or consequential damages. Since all processing occurs in your browser and we never access your documents, we cannot be held responsible for data loss.</p>
+              <p>docXform shall not be liable for any indirect, incidental, or consequential damages. Since all processing occurs in your browser and we never access your documents, we cannot be held responsible for data loss.</p>
               <h2 className="text-lg font-semibold text-foreground pt-2">Contact</h2>
               <p>Questions? <Link href="/contact" className="text-foreground underline">Contact us</Link>.</p>
             </div>

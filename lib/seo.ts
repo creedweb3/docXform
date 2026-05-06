@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import type { SiteArticle } from '@/lib/site-articles';
 import type { SiteFaq } from '@/lib/site-faqs';
 
-export const SITE_NAME = 'DocXform';
-export const SITE_URL = 'https://docxform.com';
+export const SITE_NAME = 'docXform';
+export const SITE_URL = 'https://www.docxform.com';
 export const SITE_DESCRIPTION =
-  'Convert Word to PDF and PDF to Word in your browser. DocXform keeps document processing on your device with no file uploads.';
+  'Convert Word to PDF and PDF to Word in your browser. docXform keeps document processing on your device with no file uploads.';
 
 export const OG_IMAGES = {
   default: '/og/docxform-default.png',
@@ -88,7 +88,7 @@ export function createPageMetadata({
 }: PageMetadataOptions): Metadata {
   const canonical = absoluteUrl(path);
   const imageUrl = absoluteUrl(image);
-  const resolvedImageAlt = imageAlt ?? `${SITE_NAME} - ${title.replace(/\s+\|\s+DocXform$/i, '')}`;
+  const resolvedImageAlt = imageAlt ?? `${SITE_NAME} - ${title.replace(/\s+\|\s+docXform$/i, '')}`;
 
   return {
     title,
@@ -291,7 +291,7 @@ export function articlesCollectionJsonLd(articles: SiteArticle[]) {
   return {
     '@type': 'CollectionPage',
     '@id': `${absoluteUrl('/articles')}#collection`,
-    name: 'DocXform Articles and Guides',
+    name: 'docXform Articles and Guides',
     url: absoluteUrl('/articles'),
     description:
       'Guides about private document conversion, PDF to Word workflows, Word to PDF workflows, DOCX standards, and browser security.',

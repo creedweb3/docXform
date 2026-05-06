@@ -11,9 +11,9 @@ import {
 } from '@/lib/seo';
 import type { Metadata } from 'next';
 
-const title = 'Contact DocXform | Business Inquiries';
+const title = 'Contact docXform | Business Inquiries';
 const description =
-  'Contact DocXform for business inquiries about private browser-based Word to PDF and PDF to Word conversion.';
+  'Contact docXform for business inquiries about private browser-based Word to PDF and PDF to Word conversion.';
 
 export const metadata: Metadata = createPageMetadata({
   title,
@@ -47,7 +47,7 @@ export default function ContactPage() {
             <div className="max-w-4xl mx-auto">
               <div className="max-w-3xl mx-auto text-center mb-10">
                 <h1 className="text-3xl sm:text-[2.75rem] font-bold tracking-tight text-foreground mb-3">
-                  Contact DocXform
+                  Contact docXform
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   Business inquiries only. Document conversion happens in your browser;
