@@ -36,6 +36,7 @@ export function Navbar() {
                 height={40}
                 className="w-10 h-10 object-contain"
                 sizes="40px"
+                quality={45}
                 priority
               />
             </div>

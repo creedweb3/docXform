@@ -1,7 +1,7 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import Script from 'next/script';
+import { AdsenseLoader } from '@/components/adsense-loader';
 import { ConverterQueueProvider } from '@/components/converter-queue-provider';
 import { JsonLd } from '@/components/json-ld';
 import {
@@ -80,13 +80,7 @@ export default function RootLayout({
           id="site-schema"
           data={schemaGraph([organizationJsonLd(), websiteJsonLd()])}
         />
-        <Script
-          id="adsense-loader"
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7154775313079570"
-          crossOrigin="anonymous"
-          strategy="lazyOnload"
-        />
+        <AdsenseLoader />
         <ConverterQueueProvider>{children}</ConverterQueueProvider>
       </body>
     </html>
