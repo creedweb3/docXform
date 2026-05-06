@@ -35,6 +35,23 @@ const INITIALIZE_TIMEOUT_MS = 180_000;
 const CONVERSION_TIMEOUT_MS = 240_000;
 const FALLBACK_WASM_CDN_BASE = 'https://wasm.docxform.com/wasm/';
 
+/**
+ * Appended to soffice.{wasm,data} fetch URLs so poisoned disk cache (HTML 404/challenge
+ * stored under `/wasm/soffice.wasm`) cannot reuse the wrong body. Bump or set
+ * NEXT_PUBLIC_WASM_ASSET_REVISION when you need another bust after a bad deploy.
+ */
+const WASM_ASSET_REVISION =
+  typeof process.env.NEXT_PUBLIC_WASM_ASSET_REVISION === 'string' &&
+  process.env.NEXT_PUBLIC_WASM_ASSET_REVISION.trim() !== ''
+    ? process.env.NEXT_PUBLIC_WASM_ASSET_REVISION.trim()
+    : '2026-05-06';
+
+function wasmBinaryUrlWithRevision(url: string): string {
+  const key = '_wx';
+  const v = encodeURIComponent(WASM_ASSET_REVISION);
+  return `${url}${url.includes('?') ? '&' : '?'}${key}=${v}`;
+}
+
 const MIME_TYPES: Record<OutputFormat, string> = {
   pdf: 'application/pdf',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -115,7 +132,7 @@ function resolveWasmUrl(base: string, name: string): string {
 async function probeCoreWasmAssets(base: string): Promise<void> {
   const crossOrigin = /^https?:\/\//i.test(base);
   for (const name of ['soffice.wasm', 'soffice.data'] as const) {
-    const url = resolveWasmUrl(base, name);
+    const url = wasmBinaryUrlWithRevision(resolveWasmUrl(base, name));
     try {
       const res = await fetch(url, {
         method: 'GET',
@@ -197,8 +214,15 @@ async function getConverter(onProgress?: ProgressHandler) {
        */
       const wasmPaths = createWasmPaths('/wasm/');
       if (/^https?:\/\//i.test(binaryBase)) {
-        wasmPaths.sofficeWasm = resolveWasmUrl(binaryBase, 'soffice.wasm');
-        wasmPaths.sofficeData = resolveWasmUrl(binaryBase, 'soffice.data');
+        wasmPaths.sofficeWasm = wasmBinaryUrlWithRevision(
+          resolveWasmUrl(binaryBase, 'soffice.wasm')
+        );
+        wasmPaths.sofficeData = wasmBinaryUrlWithRevision(
+          resolveWasmUrl(binaryBase, 'soffice.data')
+        );
+      } else {
+        wasmPaths.sofficeWasm = wasmBinaryUrlWithRevision(wasmPaths.sofficeWasm);
+        wasmPaths.sofficeData = wasmBinaryUrlWithRevision(wasmPaths.sofficeData);
       }
 
       const converter = new WorkerBrowserConverter({
@@ -497,6 +521,14 @@ export function conversionErrorMessage(error: unknown) {
     lowerMessage.includes('corp')
   ) {
     return 'WASM blocked (CORS or security headers). Same-origin /wasm/ should not need CORS; check next.config.js COOP/COEP and any CDN headers on static assets.';
+  }
+
+  if (
+    lowerMessage.includes('expected magic word') ||
+    lowerMessage.includes('00 61 73 6d') ||
+    lowerMessage.includes('3c 21 44 4f')
+  ) {
+    return 'The converter received a web page instead of the WASM file (often a stale browser cache on one hostname, or a blocker). Clear site data for this origin, try https://www.docxform.com, or use a private window; then reload.';
   }
 
   if (
