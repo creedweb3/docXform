@@ -73,18 +73,18 @@ export default function ModernWordSecurity() {
                     <h2 className="text-lg font-semibold text-foreground pt-2">The Cloud Conversion Problem</h2>
                     <p>When you upload a DOCX file to a traditional converter, it is transmitted over the internet, stored temporarily on a server, processed by software you cannot inspect, and sent back. Server logs, backups, and caching layers can retain copies longer than users expect.</p>
                     <h2 className="text-lg font-semibold text-foreground pt-2">WebAssembly Changes the Workflow</h2>
-                    <p>WebAssembly (WASM) enables high-performance applications to run directly in your browser at near-native speeds. With a WASM-powered tool like DocXform, your file is read by the browser, processed by a WASM module in the browser sandbox, and the result is generated in memory on your device.</p>
+                    <p>WebAssembly (WASM) enables high-performance applications to run directly in your browser at near-native speeds. With a WASM-powered tool like docXform, your file is read by the browser, processed by a WASM module in the browser sandbox, and the result is generated in memory on your device.</p>
                     <h2 className="text-lg font-semibold text-foreground pt-2">The Browser Sandbox</h2>
                     <p>WASM runs inside the browser&apos;s security sandbox, which enforces the same-origin policy and restricts file system access. The converter can process the file you selected, but it does not get broad access to your device.</p>
                     <h2 className="text-lg font-semibold text-foreground pt-2">Verifiable Privacy</h2>
-                    <p>With client-side processing, you can inspect network traffic using browser dev tools and confirm the conversion file itself is not transmitted to DocXform servers. For teams handling sensitive documents, this reduces the exposure created by upload-based conversion workflows.</p>
+                    <p>With client-side processing, you can inspect network traffic using browser dev tools and confirm the conversion file itself is not transmitted to docXform servers. For teams handling sensitive documents, this reduces the exposure created by upload-based conversion workflows.</p>
                   </div>
                   <div className="mt-10 rounded-2xl bg-white/60 border border-border/50 p-6">
                     <h2 className="text-base font-semibold text-foreground mb-2">
                       Convert PDFs without uploading the file
                     </h2>
                     <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                      Use DocXform&apos;s browser-based PDF to Word converter when you need editable DOCX output and want conversion to stay on your device.
+                      Use docXform&apos;s browser-based PDF to Word converter when you need editable DOCX output and want conversion to stay on your device.
                     </p>
                     <Link href={article.relatedHref} className="text-xs font-semibold text-blue-600 hover:text-blue-700">
                       {article.relatedLabel}

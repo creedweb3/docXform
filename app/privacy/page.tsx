@@ -11,9 +11,9 @@ import {
   webPageJsonLd,
 } from '@/lib/seo';
 
-const title = 'Privacy Policy | DocXform';
+const title = 'Privacy Policy | docXform';
 const description =
-  'DocXform privacy policy for browser-based Word to PDF and PDF to Word conversion, contact submissions, advertising, and analytics.';
+  'docXform privacy policy for browser-based Word to PDF and PDF to Word conversion, contact submissions, advertising, and analytics.';
 
 export const metadata: Metadata = createPageMetadata({
   title,
@@ -50,7 +50,7 @@ export default function PrivacyPage() {
               </div>
               <div className="prose prose-neutral max-w-none space-y-5 text-sm text-muted-foreground leading-relaxed">
                 <h2 className="text-lg font-semibold text-foreground pt-2">Core Principle</h2>
-                <p>Document conversion is performed in your browser using WebAssembly. Files selected for conversion are not uploaded to, stored on, or transmitted through a DocXform conversion server.</p>
+                <p>Document conversion is performed in your browser using WebAssembly. Files selected for conversion are not uploaded to, stored on, or transmitted through a docXform conversion server.</p>
                 <h2 className="text-lg font-semibold text-foreground pt-2">What We Do Not Collect From Conversions</h2>
                 <ul className="list-disc pl-5 space-y-1.5 text-sm">
                   <li>Document content from converted files</li>
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
                 <h2 className="text-lg font-semibold text-foreground pt-2">What We May Collect</h2>
                 <p>Standard web analytics for site operation may include aggregate page views, browser type, device type, and referral source. Contact form submissions send the name, email, message, and source page you provide.</p>
                 <h2 className="text-lg font-semibold text-foreground pt-2">Advertising</h2>
-                <p>DocXform uses Google AdSense, which may use cookies for personalized ads. Opt out at <a href="https://www.google.com/settings/ads" className="text-foreground underline" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>. See our <Link href="/cookies" className="text-foreground underline">Cookie Policy</Link> for details.</p>
+                <p>docXform uses Google AdSense, which may use cookies for personalized ads. Opt out at <a href="https://www.google.com/settings/ads" className="text-foreground underline" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>. See our <Link href="/cookies" className="text-foreground underline">Cookie Policy</Link> for details.</p>
                 <h2 className="text-lg font-semibold text-foreground pt-2">Data Security</h2>
                 <p>Document security also depends on your device and browser. Keep your browser updated, use HTTPS, and review converted files before sharing them.</p>
                 <h2 className="text-lg font-semibold text-foreground pt-2">Contact</h2>

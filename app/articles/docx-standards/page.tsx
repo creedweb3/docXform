@@ -84,7 +84,7 @@ export default function DocxStandards() {
                       Convert DOCX files in the browser
                     </h2>
                     <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                      Use DocXform when you need to turn a DOC or DOCX document into a PDF without sending the file to a server-side converter.
+                      Use docXform when you need to turn a DOC or DOCX document into a PDF without sending the file to a server-side converter.
                     </p>
                     <Link href={article.relatedHref} className="text-xs font-semibold text-amber-600 hover:text-amber-700">
                       {article.relatedLabel}

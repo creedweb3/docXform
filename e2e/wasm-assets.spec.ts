@@ -20,7 +20,13 @@ test.describe('WASM assets (browser)', () => {
       const resolveUrl = (name: string) =>
         new URL(name, baseRoot.startsWith('http') ? baseRoot : `${window.location.origin}${baseRoot}`).href;
 
-      const names = ['soffice.js', 'browser.worker.global.js', 'soffice.wasm', 'soffice.data'];
+      const names = [
+        'soffice.js',
+        'browser.worker.global.js',
+        'soffice.worker.js',
+        'soffice.wasm',
+        'soffice.data',
+      ];
       const rows: Array<Record<string, unknown>> = [];
 
       for (const name of names) {

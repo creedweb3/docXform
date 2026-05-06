@@ -1,4 +1,29 @@
 /** @type {import('next').NextConfig} */
+const buildId =
+  process.env.CF_PAGES_COMMIT_SHA ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.npm_package_version ||
+  'local';
+
+const buildStamp = new Date().toISOString();
+
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://static.cloudflareinsights.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "connect-src 'self' https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://*.doubleclick.net https://static.cloudflareinsights.com https://cloudflareinsights.com https://wasm.docxform.com",
+  "frame-src https://*.doubleclick.net https://googleads.g.doubleclick.net https://td.doubleclick.net https://fundingchoicesmessages.google.com",
+  "worker-src 'self' blob:",
+  "child-src 'self' blob:",
+  "manifest-src 'self'",
+  'upgrade-insecure-requests',
+].join('; ');
+
 const nextConfig = {
   devIndicators: false,
   images: {
@@ -12,30 +37,17 @@ const nextConfig = {
     /** Inlines global CSS to cut render-blocking `<link rel="stylesheet">` (App Router). */
     inlineCss: true,
   },
-  async rewrites() {
-    return [
-      {
-        source: '/wasm/soffice.js',
-        destination: 'https://wasm.docxform.com/wasm/soffice.js',
-      },
-      {
-        source: '/wasm/browser.worker.global.js',
-        destination: 'https://wasm.docxform.com/wasm/browser.worker.global.js',
-      },
-      {
-        source: '/wasm/soffice.wasm',
-        destination: 'https://wasm.docxform.com/wasm/soffice.wasm',
-      },
-      {
-        source: '/wasm/soffice.data',
-        destination: 'https://wasm.docxform.com/wasm/soffice.data',
-      },
-    ];
-  },
+  // WASM: .wasm/.data are proxied by middleware.ts to CDN; JS stays in public/wasm/.
   async headers() {
     const securityHeaders = [
       { key: 'X-Content-Type-Options', value: 'nosniff' },
       { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' },
+      { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
+      { key: 'Content-Security-Policy', value: contentSecurityPolicy },
+      { key: 'X-Docxform-Build', value: String(buildId).slice(0, 64) },
+      { key: 'X-Docxform-Build-Time', value: buildStamp },
       {
         key: 'Permissions-Policy',
         value: 'camera=(), microphone=(), geolocation=()',

@@ -13,7 +13,7 @@ import {
 import { SITE_ARTICLES } from '@/lib/site-articles';
 import type { Metadata } from 'next';
 
-const title = 'Articles and Guides - PDF, DOCX and Browser Privacy | DocXform';
+const title = 'Articles and Guides - PDF, DOCX and Browser Privacy | docXform';
 const description =
   'Guides on private PDF to Word conversion, DOCX formatting, Office Open XML standards, PDF optimization, and browser-based document security.';
 

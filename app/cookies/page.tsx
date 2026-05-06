@@ -11,9 +11,9 @@ import {
   webPageJsonLd,
 } from '@/lib/seo';
 
-const title = 'Cookie Policy | DocXform';
+const title = 'Cookie Policy | docXform';
 const description =
-  'How DocXform uses essential, advertising, and analytics cookies on its browser-based document conversion site.';
+  'How docXform uses essential, advertising, and analytics cookies on its browser-based document conversion site.';
 
 export const metadata: Metadata = createPageMetadata({
   title,

@@ -86,7 +86,7 @@ export default function FormattingGuide() {
                       Convert a prepared Word file to PDF
                     </h2>
                     <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                      Once your DOC or DOCX file is ready, use DocXform to create a browser-generated PDF without uploading the document.
+                      Once your DOC or DOCX file is ready, use docXform to create a browser-generated PDF without uploading the document.
                     </p>
                     <Link href={article.relatedHref} className="text-xs font-semibold text-rose-600 hover:text-rose-700">
                       {article.relatedLabel}

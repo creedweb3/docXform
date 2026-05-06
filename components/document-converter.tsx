@@ -270,7 +270,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       })
       .catch((err) => {
         warmStartedRef.current = false;
-        console.error('[DocXform] Converter warm-up failed:', err);
+        console.error('[docXform] Converter warm-up failed:', err);
         setWarmState('failed');
         setWarmMessage('Converter warm-up unavailable');
         showNotice(conversionErrorMessage(err), { kind: 'error' });

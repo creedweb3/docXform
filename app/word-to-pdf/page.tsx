@@ -25,13 +25,13 @@ import {
 } from '@/lib/seo';
 import type { SiteFaq } from '@/lib/site-faqs';
 
-const title = 'Word to PDF Converter - Free DOC and DOCX to PDF | DocXform';
+const title = 'Word to PDF Converter - Free DOC and DOCX to PDF | docXform';
 const description =
-  'Convert DOC and DOCX files to PDF in your browser. DocXform runs Word to PDF conversion locally with no file upload required.';
+  'Convert DOC and DOCX files to PDF in your browser. docXform runs Word to PDF conversion locally with no file upload required.';
 
 const toolFaqs: SiteFaq[] = [
   {
-    question: 'How do I convert Word to PDF with DocXform?',
+    question: 'How do I convert Word to PDF with docXform?',
     answer:
       'Open the Word to PDF tool, choose or drop a DOC or DOCX file, wait for browser-based conversion to finish, and download the generated PDF.',
   },
@@ -48,7 +48,7 @@ const toolFaqs: SiteFaq[] = [
   {
     question: 'Will the PDF match my Word document?',
     answer:
-      'DocXform keeps margins, fonts, images, and layout close to the source document where possible. Review important files after conversion, especially documents with uncommon fonts or complex embedded objects.',
+      'docXform keeps margins, fonts, images, and layout close to the source document where possible. Review important files after conversion, especially documents with uncommon fonts or complex embedded objects.',
   },
 ];
 
@@ -63,7 +63,7 @@ const infoSections = [
   },
   {
     title: 'Privacy',
-    text: 'The document conversion process does not upload your Word file to DocXform servers.',
+    text: 'The document conversion process does not upload your Word file to docXform servers.',
   },
   {
     title: 'Output review',
@@ -97,7 +97,7 @@ export default function WordToPdfPage() {
             path: '/word-to-pdf',
           }),
           softwareApplicationJsonLd({
-            name: 'DocXform Word to PDF Converter',
+            name: 'docXform Word to PDF Converter',
             description,
             path: '/word-to-pdf',
             featureList: [

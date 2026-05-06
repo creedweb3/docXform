@@ -25,13 +25,13 @@ import {
 } from '@/lib/seo';
 import type { SiteFaq } from '@/lib/site-faqs';
 
-const title = 'PDF to Word Converter - Free PDF to DOCX | DocXform';
+const title = 'PDF to Word Converter - Free PDF to DOCX | docXform';
 const description =
-  'Convert PDF files to editable DOCX documents in your browser. DocXform runs PDF to Word conversion locally with no file upload required.';
+  'Convert PDF files to editable DOCX documents in your browser. docXform runs PDF to Word conversion locally with no file upload required.';
 
 const toolFaqs: SiteFaq[] = [
   {
-    question: 'How do I convert PDF to Word with DocXform?',
+    question: 'How do I convert PDF to Word with docXform?',
     answer:
       'Open the PDF to Word tool, choose or drop a PDF file, wait for browser-based conversion to finish, and download the editable DOCX file.',
   },
@@ -41,14 +41,14 @@ const toolFaqs: SiteFaq[] = [
       'No. PDF to Word conversion runs in your browser with WebAssembly, so the selected PDF file stays on your device during conversion.',
   },
   {
-    question: 'What kind of Word file does DocXform create?',
+    question: 'What kind of Word file does docXform create?',
     answer:
-      'DocXform creates a DOCX file that can be opened in Microsoft Word, Google Docs, LibreOffice, and other compatible editors.',
+      'docXform creates a DOCX file that can be opened in Microsoft Word, Google Docs, LibreOffice, and other compatible editors.',
   },
   {
     question: 'Will the DOCX look exactly like the PDF?',
     answer:
-      'DocXform preserves text, images, and layout where possible. Scanned PDFs, complex tables, custom fonts, and layered designs can require manual cleanup after conversion.',
+      'docXform preserves text, images, and layout where possible. Scanned PDFs, complex tables, custom fonts, and layered designs can require manual cleanup after conversion.',
   },
 ];
 
@@ -63,7 +63,7 @@ const infoSections = [
   },
   {
     title: 'Privacy',
-    text: 'The PDF conversion process does not upload your file to DocXform servers.',
+    text: 'The PDF conversion process does not upload your file to docXform servers.',
   },
   {
     title: 'Output review',
@@ -97,7 +97,7 @@ export default function PdfToWordPage() {
             path: '/pdf-to-word',
           }),
           softwareApplicationJsonLd({
-            name: 'DocXform PDF to Word Converter',
+            name: 'docXform PDF to Word Converter',
             description,
             path: '/pdf-to-word',
             featureList: [
