@@ -32,18 +32,8 @@ import {
   validateConversionFile,
   type ConversionMode,
 } from '@/lib/client-file-validation';
-
-type QueueStatus = 'queued' | 'converting' | 'converted' | 'failed';
-
-interface QueuedFile {
-  id: string;
-  file: File;
-  status: QueueStatus;
-  progress: number;
-  message?: string;
-  error?: string;
-  output?: ConvertedDocument;
-}
+import type { QueuedFile } from '@/lib/converter-queue-types';
+import { useConverterQueue } from '@/components/converter-queue-provider';
 
 interface DocumentConverterProps {
   mode: ConversionMode;
@@ -79,6 +69,13 @@ const DEFAULT_NOTICE_DURATION = 3500;
 const chipMotion = { duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] as const };
 /** Only enable list scrolling (and scrollbar width sync) after this many files. */
 const QUEUE_SCROLL_AFTER_FILE_COUNT = 6;
+
+/** Disabled download-slot copy before conversion; one line picked at random after mount (client-only). */
+const DOWNLOAD_IDLE_HINTS = [
+  'Almost there • hit Convert',
+  'Ready when you are',
+  'One tap away',
+] as const;
 
 const converterConfig = {
   'word-to-pdf': {
@@ -172,7 +169,11 @@ function converterStatusLabel(state: WarmState) {
 
 export function DocumentConverter({ mode }: DocumentConverterProps) {
   const config = converterConfig[mode];
-  const [items, setItems] = useState<QueuedFile[]>([]);
+  const [items, setItems] = useConverterQueue(mode);
+  const downloadIdleHintRollRef = useRef(false);
+  const [downloadSecondaryIdleHint, setDownloadSecondaryIdleHint] = useState<
+    (typeof DOWNLOAD_IDLE_HINTS)[number]
+  >(DOWNLOAD_IDLE_HINTS[0]);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [duplicatePrompt, setDuplicatePrompt] = useState<DuplicatePrompt | null>(null);
   const [warmMessage, setWarmMessage] = useState('');
@@ -303,6 +304,13 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       }
     };
   }, [startWarmConverter]);
+
+  useEffect(() => {
+    if (downloadIdleHintRollRef.current) return;
+    downloadIdleHintRollRef.current = true;
+    const index = Math.floor(Math.random() * DOWNLOAD_IDLE_HINTS.length);
+    setDownloadSecondaryIdleHint(DOWNLOAD_IDLE_HINTS[index]);
+  }, []);
 
   useLayoutEffect(() => {
     const el = queueListScrollRef.current;
@@ -577,11 +585,15 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const downloadPrimary = allConvertedSuccessfully && !isConverting;
   const hasConvertedOutput = convertedItems.length > 0;
   const downloadReady = hasConvertedOutput && !isConverting;
-  const primaryCtaClass = `inline-flex min-h-12 min-w-0 flex-1 basis-0 select-none items-center justify-center gap-2 self-stretch rounded-xl bg-gradient-to-br ${config.primaryButtonClass} box-border px-4 py-3 text-center text-xs font-semibold leading-snug text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45`;
+  const ctaFlexLayout =
+    'inline-flex min-h-12 min-w-0 flex-1 basis-0 select-none items-center justify-center gap-2 self-stretch rounded-xl box-border px-4 py-3 text-center text-xs font-semibold leading-snug';
+
+  const primaryCtaClass = `${ctaFlexLayout} bg-gradient-to-br ${config.primaryButtonClass} text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45`;
   const secondaryCtaClass =
-    'inline-flex min-h-12 min-w-0 flex-1 basis-0 select-none items-center justify-center gap-2 self-stretch rounded-xl border border-border/40 bg-white/60 box-border px-4 py-3 text-center text-xs font-semibold leading-snug text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-45';
-  const downloadHintClass =
-    'border-dashed border-muted-foreground/25 bg-muted/25 text-muted-foreground shadow-none';
+    `${ctaFlexLayout} border border-border/40 bg-white/60 text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-45`;
+  /** Disabled download slot: own surface so it is not overridden by secondaryCtaClass border/bg. */
+  const downloadIdleCtaClass =
+    `${ctaFlexLayout} border border-dashed border-slate-300/75 bg-slate-100 text-slate-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-100`;
 
   const handleDownloadSingle = useCallback((file: ConvertedDocument) => {
     const url = URL.createObjectURL(file.blob);
@@ -957,9 +969,13 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               onClick={() => void handleDownloadAll()}
               disabled={!downloadReady}
               aria-busy={isConverting}
-              className={`${downloadPrimary ? primaryCtaClass : secondaryCtaClass} ${downloadPrimary ? 'order-1 sm:order-1' : 'order-2 sm:order-2'} ${
-                !downloadPrimary && !downloadReady ? downloadHintClass : ''
-              } ${!downloadReady ? 'disabled:opacity-100' : ''}`}
+              className={`${
+                downloadPrimary
+                  ? primaryCtaClass
+                  : downloadReady
+                    ? secondaryCtaClass
+                    : downloadIdleCtaClass
+              } ${downloadPrimary ? 'order-1 sm:order-1' : 'order-2 sm:order-2'}`}
             >
               {downloadReady ? (
                 <HugeiconsIcon
@@ -984,7 +1000,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   ? isBulkDownload
                     ? 'Download converted ZIP'
                     : `Download ${config.outputLabel}`
-                  : `Save ${config.outputLabel} here after converting`}
+                  : downloadSecondaryIdleHint}
             </button>
             </div>
             </div>

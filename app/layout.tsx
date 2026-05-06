@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
+import { ConverterQueueProvider } from '@/components/converter-queue-provider';
 import { JsonLd } from '@/components/json-ld';
 import {
   createPageMetadata,
@@ -86,7 +87,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="lazyOnload"
         />
-        {children}
+        <ConverterQueueProvider>{children}</ConverterQueueProvider>
       </body>
     </html>
   );

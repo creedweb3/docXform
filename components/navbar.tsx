@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -9,7 +12,17 @@ const navLinks = [
   { href: '/articles', label: 'Articles' },
 ];
 
+function linkIsActive(pathname: string, href: string) {
+  if (href === '/') return pathname === '/';
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/** Current page: same charcoal as home hero (doc/form) — not full black. */
+const navLinkActiveClass = 'font-semibold text-white bg-[#333333]';
+
 export function Navbar() {
+  const pathname = usePathname() || '/';
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 overflow-visible pointer-events-none">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-5 pb-2 pointer-events-auto">
@@ -40,11 +53,17 @@ export function Navbar() {
 
           <div className="hidden sm:flex flex-nowrap items-center justify-end gap-x-1">
             {navLinks.map((link) => {
+              const active = linkIsActive(pathname, link.href);
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="min-h-12 px-3 py-2.5 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/45"
+                  aria-current={active ? 'page' : undefined}
+                  className={`min-h-12 px-3 py-2.5 rounded-lg text-xs transition-all duration-200 whitespace-nowrap inline-flex items-center justify-center ${
+                    active
+                      ? navLinkActiveClass
+                      : 'font-medium text-muted-foreground hover:text-foreground hover:bg-white/45'
+                  }`}
                 >
                   {link.label}
                 </Link>
@@ -59,15 +78,23 @@ export function Navbar() {
                 <span className="sr-only">Open navigation menu</span>
               </summary>
               <div className="absolute right-0 mt-2 w-56 rounded-xl glass-subtle border border-white/60 p-1 shadow-lg">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="block w-full rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/60"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                {navLinks.map((link) => {
+                  const active = linkIsActive(pathname, link.href);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={`block w-full rounded-md px-3 py-2 text-sm ${
+                        active
+                          ? navLinkActiveClass
+                          : 'font-medium text-muted-foreground hover:text-foreground hover:bg-white/60'
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
               </div>
             </details>
           </div>
