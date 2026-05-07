@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "clean:local": "node scripts/cleanup-local-artifacts.mjs",
     "test:e2e": "playwright test",
+    "verify:all": "node scripts/verify-all.mjs",
+    "verify:all:full": "node scripts/verify-all.mjs --full",
     "wasm:diagnose": "node scripts/diagnose-wasm-assets.mjs",
     "wasm:r2:upload": "node scripts/upload-wasm-r2.mjs",
     "wasm:sync-js": "node scripts/sync-wasm-js.mjs",
