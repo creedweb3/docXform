@@ -56,6 +56,32 @@ const nextConfig = {
 
     return [
       {
+        source: '/wasm/bin/:revision/soffice.wasm',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+        ],
+      },
+      {
+        source: '/wasm/bin/:revision/soffice.data',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+        ],
+      },
+      {
         source: '/wasm/:path*',
         headers: [
           {

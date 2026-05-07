@@ -12,7 +12,13 @@ import {
   getWasmAssetBaseForCreatePaths,
 } from '@/lib/wasm-asset-base';
 import { showDevConverterLoadOverlay } from '@/lib/dev-converter-flags';
+import {
+  debugLogEligibility,
+  getConverterEligibility,
+  subscribeConnectionEligibilityInvalidation,
+} from '@/lib/converter-eligibility';
 import { getCachedPerfProfile, getConverterTimeouts } from '@/lib/perf-profile';
+import { getWasmAssetRevision, getVersionedWasmBinPathPrefix } from '@/lib/wasm-revision';
 
 export interface ClientConversionProgress {
   percent: number;
@@ -34,25 +40,25 @@ let conversionQueue: Promise<void> = Promise.resolve();
 
 const FALLBACK_WASM_CDN_BASE = 'https://wasm.docxform.com/wasm/';
 
+let connectionEligibilitySubscribed = false;
+
 function converterTimeouts() {
   return getConverterTimeouts(getCachedPerfProfile());
 }
 
-/**
- * Appended to soffice.{wasm,data} fetch URLs so poisoned disk cache (HTML 404/challenge
- * stored under `/wasm/soffice.wasm`) cannot reuse the wrong body. Bump or set
- * NEXT_PUBLIC_WASM_ASSET_REVISION when you need another bust after a bad deploy.
- */
-const WASM_ASSET_REVISION =
-  typeof process.env.NEXT_PUBLIC_WASM_ASSET_REVISION === 'string' &&
-  process.env.NEXT_PUBLIC_WASM_ASSET_REVISION.trim() !== ''
-    ? process.env.NEXT_PUBLIC_WASM_ASSET_REVISION.trim()
-    : '2026-05-06';
-
+/** Query-string cache bust for HTTPS WASM bases (path may not be versioned on CDN). */
 function wasmBinaryUrlWithRevision(url: string): string {
   const key = '_wx';
-  const v = encodeURIComponent(WASM_ASSET_REVISION);
+  const v = encodeURIComponent(getWasmAssetRevision());
   return `${url}${url.includes('?') ? '&' : '?'}${key}=${v}`;
+}
+
+function wasmBinaryFetchUrl(base: string, name: 'soffice.wasm' | 'soffice.data'): string {
+  const resolved = resolveWasmUrl(base, name);
+  if (/^https?:\/\//i.test(base)) {
+    return wasmBinaryUrlWithRevision(resolved);
+  }
+  return resolved;
 }
 
 function withUrlParam(url: string, key: string, value: string): string {
@@ -150,7 +156,7 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
   const crossOrigin = /^https?:\/\//i.test(base);
   const probeMs = converterTimeouts().wasmProbeMs;
   for (const name of ['soffice.wasm', 'soffice.data'] as const) {
-    const url = wasmBinaryUrlWithRevision(resolveWasmUrl(base, name));
+    const url = wasmBinaryFetchUrl(base, name);
     try {
       const res = await fetchWithTimeout(
         url,
@@ -190,9 +196,54 @@ async function resolveBinaryAssetBase(): Promise<string> {
   if (typeof window === 'undefined') return getWasmAssetBaseForCreatePaths();
 
   const base = getWasmAssetBaseForCreatePaths();
+  const versioned = getVersionedWasmBinPathPrefix();
+
+  const tryProbe = async (b: string) => {
+    await probeCoreWasmAssets(b);
+    return b;
+  };
+
+  if (base.startsWith('/wasm/')) {
+    try {
+      return await tryProbe(versioned);
+    } catch (vErr) {
+      try {
+        return await tryProbe(base);
+      } catch {
+        /* fall through */
+      }
+      const primaryError = vErr;
+      const canFallbackToCdn =
+        process.env.NODE_ENV === 'production' &&
+        base.startsWith('/wasm/') &&
+        typeof window !== 'undefined';
+
+      if (!canFallbackToCdn) {
+        throw primaryError;
+      }
+
+      const envBase = process.env.NEXT_PUBLIC_WASM_ASSET_BASE?.trim();
+      const fallbackBase =
+        envBase && /^https?:\/\//i.test(envBase)
+          ? (envBase.endsWith('/') ? envBase : `${envBase}/`)
+          : FALLBACK_WASM_CDN_BASE;
+
+      try {
+        await probeCoreWasmAssets(fallbackBase);
+        console.warn(
+          `[docXform] Falling back to CDN WASM base because same-origin /wasm/ probe failed: ${String(
+            primaryError
+          )}`
+        );
+        return fallbackBase;
+      } catch {
+        throw primaryError;
+      }
+    }
+  }
+
   try {
-    await probeCoreWasmAssets(base);
-    return base;
+    return await tryProbe(base);
   } catch (primaryError) {
     const canFallbackToCdn =
       process.env.NODE_ENV === 'production' &&
@@ -243,13 +294,13 @@ function buildWasmPathsForBinaryBase(
 ) {
   const wasmPaths = createWasmPaths('/wasm/');
   if (/^https?:\/\//i.test(binaryBase)) {
-    const wasmUrl = wasmBinaryUrlWithRevision(resolveWasmUrl(binaryBase, 'soffice.wasm'));
-    const dataUrl = wasmBinaryUrlWithRevision(resolveWasmUrl(binaryBase, 'soffice.data'));
+    const wasmUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.wasm');
+    const dataUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.data');
     wasmPaths.sofficeWasm = attemptToken ? withUrlParam(wasmUrl, '_wr', attemptToken) : wasmUrl;
     wasmPaths.sofficeData = attemptToken ? withUrlParam(dataUrl, '_wr', attemptToken) : dataUrl;
   } else {
-    const wasmUrl = wasmBinaryUrlWithRevision(wasmPaths.sofficeWasm);
-    const dataUrl = wasmBinaryUrlWithRevision(wasmPaths.sofficeData);
+    const wasmUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.wasm');
+    const dataUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.data');
     wasmPaths.sofficeWasm = attemptToken ? withUrlParam(wasmUrl, '_wr', attemptToken) : wasmUrl;
     wasmPaths.sofficeData = attemptToken ? withUrlParam(dataUrl, '_wr', attemptToken) : dataUrl;
   }
@@ -339,6 +390,15 @@ async function getConverter(onProgress?: ProgressHandler) {
 }
 
 export async function warmConverter(onProgress?: ProgressHandler) {
+  if (typeof window !== 'undefined' && !connectionEligibilitySubscribed) {
+    connectionEligibilitySubscribed = true;
+    subscribeConnectionEligibilityInvalidation();
+  }
+  const eligibility = await getConverterEligibility();
+  debugLogEligibility(eligibility);
+  if (!eligibility.autoPreload) {
+    return;
+  }
   await getConverter(onProgress);
 }
 

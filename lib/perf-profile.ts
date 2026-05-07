@@ -9,6 +9,12 @@ export type PerfProfile = 'low' | 'medium' | 'high';
 let cached: PerfProfile | null = null;
 let perfDebugLogged = false;
 
+/** Call when `navigator.connection` changes so tiering and warm-up match the new link. */
+export function invalidatePerfProfileCache(): void {
+  cached = null;
+  perfDebugLogged = false;
+}
+
 function isPerfDebugEnabled(): boolean {
   return (
     typeof process !== 'undefined' &&
@@ -21,7 +27,7 @@ function perfDebugSnapshot(profile: PerfProfile): Record<string, unknown> {
     return { profile };
   }
   const nav = navigator as Navigator & {
-    connection?: { effectiveType?: string; saveData?: boolean };
+    connection?: { effectiveType?: string; saveData?: boolean; downlink?: number };
     deviceMemory?: number;
     userAgentData?: { mobile?: boolean };
   };
@@ -33,6 +39,7 @@ function perfDebugSnapshot(profile: PerfProfile): Record<string, unknown> {
   return {
     profile,
     effectiveType: nav.connection?.effectiveType ?? null,
+    downlink: nav.connection?.downlink ?? null,
     saveData: Boolean(nav.connection?.saveData),
     hardwareConcurrency: nav.hardwareConcurrency ?? null,
     deviceMemoryGb: nav.deviceMemory ?? null,
@@ -55,6 +62,15 @@ function effectiveType(): string {
   return conn?.effectiveType ?? '';
 }
 
+function connectionDownlinkMbps(): number | null {
+  if (typeof navigator === 'undefined') return null;
+  const c = (navigator as Navigator & { connection?: { downlink?: number } }).connection;
+  if (c && typeof c.downlink === 'number' && c.downlink > 0 && Number.isFinite(c.downlink)) {
+    return c.downlink;
+  }
+  return null;
+}
+
 function isSaveData(): boolean {
   if (typeof navigator === 'undefined') return false;
   const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
@@ -70,6 +86,7 @@ function isCoarseMobile(): boolean {
 
 /**
  * Compute once per page load; safe to call from client components and `'use client'` modules.
+ * Uses connection downlink when present to separate "fast phone, slow data" from desktop Wi‑Fi.
  */
 export function computePerfProfile(): PerfProfile {
   if (typeof window === 'undefined') return 'medium';
@@ -82,16 +99,28 @@ export function computePerfProfile(): PerfProfile {
   const cores = nav.hardwareConcurrency ?? 4;
   const mem = nav.deviceMemory;
   const mobile = isCoarseMobile();
+  const downlink = connectionDownlinkMbps();
 
   if (cores <= 2 || (mem !== undefined && mem <= 2)) return 'low';
 
   if (mobile && mem !== undefined && mem <= 3) return 'low';
 
+  // Fast device but slow pipe (common on 4G label with poor real throughput).
+  if (downlink !== null && downlink < 1.5 && (cores >= 4 || !mobile)) return 'low';
+
   if (!mobile && cores >= 8 && (mem === undefined || mem >= 6) && (et === '4g' || et === '')) {
-    return 'high';
+    if (downlink === null || downlink >= 5) return 'high';
+    return 'medium';
   }
 
-  if (!mobile && cores >= 6 && et === '4g') return 'high';
+  if (!mobile && cores >= 6 && et === '4g') {
+    if (downlink === null || downlink >= 4) return 'high';
+    return 'medium';
+  }
+
+  if (mobile && cores >= 6 && (downlink === null || downlink >= 4) && (et === '4g' || et === '')) {
+    return 'high';
+  }
 
   return 'medium';
 }
@@ -124,9 +153,9 @@ export function getConverterTimeouts(profile: PerfProfile): ConverterTimeouts {
       };
     case 'high':
       return {
-        initializeMs: 480_000,
-        conversionMs: 240_000,
-        wasmProbeMs: 45_000,
+        initializeMs: 540_000,
+        conversionMs: 270_000,
+        wasmProbeMs: 50_000,
       };
     default:
       return {

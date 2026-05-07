@@ -34,6 +34,7 @@ import {
 } from '@/lib/client-file-validation';
 import type { QueuedFile } from '@/lib/converter-queue-types';
 import { useConverterQueue } from '@/components/converter-queue-provider';
+import { getConverterEligibility, subscribeConnectionEligibilityInvalidation } from '@/lib/converter-eligibility';
 import { showDevConverterLoadOverlay } from '@/lib/dev-converter-flags';
 import { getCachedPerfProfile, getMotionBudget, getWarmScheduling } from '@/lib/perf-profile';
 
@@ -62,7 +63,7 @@ interface ShowNoticeOptions {
   transient?: boolean;
 }
 
-type WarmState = 'idle' | 'warming' | 'ready' | 'failed';
+type WarmState = 'idle' | 'warming' | 'ready' | 'failed' | 'deferred';
 
 /** Brief flash for “N files added” / duplicate skipped */
 const TRANSIENT_NOTICE_DURATION = 900;
@@ -164,6 +165,7 @@ function converterStatusLabel(state: WarmState) {
   if (state === 'ready') return 'Converter ready';
   if (state === 'failed') return 'Service unavailable';
   if (state === 'warming') return 'Preparing converter';
+  if (state === 'deferred') return 'Loads when you convert';
   return 'Ready on demand';
 }
 
@@ -175,7 +177,11 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     () => getMotionBudget(perfProfile, Boolean(reducedMotion)),
     [perfProfile, reducedMotion]
   );
-  const showDevConverterOverlay = useMemo(() => showDevConverterLoadOverlay(), []);
+  /** Evaluated on the client so preview/prod can use ?devConverter=1 or session (SSR alone would stay false). */
+  const [showDevConverterOverlay, setShowDevConverterOverlay] = useState(false);
+  useLayoutEffect(() => {
+    setShowDevConverterOverlay(showDevConverterLoadOverlay());
+  }, []);
   const [items, setItems] = useConverterQueue(mode);
   const downloadIdleHintRollRef = useRef(false);
   const [downloadSecondaryIdleHint, setDownloadSecondaryIdleHint] = useState<
@@ -213,6 +219,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const visibleConverterStatus = converterStatusLabel(warmState);
   const converterReady = warmState === 'ready';
   const warmPreloadFailed = warmState === 'failed';
+  const warmDeferred = warmState === 'deferred';
   const showQueueStatusRow = hasQueuedItems;
   const inlineTransientSuccess =
     Boolean(
@@ -293,30 +300,62 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   }, [showDevConverterOverlay]);
 
   useEffect(() => {
+    subscribeConnectionEligibilityInvalidation();
+  }, []);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
 
     let cancelled = false;
-    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
     let idleId: number | null = null;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const warm = () => {
-      if (!cancelled) startWarmConverter();
+    const runDecisionAndMaybeWarm = () => {
+      if (cancelled) return;
+      void (async () => {
+        try {
+          const eligibility = await getConverterEligibility();
+          if (cancelled) return;
+          if (!eligibility.autoPreload) {
+            setWarmState('deferred');
+            setWarmMessage(
+              'Converter will load when you tap Convert — estimated wait is long on this connection or device.'
+            );
+            return;
+          }
+          startWarmConverter();
+        } catch {
+          if (!cancelled) startWarmConverter();
+        }
+      })();
     };
 
-    const { idleTimeoutMs, fallbackMs } = getWarmScheduling(getCachedPerfProfile());
+    const scheduleIdle = () => {
+      const { idleTimeoutMs, fallbackMs } = getWarmScheduling(getCachedPerfProfile());
+      if ('requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(runDecisionAndMaybeWarm, { timeout: idleTimeoutMs });
+      } else {
+        fallbackTimer = globalThis.setTimeout(runDecisionAndMaybeWarm, fallbackMs);
+      }
+    };
 
-    if ('requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(warm, { timeout: idleTimeoutMs });
+    const onLoad = () => {
+      if (!cancelled) scheduleIdle();
+    };
+
+    if (document.readyState === 'complete') {
+      scheduleIdle();
     } else {
-      fallbackTimer = setTimeout(warm, fallbackMs);
+      window.addEventListener('load', onLoad);
     }
 
     return () => {
       cancelled = true;
+      window.removeEventListener('load', onLoad);
       if (idleId !== null && 'cancelIdleCallback' in window) {
         window.cancelIdleCallback(idleId);
       }
-      if (fallbackTimer) {
+      if (fallbackTimer !== null) {
         clearTimeout(fallbackTimer);
       }
     };
@@ -736,8 +775,10 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
             </span>
           </div>
           <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
-            Local dev or set NEXT_PUBLIC_DEV_CONVERTER_PROGRESS=1. Slow climbing % usually means WASM/data
-            download; flat 0% for a long time often means network/CORS/probe before the worker reports progress.
+            Preview/prod: add <span className="font-mono">?devConverter=1</span> to the URL (saved for this tab) or set{' '}
+            <span className="font-mono">NEXT_PUBLIC_DEV_CONVERTER_PROGRESS=1</span> and rebuild. Slow % climb =
+            WASM/data download; long flat 0% = probe/network before the worker reports progress. Clear with{' '}
+            <span className="font-mono">?devConverter=0</span>.
           </p>
         </div>
       )}
@@ -798,10 +839,10 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               </AnimatePresence>
               <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
                 <HugeiconsIcon
-                  icon={converterReady ? CheckmarkCircle01Icon : RefreshIcon}
+                  icon={converterReady ? CheckmarkCircle01Icon : warmDeferred ? File01Icon : RefreshIcon}
                   size={12}
                   strokeWidth={2}
-                  className={`${config.iconClass} ${converterReady || warmPreloadFailed ? '' : 'animate-spin'}`}
+                  className={`${config.iconClass} ${converterReady || warmPreloadFailed || warmDeferred ? '' : 'animate-spin'}`}
                 />
                 {visibleConverterStatus}
               </motion.span>
