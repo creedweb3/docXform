@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "clean:local": "node scripts/cleanup-local-artifacts.mjs",
     "test:e2e": "playwright test",
+    "test:perf": "playwright test e2e/performance-load.spec.ts",
     "verify:all": "node scripts/verify-all.mjs",
     "verify:all:full": "node scripts/verify-all.mjs --full",
     "wasm:diagnose": "node scripts/diagnose-wasm-assets.mjs",

@@ -7,7 +7,10 @@
  *   node scripts/verify-all.mjs --full                         # also runs eslint + wasm:diagnose (diagnose needs dev for localhost)
  *
  * Exit code 1 if any check fails.
- */
+ *
+ * For real browser timing (cold cache, warm repeat, WASM settle), run:
+ *   npm run test:perf
+ *   npx playwright test e2e/performance-load.spec.ts --reporter=html
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
