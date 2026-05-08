@@ -27,7 +27,10 @@ export function Footer() {
               ))}
             </nav>
             <p className="text-muted-foreground/75 whitespace-nowrap">
-              &copy; {new Date().getFullYear()} docXform &middot; All processing in your browser
+              &copy;{' '}
+              {new Date().getFullYear()}
+              {' '}
+              docXform &middot; All processing in your browser
             </p>
           </div>
         </div>

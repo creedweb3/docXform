@@ -1,7 +1,8 @@
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { JsonLd } from '@/components/json-ld';
-import { IconCpu, IconEye, IconLockKey, IconShield01 } from '@/components/icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { CpuIcon, EyeIcon, LockKeyIcon, Shield01Icon } from '@hugeicons/core-free-icons';
 import type { Metadata } from 'next';
 import {
   breadcrumbJsonLd,
@@ -24,28 +25,28 @@ export const metadata: Metadata = createPageMetadata({
 
 const features = [
   {
-    Icon: IconShield01,
+    icon: Shield01Icon,
     label: 'No Server-Side File Conversion',
     desc: 'The selected document is processed by the browser-based converter instead of being uploaded to docXform for conversion.',
     boxClass: 'icon-box-blue',
     iconClass: 'text-blue-500',
   },
   {
-    Icon: IconCpu,
+    icon: CpuIcon,
     label: 'WebAssembly Engine',
     desc: 'WebAssembly lets the conversion engine run inside a modern browser with practical desktop-like performance.',
     boxClass: 'icon-box-rose',
     iconClass: 'text-rose-400',
   },
   {
-    Icon: IconEye,
+    icon: EyeIcon,
     label: 'Verifiable Workflow',
     desc: 'You can inspect network activity in browser developer tools to verify that conversion files are not uploaded.',
     boxClass: 'icon-box-amber',
     iconClass: 'text-amber-500',
   },
   {
-    Icon: IconLockKey,
+    icon: LockKeyIcon,
     label: 'No Account Required',
     desc: 'Convert documents without creating an account or giving docXform access to your document storage.',
     boxClass: 'icon-box-mint',
@@ -101,7 +102,12 @@ export default function AboutPage() {
                     <div
                       className={`w-10 h-10 rounded-xl ${feature.boxClass} flex items-center justify-center mb-4`}
                     >
-                      <feature.Icon size={20} strokeWidth={1.5} className={feature.iconClass} />
+                      <HugeiconsIcon
+                        icon={feature.icon}
+                        size={20}
+                        strokeWidth={1.5}
+                        className={feature.iconClass}
+                      />
                     </div>
                     <h3 className="text-sm font-semibold text-foreground mb-1">
                       {feature.label}

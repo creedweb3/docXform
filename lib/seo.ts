@@ -40,6 +40,8 @@ export const PUBLIC_ROUTES = [
   { path: '/articles/docx-to-pdf-legal-briefs', priority: 0.68, changeFrequency: 'monthly' },
   { path: '/articles/pdf-to-word-privacy-compliance', priority: 0.68, changeFrequency: 'monthly' },
   { path: '/articles/wasm-converter-troubleshooting', priority: 0.68, changeFrequency: 'monthly' },
+  { path: '/articles/first-load-wasm-slow-devices', priority: 0.68, changeFrequency: 'monthly' },
+  { path: '/articles/browser-conversion-future', priority: 0.68, changeFrequency: 'monthly' },
   { path: '/faq', priority: 0.65, changeFrequency: 'monthly' },
   { path: '/about', priority: 0.55, changeFrequency: 'monthly' },
   { path: '/contact', priority: 0.45, changeFrequency: 'monthly' },

@@ -2,10 +2,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import {
-  IconLogout01,
-  IconMenu01,
-} from '@/components/icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Logout01Icon, Menu01Icon } from '@hugeicons/core-free-icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,7 +66,7 @@ export function AdminBrandHeader({
                   aria-label="Open admin menu"
                   className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/50 transition-colors"
                 >
-                  <IconMenu01 size={20} strokeWidth={2} />
+                  <HugeiconsIcon icon={Menu01Icon} size={20} strokeWidth={2} />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -118,7 +116,7 @@ export function AdminBrandHeader({
                     }}
                     className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
                   >
-                    <IconLogout01 size={14} strokeWidth={2} />
+                    <HugeiconsIcon icon={Logout01Icon} size={14} strokeWidth={2} />
                     Logout
                   </DropdownMenuItem>
                 ) : null}
@@ -172,7 +170,7 @@ export function AdminBrandHeader({
               onClick={onLogout}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-white/55 transition-colors whitespace-nowrap"
             >
-              <IconLogout01 size={14} strokeWidth={2} />
+              <HugeiconsIcon icon={Logout01Icon} size={14} strokeWidth={2} />
               Logout
             </button>
           ) : null}

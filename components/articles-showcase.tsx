@@ -1,69 +1,17 @@
-import type { ComponentType } from 'react';
+'use client';
+
 import Link from 'next/link';
-import {
-  IconArchive01,
-  IconArrowRight02,
-  IconBookOpen01,
-  IconCpu,
-  IconFile01,
-  IconScanDoc,
-  IconShield01,
-  IconSparkles,
-  IconTable,
-  type SiteIconProps,
-} from '@/components/icons';
-import { SITE_ARTICLES, type ArticleTag } from '@/lib/site-articles';
-
-const icons: Partial<Record<string, ComponentType<SiteIconProps>>> = {
-  'modern-word-security': IconShield01,
-  'formatting-guide': IconFile01,
-  'docx-standards': IconBookOpen01,
-  'pdf-optimization': IconCpu,
-  'word-to-pdf-without-upload': IconShield01,
-  'pdf-to-word-scanned-ocr': IconScanDoc,
-  'batch-word-to-pdf': IconArchive01,
-  'font-embedding-pdf': IconSparkles,
-  'table-heavy-pdf-to-word': IconTable,
-  'docx-to-pdf-legal-briefs': IconFile01,
-  'pdf-to-word-privacy-compliance': IconShield01,
-  'wasm-converter-troubleshooting': IconCpu,
-};
-
-const iconWrap: Record<string, string> = {
-  'modern-word-security': 'icon-box-blue',
-  'formatting-guide': 'icon-box-rose',
-  'docx-standards': 'icon-box-amber',
-  'pdf-optimization': 'icon-box-mint',
-  'word-to-pdf-without-upload': 'icon-box-blue',
-  'pdf-to-word-scanned-ocr': 'icon-box-rose',
-  'batch-word-to-pdf': 'icon-box-mint',
-  'font-embedding-pdf': 'icon-box-amber',
-  'table-heavy-pdf-to-word': 'icon-box-blue',
-  'docx-to-pdf-legal-briefs': 'icon-box-amber',
-  'pdf-to-word-privacy-compliance': 'icon-box-blue',
-  'wasm-converter-troubleshooting': 'icon-box-mint',
-};
-
-const iconColor: Record<string, string> = {
-  'modern-word-security': 'text-blue-500',
-  'formatting-guide': 'text-rose-400',
-  'docx-standards': 'text-amber-500',
-  'pdf-optimization': 'text-emerald-500',
-  'word-to-pdf-without-upload': 'text-blue-500',
-  'pdf-to-word-scanned-ocr': 'text-rose-400',
-  'batch-word-to-pdf': 'text-emerald-500',
-  'font-embedding-pdf': 'text-amber-500',
-  'table-heavy-pdf-to-word': 'text-blue-500',
-  'docx-to-pdf-legal-briefs': 'text-amber-500',
-  'pdf-to-word-privacy-compliance': 'text-blue-500',
-  'wasm-converter-troubleshooting': 'text-emerald-500',
-};
+import { useMemo, useState } from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { ArrowRight02Icon } from '@hugeicons/core-free-icons';
+import { getArticleTagVisuals } from '@/lib/article-tag-visuals';
+import { ARTICLE_TAG_ORDER, SITE_ARTICLES, type ArticleTag } from '@/lib/site-articles';
 
 const tagStyles: Record<ArticleTag, string> = {
   Security: 'text-blue-600 bg-blue-50/90 border-blue-100/80',
   Guide: 'text-rose-600 bg-rose-50/90 border-rose-100/80',
-  Technical: 'text-sky-700 bg-sky-50/90 border-sky-100/80',
-  Performance: 'text-pink-600 bg-pink-50/90 border-pink-100/80',
+  Technical: 'text-amber-700 bg-amber-50/90 border-amber-100/80',
+  Performance: 'text-emerald-700 bg-emerald-50/90 border-emerald-100/80',
 };
 
 interface ArticlesShowcaseProps {
@@ -74,6 +22,13 @@ interface ArticlesShowcaseProps {
 export function ArticlesShowcase({ variant = 'page' }: ArticlesShowcaseProps) {
   const isHome = variant === 'home';
   const HeadingTag = isHome ? 'h2' : 'h1';
+  const showTypeFilter = variant === 'page';
+  const [activeTag, setActiveTag] = useState<ArticleTag | 'all'>('all');
+
+  const filteredArticles = useMemo(() => {
+    if (activeTag === 'all') return SITE_ARTICLES;
+    return SITE_ARTICLES.filter((a) => a.tag === activeTag);
+  }, [activeTag]);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -95,9 +50,47 @@ export function ArticlesShowcase({ variant = 'page' }: ArticlesShowcaseProps) {
         </p>
       </div>
 
+      {showTypeFilter ? (
+        <div
+          className="flex flex-wrap justify-center gap-2 mb-8 sm:mb-10"
+          role="tablist"
+          aria-label="Filter articles by type"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTag === 'all'}
+            onClick={() => setActiveTag('all')}
+            className={`inline-flex items-center rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+              activeTag === 'all'
+                ? 'border-foreground/25 bg-foreground/[0.06] text-foreground'
+                : 'border-border/70 bg-white/50 text-muted-foreground hover:text-foreground hover:border-foreground/20'
+            }`}
+          >
+            All
+          </button>
+          {ARTICLE_TAG_ORDER.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              role="tab"
+              aria-selected={activeTag === tag}
+              onClick={() => setActiveTag(tag)}
+              className={`inline-flex items-center rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                activeTag === tag
+                  ? `${tagStyles[tag]} shadow-sm`
+                  : 'border-border/70 bg-white/50 text-muted-foreground hover:text-foreground hover:border-foreground/20'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className="grid sm:grid-cols-2 gap-4 sm:gap-5">
-        {SITE_ARTICLES.map((a) => {
-          const Icon = icons[a.slug];
+        {filteredArticles.map((a) => {
+          const { Icon, iconBoxClass, iconClass } = getArticleTagVisuals(a.tag);
           return (
             <Link
               key={a.slug}
@@ -106,15 +99,9 @@ export function ArticlesShowcase({ variant = 'page' }: ArticlesShowcaseProps) {
             >
               <div className="flex items-start gap-4">
                 <div
-                  className={`w-12 h-12 rounded-2xl shrink-0 flex items-center justify-center ${iconWrap[a.slug] ?? 'icon-box-blue'}`}
+                  className={`w-12 h-12 rounded-2xl shrink-0 flex items-center justify-center ${iconBoxClass}`}
                 >
-                  {Icon ? (
-                    <Icon
-                      size={22}
-                      strokeWidth={1.5}
-                      className={iconColor[a.slug] ?? 'text-blue-500'}
-                    />
-                  ) : null}
+                  <HugeiconsIcon icon={Icon} size={22} strokeWidth={1.5} className={iconClass} />
                 </div>
                 <div className="flex-1 min-w-0 pt-0.5">
                   <span
@@ -130,7 +117,8 @@ export function ArticlesShowcase({ variant = 'page' }: ArticlesShowcaseProps) {
               <p className="text-sm text-muted-foreground leading-relaxed">{a.description}</p>
               <div className="flex items-center justify-between mt-auto pt-1">
                 <span className="text-xs text-muted-foreground">{a.readTime}</span>
-                <IconArrowRight02
+                <HugeiconsIcon
+                  icon={ArrowRight02Icon}
                   size={18}
                   strokeWidth={2}
                   className="text-muted-foreground group-hover:translate-x-0.5 transition-transform"
@@ -148,7 +136,7 @@ export function ArticlesShowcase({ variant = 'page' }: ArticlesShowcaseProps) {
             className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
           >
             View all articles
-            <IconArrowRight02 size={16} strokeWidth={2.5} />
+            <HugeiconsIcon icon={ArrowRight02Icon} size={16} strokeWidth={2.5} />
           </Link>
         </div>
       ) : null}

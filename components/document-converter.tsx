@@ -3,17 +3,18 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, CSSProperties, DragEvent } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { HugeiconsIcon } from '@hugeicons/react';
 import {
-  IconAdd01,
-  IconArchive01,
-  IconCheckmarkCircle01,
-  IconDelete02,
-  IconDownload01,
-  IconFile01,
-  IconRefresh,
-  IconShield01,
-  IconUpload04,
-} from '@/components/icons';
+  Add01Icon,
+  Archive01Icon,
+  CheckmarkCircle01Icon,
+  Delete02Icon,
+  Download01Icon,
+  File01Icon,
+  RefreshIcon,
+  Shield01Icon,
+  Upload04Icon,
+} from '@hugeicons/core-free-icons';
 import {
   convertDocumentFile,
   conversionErrorMessage,
@@ -724,7 +725,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               animate={dragOver ? { scale: 1.08 } : { scale: 1 }}
               transition={spring}
             >
-              <IconUpload04 size={24} strokeWidth={1.5} className={config.iconClass} />
+              <HugeiconsIcon icon={Upload04Icon} size={24} strokeWidth={1.5} className={config.iconClass} />
             </motion.div>
             <div className="text-center space-y-1.5">
               <h2 className="text-base font-semibold text-foreground">{config.title}</h2>
@@ -732,7 +733,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground">
               <span className="inline-flex items-center gap-1.5 bg-white/50 rounded-full px-3 py-1.5 border border-border/30">
-                <IconShield01 size={12} strokeWidth={2} className={config.iconClass} />
+                <HugeiconsIcon icon={Shield01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 Never uploaded to any server
               </span>
               <span className="inline-flex items-center gap-1.5 bg-white/50 rounded-full px-3 py-1.5 border border-border/30">
@@ -755,13 +756,13 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
           >
             {isValidating ? (
               <span className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] shadow-sm backdrop-blur-md ${noticeToneClass}`}>
-                <IconRefresh size={12} strokeWidth={2} className={`${noticeIconClass} animate-spin`} />
+                <HugeiconsIcon icon={RefreshIcon} size={12} strokeWidth={2} className={`${noticeIconClass} animate-spin`} />
                 Checking file type and size before conversion...
               </span>
             ) : (
               <span className={`inline-flex max-w-full items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-center text-[11px] leading-snug shadow-sm backdrop-blur-md ${noticeToneClass}`}>
                 {notice?.kind === 'success' && (
-                  <IconCheckmarkCircle01 size={12} strokeWidth={2} className={noticeIconClass} />
+                  <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={2} className={noticeIconClass} />
                 )}
                 {notice?.message}
               </span>
@@ -792,34 +793,29 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                     transition={chipMotion}
                     className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass} text-muted-foreground`}
                   >
-                    <IconCheckmarkCircle01 size={12} strokeWidth={2} className={noticeIconClass} />
+                    <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={2} className={noticeIconClass} />
                     {notice.message}
                   </motion.span>
                 )}
               </AnimatePresence>
-              <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
-                {converterReady ? (
-                  <IconCheckmarkCircle01 size={12} strokeWidth={2} className={config.iconClass} />
-                ) : warmDeferred ? (
-                  <IconFile01 size={12} strokeWidth={2} className={config.iconClass} />
-                ) : (
-                  <IconRefresh
-                    size={12}
-                    strokeWidth={2}
-                    className={`${config.iconClass} ${converterReady || warmPreloadFailed || warmDeferred ? '' : 'animate-spin'}`}
-                  />
-                )}
+                <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
+                <HugeiconsIcon
+                  icon={converterReady ? CheckmarkCircle01Icon : warmDeferred ? File01Icon : RefreshIcon}
+                  size={12}
+                  strokeWidth={2}
+                  className={`${config.iconClass} ${converterReady || warmPreloadFailed || warmDeferred ? '' : 'animate-spin'}`}
+                />
                 {visibleConverterStatus}
               </motion.span>
               <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
-                <IconFile01 size={12} strokeWidth={2} className={config.iconClass} />
+                <HugeiconsIcon icon={File01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 {items.length} / {MAX_CONVERSION_BATCH_FILES} files
               </motion.span>
               <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
                 {formatBytes(totalBytes)} selected
               </motion.span>
               <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
-                <IconShield01 size={12} strokeWidth={2} className={config.iconClass} />
+                <HugeiconsIcon icon={Shield01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 Private local conversion
               </motion.span>
             </div>
@@ -885,7 +881,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   disabled={busy || items.length >= MAX_CONVERSION_BATCH_FILES}
                   className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <IconAdd01 size={13} strokeWidth={2} />
+                  <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
                   Add files
                 </button>
                 <button
@@ -894,7 +890,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   disabled={busy}
                   className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <IconDelete02 size={13} strokeWidth={2} />
+                  <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
                   Clear all
                 </button>
               </div>
@@ -927,13 +923,12 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               >
                 <div className="flex w-full items-center gap-2.5">
                   <div className={`h-8 w-8 shrink-0 rounded-lg ${config.iconBoxClass} flex items-center justify-center`}>
-                    {item.status === 'converted' ? (
-                      <IconCheckmarkCircle01 size={15} strokeWidth={1.7} className={config.iconClass} />
-                    ) : item.status === 'converting' ? (
-                      <IconRefresh size={15} strokeWidth={1.7} className={`${config.iconClass} animate-spin`} />
-                    ) : (
-                      <IconFile01 size={15} strokeWidth={1.7} className={config.iconClass} />
-                    )}
+                    <HugeiconsIcon
+                      icon={item.status === 'converted' ? CheckmarkCircle01Icon : item.status === 'converting' ? RefreshIcon : File01Icon}
+                      size={15}
+                      strokeWidth={1.7}
+                      className={`${config.iconClass} ${item.status === 'converting' ? 'animate-spin' : ''}`}
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
@@ -952,7 +947,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                             onClick={() => handleDownloadSingle(item.output as ConvertedDocument)}
                             className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium ${config.linkClass}`}
                           >
-                            <IconDownload01 size={12} strokeWidth={2} />
+                            <HugeiconsIcon icon={Download01Icon} size={12} strokeWidth={2} />
                             Download
                           </button>
                         )}
@@ -963,7 +958,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                           aria-label={`Remove ${item.file.name}`}
                           className="inline-flex items-center justify-center rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          <IconDelete02 size={13} strokeWidth={2} />
+                          <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
                         </button>
                       </div>
                     </div>
@@ -1010,15 +1005,12 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               }
               className={`${downloadPrimary ? secondaryCtaClass : primaryCtaClass} ${downloadPrimary ? 'order-2 sm:order-2' : 'order-1 sm:order-1'}`}
             >
-              {isConverting || allConvertedSuccessfully ? (
-                <IconRefresh
-                  size={15}
-                  strokeWidth={2}
-                  className={`shrink-0 ${isConverting ? 'animate-spin' : ''}`}
-                />
-              ) : (
-                <IconFile01 size={15} strokeWidth={2} className="shrink-0" />
-              )}
+              <HugeiconsIcon
+                icon={isConverting || allConvertedSuccessfully ? RefreshIcon : File01Icon}
+                size={15}
+                strokeWidth={2}
+                className={`shrink-0 ${isConverting ? 'animate-spin' : ''}`}
+              />
               {isConverting
                 ? 'Converting...'
                 : pendingCount > 0
@@ -1041,15 +1033,21 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               } ${downloadPrimary ? 'order-1 sm:order-1' : 'order-2 sm:order-2'}`}
             >
               {downloadReady ? (
-                isBulkDownload ? (
-                  <IconArchive01 size={15} strokeWidth={2} className="shrink-0" />
-                ) : (
-                  <IconDownload01 size={15} strokeWidth={2} className="shrink-0" />
-                )
+                <HugeiconsIcon
+                  icon={isBulkDownload ? Archive01Icon : Download01Icon}
+                  size={15}
+                  strokeWidth={2}
+                  className="shrink-0"
+                />
               ) : isConverting ? (
-                <IconRefresh size={15} strokeWidth={2} className="shrink-0 animate-spin opacity-70" />
+                <HugeiconsIcon
+                  icon={RefreshIcon}
+                  size={15}
+                  strokeWidth={2}
+                  className="shrink-0 animate-spin opacity-70"
+                />
               ) : (
-                <IconFile01 size={15} strokeWidth={2} className="shrink-0 opacity-60" />
+                <HugeiconsIcon icon={File01Icon} size={15} strokeWidth={2} className="shrink-0 opacity-60" />
               )}
               {isConverting
                 ? `Your ${config.outputLabel} will appear here shortly`

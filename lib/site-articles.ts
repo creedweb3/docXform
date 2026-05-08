@@ -1,5 +1,8 @@
 export type ArticleTag = 'Security' | 'Guide' | 'Technical' | 'Performance';
 
+/** Order for filter chips on /articles */
+export const ARTICLE_TAG_ORDER: ArticleTag[] = ['Security', 'Guide', 'Technical', 'Performance'];
+
 export interface SiteArticle {
   slug: string;
   title: string;
@@ -82,11 +85,11 @@ export const SITE_ARTICLES: SiteArticle[] = [
     title: 'Convert Word to PDF Without Uploading',
     metaTitle: 'Word to PDF Without Uploading Files | docXform',
     description:
-      'Step-by-step guide to convert DOCX to PDF locally in your browser with no server upload, ideal for sensitive documents.',
+      'What "local" Word-to-PDF means on docXform, how that differs from sites that upload your file, and what internet traffic you should still expect (engine download, normal page assets).',
     tag: 'Guide',
-    readTime: '6 min read',
+    readTime: '11 min read',
     datePublished: '2026-05-08T09:00:00+00:00',
-    dateModified: '2026-05-08T09:00:00+00:00',
+    dateModified: '2026-05-08T18:00:00+00:00',
     author: 'docXform',
     image: '/og/article-word-to-pdf-without-upload.png',
     relatedHref: '/word-to-pdf',
@@ -95,13 +98,13 @@ export const SITE_ARTICLES: SiteArticle[] = [
   {
     slug: 'pdf-to-word-scanned-ocr',
     title: 'PDF to Word for Scanned Documents and OCR',
-    metaTitle: 'PDF to Word for Scans and OCR Tips | docXform',
+    metaTitle: 'PDF to Word for Scans: OCR Expectations and Cleanup | docXform',
     description:
-      'How to handle scanned PDFs, OCR limitations, and cleanup steps when converting to editable DOCX.',
+      'How scanned (image-only) PDFs differ from text PDFs, what that means for editable Word output, and how to clean up results - whatever converter you use.',
     tag: 'Guide',
-    readTime: '7 min read',
+    readTime: '12 min read',
     datePublished: '2026-05-08T09:00:00+00:00',
-    dateModified: '2026-05-08T09:00:00+00:00',
+    dateModified: '2026-05-08T18:00:00+00:00',
     author: 'docXform',
     image: '/og/article-pdf-to-word-ocr.png',
     relatedHref: '/pdf-to-word',
@@ -114,9 +117,9 @@ export const SITE_ARTICLES: SiteArticle[] = [
     description:
       'Ways to process multiple DOCX files to PDF in the browser, plus when to zip downloads and watch size limits.',
     tag: 'Performance',
-    readTime: '5 min read',
+    readTime: '10 min read',
     datePublished: '2026-05-08T09:00:00+00:00',
-    dateModified: '2026-05-08T09:00:00+00:00',
+    dateModified: '2026-05-08T18:00:00+00:00',
     author: 'docXform',
     image: '/og/article-batch-word-to-pdf.png',
     relatedHref: '/word-to-pdf',
@@ -129,9 +132,9 @@ export const SITE_ARTICLES: SiteArticle[] = [
     description:
       'How fonts, embedding, and fallbacks affect PDF output and what to do before converting DOCX to PDF.',
     tag: 'Technical',
-    readTime: '6 min read',
+    readTime: '11 min read',
     datePublished: '2026-05-08T09:00:00+00:00',
-    dateModified: '2026-05-08T09:00:00+00:00',
+    dateModified: '2026-05-08T18:00:00+00:00',
     author: 'docXform',
     image: '/og/article-font-embedding.png',
     relatedHref: '/word-to-pdf',
@@ -144,9 +147,9 @@ export const SITE_ARTICLES: SiteArticle[] = [
     description:
       'Tips for preserving tables, grids, and tabular data when turning PDF files into editable DOCX documents.',
     tag: 'Guide',
-    readTime: '6 min read',
+    readTime: '12 min read',
     datePublished: '2026-05-08T09:00:00+00:00',
-    dateModified: '2026-05-08T09:00:00+00:00',
+    dateModified: '2026-05-08T18:00:00+00:00',
     author: 'docXform',
     image: '/og/article-table-heavy-pdf.png',
     relatedHref: '/pdf-to-word',
@@ -155,13 +158,13 @@ export const SITE_ARTICLES: SiteArticle[] = [
   {
     slug: 'docx-to-pdf-legal-briefs',
     title: 'DOCX to PDF for Legal Briefs and Filings',
-    metaTitle: 'Court-Ready DOCX to PDF Conversion | docXform',
+    metaTitle: 'DOCX to PDF for Legal Briefs: a Practical Checklist | docXform',
     description:
-      'Checklist for margins, fonts, exhibits, and bookmarks when exporting legal briefs from DOCX to PDF.',
+      'Technical checklist for margins, fonts, exhibits, metadata, and bookmarks when exporting legal-style briefs from DOCX to PDF - verify against your court rules.',
     tag: 'Technical',
-    readTime: '6 min read',
+    readTime: '12 min read',
     datePublished: '2026-05-08T09:00:00+00:00',
-    dateModified: '2026-05-08T09:00:00+00:00',
+    dateModified: '2026-05-08T18:00:00+00:00',
     author: 'docXform',
     image: '/og/article-legal-briefs.png',
     relatedHref: '/word-to-pdf',
@@ -172,11 +175,11 @@ export const SITE_ARTICLES: SiteArticle[] = [
     title: 'PDF to Word with Privacy and Compliance in Mind',
     metaTitle: 'Privacy-First PDF to Word Conversion | docXform',
     description:
-      'How to keep PII and contracts safe when converting PDFs to DOCX locally, plus audit tips for regulated teams.',
+      'Plain-language notes for teams: what changes when conversion stays in the browser, what it does not fix by itself, and how to double-check behavior against your own rules.',
     tag: 'Security',
-    readTime: '5 min read',
+    readTime: '11 min read',
     datePublished: '2026-05-08T09:00:00+00:00',
-    dateModified: '2026-05-08T09:00:00+00:00',
+    dateModified: '2026-05-08T18:00:00+00:00',
     author: 'docXform',
     image: '/og/article-pdf-privacy.png',
     relatedHref: '/pdf-to-word',
@@ -189,11 +192,41 @@ export const SITE_ARTICLES: SiteArticle[] = [
     description:
       'Common failures and fixes for local WASM document converters: cache resets, offline mode, and storage limits.',
     tag: 'Performance',
-    readTime: '5 min read',
+    readTime: '11 min read',
     datePublished: '2026-05-08T09:00:00+00:00',
-    dateModified: '2026-05-08T09:00:00+00:00',
+    dateModified: '2026-05-08T18:00:00+00:00',
     author: 'docXform',
     image: '/og/article-wasm-troubleshooting.png',
+    relatedHref: '/pdf-to-word',
+    relatedLabel: 'Try PDF to Word',
+  },
+  {
+    slug: 'first-load-wasm-slow-devices',
+    title: 'Why the First Open Can Feel Slow',
+    metaTitle: 'Slow First Load: Wi-Fi, Old Devices, and WASM Tips | docXform',
+    description:
+      'What happens on the first visit, why slow internet or an older laptop can make it feel long, and simple steps that usually help - written in plain language.',
+    tag: 'Performance',
+    readTime: '8 min read',
+    datePublished: '2026-05-08T12:00:00+00:00',
+    dateModified: '2026-05-08T12:00:00+00:00',
+    author: 'docXform',
+    image: '/og/article-wasm-troubleshooting.png',
+    relatedHref: '/word-to-pdf',
+    relatedLabel: 'Open Word to PDF',
+  },
+  {
+    slug: 'browser-conversion-future',
+    title: 'Why In-Browser Conversion Fits the Next Few Years',
+    metaTitle: 'The Future of Browser File Conversion | docXform',
+    description:
+      'Devices and home internet keep getting faster. Here is why that matters for tools that run in the browser instead of sending your files to someone else\'s server.',
+    tag: 'Guide',
+    readTime: '7 min read',
+    datePublished: '2026-05-08T12:00:00+00:00',
+    dateModified: '2026-05-08T12:00:00+00:00',
+    author: 'docXform',
+    image: '/og/article-formatting-guide.png',
     relatedHref: '/pdf-to-word',
     relatedLabel: 'Try PDF to Word',
   },

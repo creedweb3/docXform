@@ -3,13 +3,15 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { AdSlot } from '@/components/ad-slot';
 import { JsonLd } from '@/components/json-ld';
+import { FaqDetailsCard } from '@/components/faq-details-card';
+import { HugeiconsIcon } from '@hugeicons/react';
 import {
-  IconBookOpen01,
-  IconFile01,
-  IconFlash,
-  IconShield01,
-  IconSparkles,
-} from '@/components/icons';
+  BookOpen01Icon,
+  File01Icon,
+  FlashIcon,
+  Shield01Icon,
+  SparklesIcon,
+} from '@hugeicons/core-free-icons';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { MAX_CONVERSION_FILE_SIZE_LABEL } from '@/lib/conversion-limits';
@@ -119,7 +121,7 @@ export default function WordToPdfPage() {
           <div className="w-full max-w-4xl mx-auto pt-4">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 glass-subtle rounded-full px-4 py-1.5 mb-6 border border-white/5">
-                <IconShield01 size={14} strokeWidth={2} className="text-blue-500" />
+                <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className="text-blue-500" />
                 <span className="text-xs font-medium text-muted-foreground">
                   No file upload &middot; up to {MAX_CONVERSION_FILE_SIZE_LABEL} &middot; free to use
                 </span>
@@ -134,17 +136,17 @@ export default function WordToPdfPage() {
             <WordToPdfConverter />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
               <div className="glass-subtle rounded-xl p-5 text-center">
-                <IconShield01 size={20} strokeWidth={2} className="text-blue-400 mx-auto mb-2.5" />
+                <HugeiconsIcon icon={Shield01Icon} size={20} strokeWidth={2} className="text-blue-400 mx-auto mb-2.5" />
                 <p className="text-sm font-medium text-foreground">Private by design</p>
                 <p className="text-xs text-muted-foreground mt-1">No file upload</p>
               </div>
               <div className="glass-subtle rounded-xl p-5 text-center">
-                <IconFlash size={20} strokeWidth={2} className="text-amber-500 mx-auto mb-2.5" />
+                <HugeiconsIcon icon={FlashIcon} size={20} strokeWidth={2} className="text-amber-500 mx-auto mb-2.5" />
                 <p className="text-sm font-medium text-foreground">Browser based</p>
                 <p className="text-xs text-muted-foreground mt-1">Runs locally</p>
               </div>
               <div className="glass-subtle rounded-xl p-5 text-center">
-                <IconSparkles size={20} strokeWidth={2} className="text-emerald-500 mx-auto mb-2.5" />
+                <HugeiconsIcon icon={SparklesIcon} size={20} strokeWidth={2} className="text-emerald-500 mx-auto mb-2.5" />
                 <p className="text-sm font-medium text-foreground">Formatted output</p>
                 <p className="text-xs text-muted-foreground mt-1">Review before sharing</p>
               </div>
@@ -158,7 +160,7 @@ export default function WordToPdfPage() {
                 {infoSections.map((section) => (
                   <div key={section.title} className="glass-subtle rounded-2xl p-5">
                     <div className="w-10 h-10 rounded-xl icon-box-blue flex items-center justify-center mb-4">
-                      <IconFile01 size={18} strokeWidth={1.5} className="text-blue-500" />
+                      <HugeiconsIcon icon={File01Icon} size={18} strokeWidth={1.5} className="text-blue-500" />
                     </div>
                     <h3 className="text-sm font-semibold text-foreground mb-1">
                       {section.title}
@@ -177,20 +179,20 @@ export default function WordToPdfPage() {
               </h2>
               <div className="space-y-3">
                 {toolFaqs.map((faq, index) => (
-                  <details key={faq.question} className="glass-subtle rounded-2xl p-5" open={index === 0}>
-                    <summary className="font-medium text-sm text-foreground list-none cursor-pointer">
-                      {faq.question}
-                    </summary>
-                    <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
-                      {faq.answer}
-                    </p>
-                  </details>
+                  <FaqDetailsCard
+                    key={faq.question}
+                    question={faq.question}
+                    answer={faq.answer}
+                    defaultOpen={index === 0}
+                    variant="glass-subtle"
+                    showExpander={false}
+                  />
                 ))}
               </div>
             </section>
 
             <section className="mt-12 rounded-2xl bg-white/55 border border-border/50 p-6 text-center">
-              <IconBookOpen01 size={22} strokeWidth={1.5} className="text-blue-500 mx-auto mb-3" />
+              <HugeiconsIcon icon={BookOpen01Icon} size={22} strokeWidth={1.5} className="text-blue-500 mx-auto mb-3" />
               <h2 className="text-base font-semibold text-foreground mb-2">
                 Learn more about clean Word to PDF conversion
               </h2>

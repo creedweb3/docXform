@@ -1,7 +1,8 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { IconLockPassword, IconMail01 } from '@/components/icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { LockPasswordIcon, Mail01Icon } from '@hugeicons/core-free-icons';
 
 export function AdminLoginForm() {
   const [email, setEmail] = useState('');
@@ -54,7 +55,12 @@ export function AdminLoginForm() {
           Admin Email
         </label>
         <div className="relative">
-          <IconMail01 size={15} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <HugeiconsIcon
+            icon={Mail01Icon}
+            size={15}
+            strokeWidth={2}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
           <input
             id="admin-email"
             type="email"
@@ -76,7 +82,12 @@ export function AdminLoginForm() {
           Password
         </label>
         <div className="relative">
-          <IconLockPassword size={15} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <HugeiconsIcon
+            icon={LockPasswordIcon}
+            size={15}
+            strokeWidth={2}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
           <input
             id="admin-password"
             type="password"

@@ -2,7 +2,8 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { AdSlot } from '@/components/ad-slot';
 import { JsonLd } from '@/components/json-ld';
-import { IconArrowLeft02, IconFile01 } from '@/components/icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { ArrowLeft02Icon, File01Icon } from '@hugeicons/core-free-icons';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getArticleBySlug } from '@/lib/site-articles';
@@ -56,10 +57,10 @@ export default function FormattingGuide() {
                 </aside>
                 <div className="max-w-2xl mx-auto w-full">
                   <Link href="/articles" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-8">
-                    <IconArrowLeft02 size={14} strokeWidth={2} /> Articles
+                    <HugeiconsIcon icon={ArrowLeft02Icon} size={14} strokeWidth={2} /> Articles
                   </Link>
                   <div className="w-14 h-14 rounded-2xl icon-box-rose flex items-center justify-center mb-6">
-                    <IconFile01 size={24} strokeWidth={1.5} className="text-rose-400" />
+                    <HugeiconsIcon icon={File01Icon} size={24} strokeWidth={1.5} className="text-rose-400" />
                   </div>
                   <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
                     The Complete DOCX Formatting Guide

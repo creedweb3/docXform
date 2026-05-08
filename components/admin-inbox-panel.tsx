@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
 import {
-  IconArrowLeft01,
-  IconCheckmarkCircle01,
-  IconDelete02,
-  IconRefresh,
-  IconSearch01,
-} from '@/components/icons';
+  ArrowLeft01Icon,
+  CheckmarkCircle01Icon,
+  Delete02Icon,
+  RefreshIcon,
+  Search01Icon,
+} from '@hugeicons/core-free-icons';
 import { AdminBrandHeader } from '@/components/admin-brand-header';
 
 type SubmissionStatus = 'new' | 'read' | 'replied' | 'archived';
@@ -319,12 +320,22 @@ export function AdminInboxPanel({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm font-semibold text-foreground">Messages</p>
           {loadingList ? (
-            <IconRefresh size={14} strokeWidth={2} className="animate-spin text-muted-foreground" />
+            <HugeiconsIcon
+              icon={RefreshIcon}
+              size={14}
+              strokeWidth={2}
+              className="animate-spin text-muted-foreground"
+            />
           ) : null}
         </div>
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_170px_auto] gap-2.5">
           <div className="relative">
-            <IconSearch01 size={15} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <HugeiconsIcon
+              icon={Search01Icon}
+              size={15}
+              strokeWidth={2}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
             <input
               type="text"
               value={searchInput}
@@ -386,9 +397,15 @@ export function AdminInboxPanel({
               className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
               {listRefreshState === 'success' ? (
-                <IconCheckmarkCircle01 size={14} strokeWidth={2} className="text-emerald-600" />
+                <HugeiconsIcon
+                  icon={CheckmarkCircle01Icon}
+                  size={14}
+                  strokeWidth={2}
+                  className="text-emerald-600"
+                />
               ) : (
-                <IconRefresh
+                <HugeiconsIcon
+                  icon={RefreshIcon}
                   size={14}
                   strokeWidth={2}
                   className={listRefreshState === 'spinning' ? 'animate-spin' : ''}
@@ -486,7 +503,7 @@ export function AdminInboxPanel({
                     onClick={() => setMobileDetailOpen(false)}
                     className="inline-flex lg:hidden items-center gap-1 text-xs text-muted-foreground mb-2"
                   >
-                    <IconArrowLeft01 size={12} strokeWidth={2} />
+                    <HugeiconsIcon icon={ArrowLeft01Icon} size={12} strokeWidth={2} />
                     Back to list
                   </button>
                   <h2 className="text-lg font-semibold text-foreground">{selectedItem.name}</h2>
@@ -554,7 +571,7 @@ export function AdminInboxPanel({
                   disabled={actionLoading !== null}
                   className="text-xs inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 px-3 py-1.5 disabled:opacity-50"
                 >
-                  <IconDelete02 size={12} strokeWidth={2} />
+                  <HugeiconsIcon icon={Delete02Icon} size={12} strokeWidth={2} />
                   {actionLoading === 'delete' ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
