@@ -1,16 +1,15 @@
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { JsonLd } from '@/components/json-ld';
-import { HugeiconsIcon } from '@hugeicons/react';
 import {
-  ArrowDataTransferHorizontalIcon,
-  ArrowDataTransferVerticalIcon,
-  Shield01Icon,
-  FlashIcon,
-  Delete02Icon,
-  File01Icon,
-  CpuIcon,
-} from '@hugeicons/core-free-icons';
+  IconArrowDataTransferHorizontal,
+  IconArrowDataTransferVertical,
+  IconCpu,
+  IconDelete02,
+  IconFile01,
+  IconFlash,
+  IconShield01,
+} from '@/components/icons';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { MAX_CONVERSION_FILE_SIZE_LABEL } from '@/lib/conversion-limits';
@@ -84,12 +83,7 @@ export default function Home() {
           <section className="px-6 pt-4 pb-16 sm:pb-20">
             <div className="max-w-4xl mx-auto text-center">
               <div className="inline-flex items-center gap-2 glass-subtle rounded-full px-4 py-1.5 mb-6 border border-white/5">
-                <HugeiconsIcon
-                  icon={Shield01Icon}
-                  size={14}
-                  strokeWidth={2}
-                  className="text-blue-500"
-                />
+                <IconShield01 size={14} strokeWidth={2} className="text-blue-500" />
                 <span className="text-xs font-medium text-muted-foreground">
                   Browser-based &middot; up to {MAX_CONVERSION_FILE_SIZE_LABEL} &middot; free to use
                 </span>
@@ -117,12 +111,7 @@ export default function Home() {
                   className="group converter-card converter-card-rose rounded-[2rem] p-6 sm:p-7 text-left shadow-[0_6px_16px_rgba(244,114,182,0.10)] transition-all duration-300 hover:shadow-[0_12px_24px_rgba(244,114,182,0.14)] hover:-translate-y-1 border md:aspect-square min-h-[18.75rem] flex flex-col"
                 >
                   <div className="w-[4.5rem] h-[4.5rem] rounded-2xl icon-box-rose flex items-center justify-center mb-6">
-                    <HugeiconsIcon
-                      icon={ArrowDataTransferVerticalIcon}
-                      size={32}
-                      strokeWidth={1.5}
-                      className="text-rose-400"
-                    />
+                    <IconArrowDataTransferVertical size={32} strokeWidth={1.5} className="text-rose-400" />
                   </div>
                   <h2 className="text-[1.35rem] sm:text-[1.7rem] font-semibold text-foreground leading-tight mb-3">
                     PDF to Word
@@ -133,11 +122,7 @@ export default function Home() {
                   </p>
                   <span className="mt-auto w-fit converter-cta converter-cta-rose group-hover:gap-3 transition-all">
                     Start converting
-                    <HugeiconsIcon
-                      icon={ArrowDataTransferVerticalIcon}
-                      size={18}
-                      strokeWidth={2.5}
-                    />
+                    <IconArrowDataTransferVertical size={18} strokeWidth={2.5} />
                   </span>
                 </Link>
 
@@ -146,12 +131,7 @@ export default function Home() {
                   className="group converter-card converter-card-blue rounded-[2rem] p-6 sm:p-7 text-left shadow-[0_6px_16px_rgba(59,130,246,0.10)] transition-all duration-300 hover:shadow-[0_12px_24px_rgba(59,130,246,0.14)] hover:-translate-y-1 border md:aspect-square min-h-[18.75rem] flex flex-col"
                 >
                   <div className="w-[4.5rem] h-[4.5rem] rounded-2xl icon-box-blue flex items-center justify-center mb-6">
-                    <HugeiconsIcon
-                      icon={ArrowDataTransferHorizontalIcon}
-                      size={32}
-                      strokeWidth={1.5}
-                      className="text-blue-500"
-                    />
+                    <IconArrowDataTransferHorizontal size={32} strokeWidth={1.5} className="text-blue-500" />
                   </div>
                   <h2 className="text-[1.35rem] sm:text-[1.7rem] font-semibold text-foreground leading-tight mb-3">
                     Word to PDF
@@ -162,11 +142,7 @@ export default function Home() {
                   </p>
                   <span className="mt-auto w-fit converter-cta converter-cta-blue group-hover:gap-3 transition-all">
                     Start converting
-                    <HugeiconsIcon
-                      icon={ArrowDataTransferHorizontalIcon}
-                      size={18}
-                      strokeWidth={2.5}
-                    />
+                    <IconArrowDataTransferHorizontal size={18} strokeWidth={2.5} />
                   </span>
                 </Link>
               </div>
@@ -177,12 +153,7 @@ export default function Home() {
             <div className="max-w-[52rem] mx-auto">
               <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 justify-center items-stretch sm:items-center">
                 <div className="feature-pill feature-pill-blue">
-                  <HugeiconsIcon
-                    icon={CpuIcon}
-                    size={22}
-                    strokeWidth={1.35}
-                    className="text-blue-500 shrink-0"
-                  />
+                  <IconCpu size={22} strokeWidth={1.35} className="text-blue-500 shrink-0" />
                   <div className="text-center min-w-0 leading-tight">
                     <p className="font-semibold text-foreground text-[13px] sm:text-sm">
                       Browser Based
@@ -193,12 +164,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="feature-pill feature-pill-rose">
-                  <HugeiconsIcon
-                    icon={FlashIcon}
-                    size={22}
-                    strokeWidth={1.35}
-                    className="text-rose-500 shrink-0"
-                  />
+                  <IconFlash size={22} strokeWidth={1.35} className="text-rose-500 shrink-0" />
                   <div className="text-center min-w-0 leading-tight">
                     <p className="font-semibold text-foreground text-[13px] sm:text-sm">
                       Local Results
@@ -209,12 +175,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="feature-pill feature-pill-sky">
-                  <HugeiconsIcon
-                    icon={Delete02Icon}
-                    size={21}
-                    strokeWidth={1.35}
-                    className="text-sky-600 shrink-0"
-                  />
+                  <IconDelete02 size={21} strokeWidth={1.35} className="text-sky-600 shrink-0" />
                   <div className="text-center min-w-0 leading-tight">
                     <p className="font-semibold text-foreground text-[13px] sm:text-sm">
                       No File Upload
@@ -244,12 +205,7 @@ export default function Home() {
                 {facts.map((fact) => (
                   <div key={fact.title} className="glass-subtle rounded-2xl p-5">
                     <div className="w-10 h-10 rounded-xl icon-box-blue flex items-center justify-center mb-4">
-                      <HugeiconsIcon
-                        icon={File01Icon}
-                        size={18}
-                        strokeWidth={1.5}
-                        className="text-blue-500"
-                      />
+                      <IconFile01 size={18} strokeWidth={1.5} className="text-blue-500" />
                     </div>
                     <h3 className="text-sm font-semibold text-foreground mb-1">
                       {fact.title}

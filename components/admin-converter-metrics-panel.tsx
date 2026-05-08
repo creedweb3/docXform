@@ -1,8 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { RefreshIcon } from '@hugeicons/core-free-icons';
+import { IconRefresh } from '@/components/icons';
 import { AdminBrandHeader } from '@/components/admin-brand-header';
 
 interface MetricRow {
@@ -102,7 +101,7 @@ export function AdminConverterMetricsPanel({
           disabled={loading}
           className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-white/80 px-3 py-1.5 text-xs font-medium hover:bg-white disabled:opacity-50"
         >
-          <HugeiconsIcon icon={RefreshIcon} size={14} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
+          <IconRefresh size={14} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
           Refresh
         </button>
       </div>

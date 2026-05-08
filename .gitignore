@@ -19,6 +19,10 @@
 public/soffice.wasm
 public/soffice.data
 
+# WASM runtime artifacts (copied by postinstall; do not commit)
+public/wasm/soffice.wasm
+public/wasm/soffice.data
+
 # misc
 .DS_Store
 *.pem

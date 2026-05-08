@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
+const withBundleAnalyzer =
+  process.env.ANALYZE === 'true'
+    ? require('@next/bundle-analyzer')({ enabled: true, openAnalyzer: false })
+    : (config) => config;
+
 const buildId =
   process.env.CF_PAGES_COMMIT_SHA ||
   process.env.VERCEL_GIT_COMMIT_SHA ||
@@ -131,4 +136,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withBundleAnalyzer(nextConfig);

@@ -1,12 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  MailSend01Icon,
-  CheckmarkCircle01Icon,
-  RefreshIcon,
-} from '@hugeicons/core-free-icons';
+import { IconCheckmarkCircle01, IconMailSend01, IconRefresh } from '@/components/icons';
 
 const CONTACT_RESET_SECONDS = 12;
 
@@ -89,12 +84,7 @@ export function ContactForm() {
     return (
       <div className="converter-main-card-blue rounded-3xl p-10 sm:p-12 text-center max-w-4xl mx-auto min-h-[23rem] flex flex-col justify-center">
         <div className="w-14 h-14 rounded-2xl icon-box-mint flex items-center justify-center mx-auto mb-5">
-          <HugeiconsIcon
-            icon={CheckmarkCircle01Icon}
-            size={24}
-            strokeWidth={1.5}
-            className="text-emerald-500"
-          />
+          <IconCheckmarkCircle01 size={24} strokeWidth={1.5} className="text-emerald-500" />
         </div>
         <h2 className="text-sm font-semibold text-foreground mb-1">Message Sent</h2>
         <p className="text-xs text-muted-foreground">We&apos;ll get back to you soon.</p>
@@ -106,7 +96,7 @@ export function ContactForm() {
           onClick={resetToForm}
           className="mt-5 inline-flex items-center justify-center gap-2 bg-white/70 border border-blue-100/60 text-blue-700 rounded-xl px-5 py-2.5 font-medium text-sm hover:bg-white/90 transition-colors mx-auto"
         >
-          <HugeiconsIcon icon={RefreshIcon} size={14} strokeWidth={2} />
+          <IconRefresh size={14} strokeWidth={2} />
           Send another message
         </button>
       </div>
@@ -174,7 +164,7 @@ export function ContactForm() {
         disabled={submitting}
         className="w-full flex items-center justify-center gap-2 bg-gradient-to-br from-blue-600 to-blue-500 text-white rounded-xl px-4 py-3 font-semibold text-sm hover:opacity-90 transition-opacity shadow-sm disabled:opacity-60"
       >
-        <HugeiconsIcon icon={MailSend01Icon} size={16} strokeWidth={2} />
+        <IconMailSend01 size={16} strokeWidth={2} />
         {submitting ? 'Sending...' : 'Send Message'}
       </button>
     </form>

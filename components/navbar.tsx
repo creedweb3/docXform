@@ -30,13 +30,12 @@ export function Navbar() {
           <Link href="/" className="flex min-h-12 items-center gap-2.5 shrink-0 py-1" aria-label="docXform home">
             <div className="w-10 h-10 flex shrink-0 items-center justify-center">
               <Image
-                src="/brand/docxform-logo-icon.png"
+                src="/brand/docxform-logo-icon-64.webp"
                 alt=""
                 width={40}
                 height={40}
                 className="w-10 h-10 object-contain"
                 sizes="40px"
-                quality={45}
                 priority
               />
             </div>
