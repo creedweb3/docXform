@@ -67,6 +67,7 @@ export function middleware(request: NextRequest) {
 
   const publicLoginPath = `/${slug}/login`;
   const publicInboxPath = `/${slug}/inbox`;
+  const publicConverterMetricsPath = `/${slug}/converter-metrics`;
 
   if (pathname === publicLoginPath) {
     return withIsolationHeaders(
@@ -77,6 +78,12 @@ export function middleware(request: NextRequest) {
   if (pathname === publicInboxPath) {
     return withIsolationHeaders(
       NextResponse.rewrite(new URL(`${ADMIN_INTERNAL_PREFIX}/inbox`, request.url))
+    );
+  }
+
+  if (pathname === publicConverterMetricsPath) {
+    return withIsolationHeaders(
+      NextResponse.rewrite(new URL(`${ADMIN_INTERNAL_PREFIX}/converter-metrics`, request.url))
     );
   }
 

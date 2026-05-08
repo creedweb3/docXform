@@ -36,6 +36,7 @@ import type { QueuedFile } from '@/lib/converter-queue-types';
 import { useConverterQueue } from '@/components/converter-queue-provider';
 import { getConverterEligibility, subscribeConnectionEligibilityInvalidation } from '@/lib/converter-eligibility';
 import { getCachedPerfProfile, getMotionBudget, getWarmScheduling } from '@/lib/perf-profile';
+import { reportConverterMetric } from '@/lib/converter-metrics-client';
 
 interface DocumentConverterProps {
   mode: ConversionMode;
@@ -275,15 +276,21 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       .then(() => {
         setWarmState('ready');
         setWarmMessage('Converter ready');
+        reportConverterMetric({ event: 'warm_ready', mode });
       })
       .catch((err) => {
         warmStartedRef.current = false;
         console.error('[docXform] Converter warm-up failed:', err);
         setWarmState('failed');
         setWarmMessage('Converter warm-up unavailable');
+        reportConverterMetric({
+          event: 'warm_failed',
+          mode,
+          detail: conversionErrorMessage(err).slice(0, 500),
+        });
         showNotice(conversionErrorMessage(err), { kind: 'error' });
       });
-  }, [showNotice]);
+  }, [mode, showNotice]);
 
   useEffect(() => {
     subscribeConnectionEligibilityInvalidation();
@@ -307,6 +314,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
             setWarmMessage(
               'Converter will load when you tap Convert — estimated wait is long on this connection or device.'
             );
+            reportConverterMetric({ event: 'warm_deferred', mode });
             return;
           }
           startWarmConverter();
@@ -345,7 +353,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
         clearTimeout(fallbackTimer);
       }
     };
-  }, [startWarmConverter]);
+  }, [mode, startWarmConverter]);
 
   useEffect(() => {
     if (downloadIdleHintRollRef.current) return;
@@ -595,7 +603,10 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                 : item
             )
           );
+          reportConverterMetric({ event: 'convert_success', mode, count: 1 });
         } catch (error) {
+          const msg = conversionErrorMessage(error);
+          reportConverterMetric({ event: 'convert_fail', mode, detail: msg.slice(0, 500) });
           setItems((current) =>
             current.map((item) =>
               item.id === target.id
@@ -604,7 +615,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                     status: 'failed',
                     progress: 0,
                     message: undefined,
-                    error: conversionErrorMessage(error),
+                    error: msg,
                   }
                 : item
             )
@@ -614,7 +625,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
 
       setIsConverting(false);
     },
-    [config.outputFormat, showNotice]
+    [config.outputFormat, mode, showNotice]
   );
 
   const handleConvert = useCallback(async () => {
@@ -638,13 +649,14 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     `${ctaFlexLayout} border border-dashed border-slate-300/75 bg-slate-100 text-slate-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-100`;
 
   const handleDownloadSingle = useCallback((file: ConvertedDocument) => {
+    reportConverterMetric({ event: 'download', mode, count: 1 });
     const url = URL.createObjectURL(file.blob);
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = file.name;
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, []);
+  }, [mode]);
 
   const handleDownloadAll = useCallback(async () => {
     if (convertedItems.length === 0) return;
@@ -664,13 +676,14 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     });
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
+    reportConverterMetric({ event: 'download', mode, count: convertedItems.length });
     const url = URL.createObjectURL(zipBlob);
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = config.zipName;
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, [config.zipName, convertedItems, handleDownloadSingle]);
+  }, [config.zipName, convertedItems, handleDownloadSingle, mode]);
 
   return (
     <div className="w-full space-y-4">

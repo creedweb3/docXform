@@ -391,9 +391,8 @@ export async function warmConverter(onProgress?: ProgressHandler) {
   }
   const eligibility = await getConverterEligibility();
   debugLogEligibility(eligibility);
-  if (!eligibility.autoPreload) {
-    return;
-  }
+  // Auto-preload gating lives in `document-converter` (idle effect). Explicit warm calls (hover, Convert, add files)
+  // should still attempt `getConverter` so deferred connections can load on user intent.
   await getConverter(onProgress);
 }
 

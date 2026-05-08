@@ -34,6 +34,7 @@ devserver*.log
 # temp files
 tmp-*.png
 /tmp-conversion-tests/
+/tmp/
 
 # local AI/editor tooling
 /.augment/

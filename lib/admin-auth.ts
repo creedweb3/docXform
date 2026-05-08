@@ -41,6 +41,10 @@ export function getAdminInboxPathOrFallback() {
   return getPublicAdminPath('inbox') ?? '/';
 }
 
+export function getAdminConverterMetricsPathOrFallback() {
+  return getPublicAdminPath('converter-metrics') ?? '/';
+}
+
 export function isAdminFeatureConfigured() {
   return getAdminEntrySlug() !== null;
 }

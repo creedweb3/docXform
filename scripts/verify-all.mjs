@@ -11,6 +11,9 @@
  * For real browser timing (cold cache, warm repeat, WASM settle), run:
  *   npm run test:perf
  *   npx playwright test e2e/performance-load.spec.ts --reporter=html
+ *
+ * WASM URL + Cache-Control checks: npm run test:e2e:site-quality
+ */
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

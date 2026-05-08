@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
-import { AdminInboxPanel } from '@/components/admin-inbox-panel';
+import { AdminConverterMetricsPanel } from '@/components/admin-converter-metrics-panel';
 import {
   getAdminConverterMetricsPathOrFallback,
   getAdminInboxPathOrFallback,
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function AdminPrivateInboxPage() {
+export default async function AdminConverterMetricsPage() {
   if (!isAdminFeatureConfigured()) {
     notFound();
   }
@@ -34,7 +34,7 @@ export default async function AdminPrivateInboxPage() {
   return (
     <div className="min-h-screen bg-dot-grid-subtle px-4 sm:px-6 py-6 sm:py-8">
       <div className="max-w-7xl mx-auto">
-        <AdminInboxPanel
+        <AdminConverterMetricsPanel
           loginPath={loginPath}
           inboxPath={inboxPath}
           converterMetricsPath={converterMetricsPath}

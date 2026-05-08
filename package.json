@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "clean:local": "node scripts/cleanup-local-artifacts.mjs",
     "test:e2e": "playwright test",
+    "test:e2e:site-quality": "playwright test e2e/site-quality.spec.ts",
+    "test:lighthouse": "node scripts/lighthouse-audit.mjs",
     "test:perf": "playwright test e2e/performance-load.spec.ts",
     "verify:all": "node scripts/verify-all.mjs",
     "verify:all:full": "node scripts/verify-all.mjs --full",
