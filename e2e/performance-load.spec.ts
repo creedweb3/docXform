@@ -9,7 +9,7 @@ import { test, expect, type Page } from '@playwright/test';
  *
  * Env:
  *   PLAYWRIGHT_BASE_URL — same as other e2e (default http://localhost:3000)
- *   PERF_SKIP_CONVERTER_WAIT=1 — skip slow WASM settle test (also skipped when CI is set)
+ *   PERF_SKIP_CONVERTER_WAIT=1 — skip slow WASM settle + SPA timing tests (also skipped when CI is set)
  */
 
 const ROUTES = ['/', '/word-to-pdf', '/pdf-to-word'] as const;
@@ -128,5 +128,43 @@ test.describe('Performance: cold cache, warm repeat, converter settle', () => {
 
     expect(errors.filter((m) => !m.includes('favicon'))).toEqual([]);
     expect(settleMs, 'converter should reach ready/deferred/failed within 4 minutes').toBeLessThan(240_000);
+  });
+
+  test('SPA: second tool page shows Converter ready quickly after first warm', async ({ page }) => {
+    test.skip(
+      skipConverterWait,
+      'Unset CI and PERF_SKIP_CONVERTER_WAIT locally to run WASM warm + SPA revisit timing.'
+    );
+
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+
+    await page.goto('/word-to-pdf', { waitUntil: 'load', timeout: 90_000 });
+    const status = page.getByText(/Converter ready|Loads when you convert|Service unavailable/);
+    await expect(status.first()).toBeVisible({ timeout: 240_000 });
+    const label = (await status.first().textContent())?.trim() ?? '';
+    if (!label.includes('Converter ready')) {
+      test.skip(true, 'Converter did not reach ready (deferred/failed); skip SPA timing assertion.');
+    }
+
+    const t0 = Date.now();
+    await page.getByRole('navigation').getByRole('link', { name: 'PDF to Word' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: /PDF to Word/i })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText('Converter ready').first()).toBeVisible({ timeout: 20_000 });
+    const readyAfterNavMs = Date.now() - t0;
+
+    // eslint-disable-next-line no-console -- perf report
+    console.log('\n[perf-spa-second-tool]', JSON.stringify({ readyAfterNavMs }, null, 2));
+
+    await test.info().attach('perf-spa-second-tool.json', {
+      body: Buffer.from(JSON.stringify({ readyAfterNavMs, errors }, null, 2), 'utf8'),
+      contentType: 'application/json',
+    });
+
+    expect(errors.filter((m) => !m.includes('favicon') && !m.includes('ads'))).toEqual([]);
+    expect(
+      readyAfterNavMs,
+      'In-memory converter should make the second tool page show ready without another long warm'
+    ).toBeLessThan(20_000);
   });
 });

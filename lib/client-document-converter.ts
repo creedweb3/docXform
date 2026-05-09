@@ -11,11 +11,7 @@ import {
   getBrowserWorkerJsUrl,
   getWasmAssetBaseForCreatePaths,
 } from '@/lib/wasm-asset-base';
-import {
-  debugLogEligibility,
-  getConverterEligibility,
-  subscribeConnectionEligibilityInvalidation,
-} from '@/lib/converter-eligibility';
+import { subscribeConnectionEligibilityInvalidation } from '@/lib/converter-eligibility';
 import { getCachedPerfProfile, getConverterTimeouts } from '@/lib/perf-profile';
 import { getWasmAssetRevision, getVersionedWasmBinPathPrefix } from '@/lib/wasm-revision';
 
@@ -389,11 +385,18 @@ export async function warmConverter(onProgress?: ProgressHandler) {
     connectionEligibilitySubscribed = true;
     subscribeConnectionEligibilityInvalidation();
   }
-  const eligibility = await getConverterEligibility();
-  debugLogEligibility(eligibility);
-  // Auto-preload gating lives in `document-converter` (idle effect). Explicit warm calls (hover, Convert, add files)
-  // should still attempt `getConverter` so deferred connections can load on user intent.
+  if (converterInstance !== null) {
+    onProgress?.({ percent: 100, message: 'Converter ready' });
+    return;
+  }
+  // Eligibility (network probe, save-data, etc.) is computed once in `DocumentConverter` before warm starts.
+  // Do not await it here or every warm pays for a duplicate probe and extra "Preparing" latency.
   await getConverter(onProgress);
+}
+
+/** True after WASM init succeeded in this tab (survives client navigations between tool pages). */
+export function isConverterSessionReady(): boolean {
+  return converterInstance !== null;
 }
 
 function mapProgress(onProgress: ProgressHandler | undefined, start: number, end: number) {

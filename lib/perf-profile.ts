@@ -166,15 +166,19 @@ export function getConverterTimeouts(profile: PerfProfile): ConverterTimeouts {
   }
 }
 
-/** `requestIdleCallback` timeout and `setTimeout` fallback for WASM warm-up. */
+/**
+ * `requestIdleCallback` timeout and `setTimeout` fallback for WASM warm-up.
+ * Timeout is the worst-case wait when the main thread stays busy (e.g. hydration);
+ * keep it modest so "Preparing converter" does not sit idle for many seconds before work starts.
+ */
 export function getWarmScheduling(profile: PerfProfile): { idleTimeoutMs: number; fallbackMs: number } {
   switch (profile) {
     case 'low':
-      return { idleTimeoutMs: 6000, fallbackMs: 2500 };
+      return { idleTimeoutMs: 2000, fallbackMs: 800 };
     case 'high':
-      return { idleTimeoutMs: 1200, fallbackMs: 400 };
+      return { idleTimeoutMs: 400, fallbackMs: 200 };
     default:
-      return { idleTimeoutMs: 1800, fallbackMs: 500 };
+      return { idleTimeoutMs: 800, fallbackMs: 350 };
   }
 }
 

@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { AdsenseLoader } from '@/components/adsense-loader';
 import { ConverterQueueProvider } from '@/components/converter-queue-provider';
+import { PostLcpWasmPrime } from '@/components/post-lcp-wasm-prime';
 import { JsonLd } from '@/components/json-ld';
 import {
   createPageMetadata,
@@ -81,6 +82,7 @@ export default function RootLayout({
           data={schemaGraph([organizationJsonLd(), websiteJsonLd()])}
         />
         <AdsenseLoader />
+        <PostLcpWasmPrime />
         <ConverterQueueProvider>{children}</ConverterQueueProvider>
       </body>
     </html>

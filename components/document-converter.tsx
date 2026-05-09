@@ -18,6 +18,7 @@ import {
 import {
   convertDocumentFile,
   conversionErrorMessage,
+  isConverterSessionReady,
   warmConverter,
   type ConvertedDocument,
 } from '@/lib/client-document-converter';
@@ -34,7 +35,11 @@ import {
 } from '@/lib/client-file-validation';
 import type { QueuedFile } from '@/lib/converter-queue-types';
 import { useConverterQueue } from '@/components/converter-queue-provider';
-import { getConverterEligibility, subscribeConnectionEligibilityInvalidation } from '@/lib/converter-eligibility';
+import {
+  debugLogEligibility,
+  getConverterEligibility,
+  subscribeConnectionEligibilityInvalidation,
+} from '@/lib/converter-eligibility';
 import { getCachedPerfProfile, getMotionBudget, getWarmScheduling } from '@/lib/perf-profile';
 import { reportConverterMetric } from '@/lib/converter-metrics-client';
 
@@ -196,6 +201,13 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const queueListScrollRef = useRef<HTMLDivElement>(null);
   const [queueScrollbarPadPx, setQueueScrollbarPadPx] = useState(0);
 
+  useLayoutEffect(() => {
+    if (!isConverterSessionReady()) return;
+    setWarmState('ready');
+    setWarmMessage('Converter ready');
+    warmStartedRef.current = true;
+  }, []);
+
   const totalBytes = useMemo(
     () => items.reduce((total, item) => total + item.file.size, 0),
     [items]
@@ -305,9 +317,16 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
 
     const runDecisionAndMaybeWarm = () => {
       if (cancelled) return;
+      if (isConverterSessionReady()) {
+        setWarmState('ready');
+        setWarmMessage('Converter ready');
+        warmStartedRef.current = true;
+        return;
+      }
       void (async () => {
         try {
           const eligibility = await getConverterEligibility();
+          debugLogEligibility(eligibility);
           if (cancelled) return;
           if (!eligibility.autoPreload) {
             setWarmState('deferred');
