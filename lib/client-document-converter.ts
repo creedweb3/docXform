@@ -56,10 +56,6 @@ function wasmBinaryFetchUrl(base: string, name: 'soffice.wasm' | 'soffice.data')
   return resolved;
 }
 
-function withUrlParam(url: string, key: string, value: string): string {
-  return `${url}${url.includes('?') ? '&' : '?'}${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
-}
-
 async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: number): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -284,21 +280,11 @@ function buildWasmPathsForBinaryBase(
     sofficeData: string;
     sofficeWorkerJs: string;
   },
-  binaryBase: string,
-  attemptToken?: string
+  binaryBase: string
 ) {
   const wasmPaths = createWasmPaths('/wasm/');
-  if (/^https?:\/\//i.test(binaryBase)) {
-    const wasmUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.wasm');
-    const dataUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.data');
-    wasmPaths.sofficeWasm = attemptToken ? withUrlParam(wasmUrl, '_wr', attemptToken) : wasmUrl;
-    wasmPaths.sofficeData = attemptToken ? withUrlParam(dataUrl, '_wr', attemptToken) : dataUrl;
-  } else {
-    const wasmUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.wasm');
-    const dataUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.data');
-    wasmPaths.sofficeWasm = attemptToken ? withUrlParam(wasmUrl, '_wr', attemptToken) : wasmUrl;
-    wasmPaths.sofficeData = attemptToken ? withUrlParam(dataUrl, '_wr', attemptToken) : dataUrl;
-  }
+  wasmPaths.sofficeWasm = wasmBinaryFetchUrl(binaryBase, 'soffice.wasm');
+  wasmPaths.sofficeData = wasmBinaryFetchUrl(binaryBase, 'soffice.data');
   return wasmPaths;
 }
 
@@ -323,8 +309,8 @@ async function getConverter(onProgress?: ProgressHandler) {
       );
 
       const createAndInitialize = async (base: string) => {
-        const attemptToken = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const wasmPaths = buildWasmPathsForBinaryBase(createWasmPaths, base, attemptToken);
+        // Stable WASM/data URLs (version path + optional _wx on HTTPS) so the browser HTTP cache can reuse ~100MB binaries.
+        const wasmPaths = buildWasmPathsForBinaryBase(createWasmPaths, base);
         const converter = new WorkerBrowserConverter({
           ...wasmPaths,
           browserWorkerJs: getBrowserWorkerJsUrl(),
