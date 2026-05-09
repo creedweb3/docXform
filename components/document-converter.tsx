@@ -574,75 +574,77 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       setIsConverting(true);
       showNotice('');
 
-      for (const target of targets) {
-        setItems((current) =>
-          current.map((item) =>
-            item.id === target.id
-              ? {
-                  ...item,
-                  status: 'converting',
-                  progress: 0,
-                  message: 'Preparing document...',
-                  error: undefined,
-                  output: undefined,
-                }
-              : item
-          )
-        );
-
-        try {
-          const converted = await convertDocumentFile(
-            target.file,
-            config.outputFormat,
-            ({ percent, message }) => {
-              setItems((current) =>
-                current.map((item) =>
-                  item.id === target.id
-                    ? {
-                        ...item,
-                        progress: Math.min(99, percent),
-                        message,
-                      }
-                    : item
-                )
-              );
-            }
-          );
-
+      try {
+        for (const target of targets) {
           setItems((current) =>
             current.map((item) =>
               item.id === target.id
                 ? {
                     ...item,
-                    status: 'converted',
-                    progress: 100,
-                    message: 'Conversion complete',
-                    output: converted,
-                  }
-                : item
-            )
-          );
-          reportConverterMetric({ event: 'convert_success', mode, count: 1 });
-        } catch (error) {
-          const msg = conversionErrorMessage(error);
-          reportConverterMetric({ event: 'convert_fail', mode, detail: msg.slice(0, 500) });
-          setItems((current) =>
-            current.map((item) =>
-              item.id === target.id
-                ? {
-                    ...item,
-                    status: 'failed',
+                    status: 'converting',
                     progress: 0,
-                    message: undefined,
-                    error: msg,
+                    message: 'Preparing document...',
+                    error: undefined,
+                    output: undefined,
                   }
                 : item
             )
           );
-        }
-      }
 
-      setIsConverting(false);
+          try {
+            const converted = await convertDocumentFile(
+              target.file,
+              config.outputFormat,
+              ({ percent, message }) => {
+                setItems((current) =>
+                  current.map((item) =>
+                    item.id === target.id
+                      ? {
+                          ...item,
+                          progress: Math.min(99, percent),
+                          message,
+                        }
+                      : item
+                  )
+                );
+              }
+            );
+
+            setItems((current) =>
+              current.map((item) =>
+                item.id === target.id
+                  ? {
+                      ...item,
+                      status: 'converted',
+                      progress: 100,
+                      message: 'Conversion complete',
+                      output: converted,
+                    }
+                  : item
+              )
+            );
+            reportConverterMetric({ event: 'convert_success', mode, count: 1 });
+          } catch (error) {
+            const msg = conversionErrorMessage(error);
+            reportConverterMetric({ event: 'convert_fail', mode, detail: msg.slice(0, 500) });
+            setItems((current) =>
+              current.map((item) =>
+                item.id === target.id
+                  ? {
+                      ...item,
+                      status: 'failed',
+                      progress: 0,
+                      message: undefined,
+                      error: msg,
+                    }
+                  : item
+              )
+            );
+          }
+        }
+      } finally {
+        setIsConverting(false);
+      }
     },
     [config.outputFormat, mode, showNotice]
   );
