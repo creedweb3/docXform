@@ -20,8 +20,11 @@ function withIsolationHeaders(response: NextResponse) {
  * R2 body even when the URL is same-origin (edge rewrite). Worker JS already
  * gets CORP via static config; match that for .wasm / .data rewrites.
  *
- * Cache-Control is set here so browsers still see strong caching when the edge
- * rewrites to R2 and upstream metadata headers are weak or absent.
+ * Cache-Control is set here hoping the edge forwards it, but Next.js rewrite
+ * responses often keep the **origin** Cache-Control (R2) and do not let
+ * middleware replace it (see vercel/next.js#70515). You should still set a
+ * long TTL on `wasm.docxform.com` (Transform Rule or R2 HTTP headers) so
+ * browsers actually cache `soffice.{wasm,data}`.
  */
 const CACHE_VERSIONED_WASM = 'public, max-age=31536000, immutable';
 /** Align with next.config `/wasm/:path*` for non-revision URLs. */
