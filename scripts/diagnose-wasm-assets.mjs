@@ -11,6 +11,11 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 
+const WASM_BIN_REVISION =
+  (typeof process.env.NEXT_PUBLIC_WASM_ASSET_REVISION === 'string' &&
+    process.env.NEXT_PUBLIC_WASM_ASSET_REVISION.trim()) ||
+  '2026-05-06';
+
 function loadWasmBaseFromEnvLocal() {
   const p = resolve(repoRoot, '.env.local');
   if (!existsSync(p)) return null;
@@ -32,6 +37,11 @@ function wasmBaseUrl() {
   if (fromFile) return fromFile;
   const origin = (process.env.WASM_DIAGNOSE_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
   return `${origin}/wasm/`;
+}
+
+function versionedWasmBinBase() {
+  const origin = (process.env.WASM_DIAGNOSE_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
+  return `${origin}/wasm/bin/${WASM_BIN_REVISION}/`;
 }
 
 const FILES = [
@@ -64,6 +74,7 @@ async function probe(name, base, originHeader) {
 }
 
 const base = wasmBaseUrl();
+const binBase = versionedWasmBinBase();
 const defaultProbeOrigin = process.env.WASM_DIAGNOSE_ORIGIN || new URL(base).origin;
 const pageOrigin = (process.env.WASM_CORS_PROBE_ORIGIN || defaultProbeOrigin).replace(/\/$/, '');
 const crossOrigin = (() => {
@@ -84,8 +95,26 @@ if (!crossOrigin) {
 let failed = false;
 const corsOrigin = pageOrigin;
 
+function resolveProbeBase(file) {
+  const isBinary = file.endsWith('.wasm') || file.endsWith('.data');
+  if (!isBinary) return base;
+  try {
+    const u = new URL(base);
+    if (u.protocol === 'http:' || u.protocol === 'https:') {
+      const h = u.hostname;
+      if (h !== 'localhost' && h !== '127.0.0.1') {
+        return base;
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+  return binBase;
+}
+
 for (const f of FILES) {
-  const row = await probe(f, base, crossOrigin ? corsOrigin : undefined);
+  const probeBase = resolveProbeBase(f);
+  const row = await probe(f, probeBase, crossOrigin ? corsOrigin : undefined);
   console.log(JSON.stringify(row, null, 2));
   if (!row.ok) failed = true;
   if (crossOrigin && row.ok && !row['access-control-allow-origin']) {

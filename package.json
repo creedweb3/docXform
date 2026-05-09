@@ -10,6 +10,11 @@
     "typecheck": "tsc --noEmit",
     "clean:local": "node scripts/cleanup-local-artifacts.mjs",
     "test:e2e": "playwright test",
+    "test:e2e:site-quality": "playwright test e2e/site-quality.spec.ts",
+    "test:lighthouse": "node scripts/lighthouse-audit.mjs",
+    "test:perf": "playwright test e2e/performance-load.spec.ts",
+    "verify:all": "node scripts/verify-all.mjs",
+    "verify:all:full": "node scripts/verify-all.mjs --full",
     "wasm:diagnose": "node scripts/diagnose-wasm-assets.mjs",
     "wasm:r2:upload": "node scripts/upload-wasm-r2.mjs",
     "wasm:sync-js": "node scripts/sync-wasm-js.mjs",
@@ -35,6 +40,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.2.6",
     "@playwright/test": "^1.59.1",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",

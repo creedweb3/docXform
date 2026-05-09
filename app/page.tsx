@@ -5,11 +5,11 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import {
   ArrowDataTransferHorizontalIcon,
   ArrowDataTransferVerticalIcon,
-  Shield01Icon,
-  FlashIcon,
+  CpuIcon,
   Delete02Icon,
   File01Icon,
-  CpuIcon,
+  FlashIcon,
+  Shield01Icon,
 } from '@hugeicons/core-free-icons';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -84,12 +84,7 @@ export default function Home() {
           <section className="px-6 pt-4 pb-16 sm:pb-20">
             <div className="max-w-4xl mx-auto text-center">
               <div className="inline-flex items-center gap-2 glass-subtle rounded-full px-4 py-1.5 mb-6 border border-white/5">
-                <HugeiconsIcon
-                  icon={Shield01Icon}
-                  size={14}
-                  strokeWidth={2}
-                  className="text-blue-500"
-                />
+                <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className="text-blue-500" />
                 <span className="text-xs font-medium text-muted-foreground">
                   Browser-based &middot; up to {MAX_CONVERSION_FILE_SIZE_LABEL} &middot; free to use
                 </span>
@@ -133,11 +128,7 @@ export default function Home() {
                   </p>
                   <span className="mt-auto w-fit converter-cta converter-cta-rose group-hover:gap-3 transition-all">
                     Start converting
-                    <HugeiconsIcon
-                      icon={ArrowDataTransferVerticalIcon}
-                      size={18}
-                      strokeWidth={2.5}
-                    />
+                    <HugeiconsIcon icon={ArrowDataTransferVerticalIcon} size={18} strokeWidth={2.5} />
                   </span>
                 </Link>
 
@@ -162,11 +153,7 @@ export default function Home() {
                   </p>
                   <span className="mt-auto w-fit converter-cta converter-cta-blue group-hover:gap-3 transition-all">
                     Start converting
-                    <HugeiconsIcon
-                      icon={ArrowDataTransferHorizontalIcon}
-                      size={18}
-                      strokeWidth={2.5}
-                    />
+                    <HugeiconsIcon icon={ArrowDataTransferHorizontalIcon} size={18} strokeWidth={2.5} />
                   </span>
                 </Link>
               </div>
@@ -244,12 +231,7 @@ export default function Home() {
                 {facts.map((fact) => (
                   <div key={fact.title} className="glass-subtle rounded-2xl p-5">
                     <div className="w-10 h-10 rounded-xl icon-box-blue flex items-center justify-center mb-4">
-                      <HugeiconsIcon
-                        icon={File01Icon}
-                        size={18}
-                        strokeWidth={1.5}
-                        className="text-blue-500"
-                      />
+                      <HugeiconsIcon icon={File01Icon} size={18} strokeWidth={1.5} className="text-blue-500" />
                     </div>
                     <h3 className="text-sm font-semibold text-foreground mb-1">
                       {fact.title}

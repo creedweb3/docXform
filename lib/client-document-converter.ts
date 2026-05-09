@@ -11,6 +11,9 @@ import {
   getBrowserWorkerJsUrl,
   getWasmAssetBaseForCreatePaths,
 } from '@/lib/wasm-asset-base';
+import { subscribeConnectionEligibilityInvalidation } from '@/lib/converter-eligibility';
+import { getCachedPerfProfile, getConverterTimeouts } from '@/lib/perf-profile';
+import { getWasmAssetRevision, getVersionedWasmBinPathPrefix } from '@/lib/wasm-revision';
 
 export interface ClientConversionProgress {
   percent: number;
@@ -30,27 +33,27 @@ let converterInstance: WorkerBrowserConverter | null = null;
 let activeProgressHandler: ProgressHandler | null = null;
 let conversionQueue: Promise<void> = Promise.resolve();
 
-/** First load can pull large wasm/data from same-origin `/wasm/`; keep generous on slow links. */
-const INITIALIZE_TIMEOUT_MS = 180_000;
-const CONVERSION_TIMEOUT_MS = 240_000;
-const WASM_PROBE_TIMEOUT_MS = 20_000;
 const FALLBACK_WASM_CDN_BASE = 'https://wasm.docxform.com/wasm/';
 
-/**
- * Appended to soffice.{wasm,data} fetch URLs so poisoned disk cache (HTML 404/challenge
- * stored under `/wasm/soffice.wasm`) cannot reuse the wrong body. Bump or set
- * NEXT_PUBLIC_WASM_ASSET_REVISION when you need another bust after a bad deploy.
- */
-const WASM_ASSET_REVISION =
-  typeof process.env.NEXT_PUBLIC_WASM_ASSET_REVISION === 'string' &&
-  process.env.NEXT_PUBLIC_WASM_ASSET_REVISION.trim() !== ''
-    ? process.env.NEXT_PUBLIC_WASM_ASSET_REVISION.trim()
-    : '2026-05-06';
+let connectionEligibilitySubscribed = false;
 
+function converterTimeouts() {
+  return getConverterTimeouts(getCachedPerfProfile());
+}
+
+/** Query-string cache bust for HTTPS WASM bases (path may not be versioned on CDN). */
 function wasmBinaryUrlWithRevision(url: string): string {
   const key = '_wx';
-  const v = encodeURIComponent(WASM_ASSET_REVISION);
+  const v = encodeURIComponent(getWasmAssetRevision());
   return `${url}${url.includes('?') ? '&' : '?'}${key}=${v}`;
+}
+
+function wasmBinaryFetchUrl(base: string, name: 'soffice.wasm' | 'soffice.data'): string {
+  const resolved = resolveWasmUrl(base, name);
+  if (/^https?:\/\//i.test(base)) {
+    return wasmBinaryUrlWithRevision(resolved);
+  }
+  return resolved;
 }
 
 function withUrlParam(url: string, key: string, value: string): string {
@@ -146,8 +149,9 @@ function resolveWasmUrl(base: string, name: string): string {
 
 async function probeCoreWasmAssets(base: string): Promise<void> {
   const crossOrigin = /^https?:\/\//i.test(base);
+  const probeMs = converterTimeouts().wasmProbeMs;
   for (const name of ['soffice.wasm', 'soffice.data'] as const) {
-    const url = wasmBinaryUrlWithRevision(resolveWasmUrl(base, name));
+    const url = wasmBinaryFetchUrl(base, name);
     try {
       const res = await fetchWithTimeout(
         url,
@@ -156,7 +160,7 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
         headers: { Range: 'bytes=0-0' },
         cache: 'no-store',
         },
-        WASM_PROBE_TIMEOUT_MS
+        probeMs
       );
       if (res.status !== 200 && res.status !== 206) {
         throw new Error(
@@ -171,7 +175,7 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
       const inner = e instanceof Error ? e.message : String(e);
       const timeoutHint =
         e instanceof Error && e.name === 'AbortError'
-          ? ` (request timed out after ${Math.round(WASM_PROBE_TIMEOUT_MS / 1000)}s)`
+          ? ` (request timed out after ${Math.round(probeMs / 1000)}s)`
           : '';
       throw new Error(
         `Cannot fetch ${name} from ${url}: ${inner}${timeoutHint}. ` +
@@ -187,9 +191,54 @@ async function resolveBinaryAssetBase(): Promise<string> {
   if (typeof window === 'undefined') return getWasmAssetBaseForCreatePaths();
 
   const base = getWasmAssetBaseForCreatePaths();
+  const versioned = getVersionedWasmBinPathPrefix();
+
+  const tryProbe = async (b: string) => {
+    await probeCoreWasmAssets(b);
+    return b;
+  };
+
+  if (base.startsWith('/wasm/')) {
+    try {
+      return await tryProbe(versioned);
+    } catch (vErr) {
+      try {
+        return await tryProbe(base);
+      } catch {
+        /* fall through */
+      }
+      const primaryError = vErr;
+      const canFallbackToCdn =
+        process.env.NODE_ENV === 'production' &&
+        base.startsWith('/wasm/') &&
+        typeof window !== 'undefined';
+
+      if (!canFallbackToCdn) {
+        throw primaryError;
+      }
+
+      const envBase = process.env.NEXT_PUBLIC_WASM_ASSET_BASE?.trim();
+      const fallbackBase =
+        envBase && /^https?:\/\//i.test(envBase)
+          ? (envBase.endsWith('/') ? envBase : `${envBase}/`)
+          : FALLBACK_WASM_CDN_BASE;
+
+      try {
+        await probeCoreWasmAssets(fallbackBase);
+        console.warn(
+          `[docXform] Falling back to CDN WASM base because same-origin /wasm/ probe failed: ${String(
+            primaryError
+          )}`
+        );
+        return fallbackBase;
+      } catch {
+        throw primaryError;
+      }
+    }
+  }
+
   try {
-    await probeCoreWasmAssets(base);
-    return base;
+    return await tryProbe(base);
   } catch (primaryError) {
     const canFallbackToCdn =
       process.env.NODE_ENV === 'production' &&
@@ -240,13 +289,13 @@ function buildWasmPathsForBinaryBase(
 ) {
   const wasmPaths = createWasmPaths('/wasm/');
   if (/^https?:\/\//i.test(binaryBase)) {
-    const wasmUrl = wasmBinaryUrlWithRevision(resolveWasmUrl(binaryBase, 'soffice.wasm'));
-    const dataUrl = wasmBinaryUrlWithRevision(resolveWasmUrl(binaryBase, 'soffice.data'));
+    const wasmUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.wasm');
+    const dataUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.data');
     wasmPaths.sofficeWasm = attemptToken ? withUrlParam(wasmUrl, '_wr', attemptToken) : wasmUrl;
     wasmPaths.sofficeData = attemptToken ? withUrlParam(dataUrl, '_wr', attemptToken) : dataUrl;
   } else {
-    const wasmUrl = wasmBinaryUrlWithRevision(wasmPaths.sofficeWasm);
-    const dataUrl = wasmBinaryUrlWithRevision(wasmPaths.sofficeData);
+    const wasmUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.wasm');
+    const dataUrl = wasmBinaryFetchUrl(binaryBase, 'soffice.data');
     wasmPaths.sofficeWasm = attemptToken ? withUrlParam(wasmUrl, '_wr', attemptToken) : wasmUrl;
     wasmPaths.sofficeData = attemptToken ? withUrlParam(dataUrl, '_wr', attemptToken) : dataUrl;
   }
@@ -258,7 +307,16 @@ async function getConverter(onProgress?: ProgressHandler) {
 
   if (!converterPromise) {
     converterPromise = (async () => {
+      activeProgressHandler?.({
+        percent: 2,
+        message: 'Probing WASM URLs (soffice.wasm / soffice.data)…',
+      });
       const binaryBase = await resolveBinaryAssetBase();
+
+      activeProgressHandler?.({
+        percent: 8,
+        message: 'Loading converter module and worker…',
+      });
 
       const { WorkerBrowserConverter, createWasmPaths } = await import(
         '@matbee/libreoffice-converter/browser'
@@ -272,7 +330,11 @@ async function getConverter(onProgress?: ProgressHandler) {
           browserWorkerJs: getBrowserWorkerJsUrl(),
           onProgress: emitProgress,
         });
-        await withTimeout(converter.initialize(), INITIALIZE_TIMEOUT_MS, 'Converter initialization');
+        await withTimeout(
+          converter.initialize(),
+          converterTimeouts().initializeMs,
+          'Converter initialization'
+        );
         return converter;
       };
 
@@ -319,7 +381,22 @@ async function getConverter(onProgress?: ProgressHandler) {
 }
 
 export async function warmConverter(onProgress?: ProgressHandler) {
+  if (typeof window !== 'undefined' && !connectionEligibilitySubscribed) {
+    connectionEligibilitySubscribed = true;
+    subscribeConnectionEligibilityInvalidation();
+  }
+  if (converterInstance !== null) {
+    onProgress?.({ percent: 100, message: 'Converter ready' });
+    return;
+  }
+  // Eligibility (network probe, save-data, etc.) is computed once in `DocumentConverter` before warm starts.
+  // Do not await it here or every warm pays for a duplicate probe and extra "Preparing" latency.
   await getConverter(onProgress);
+}
+
+/** True after WASM init succeeded in this tab (survives client navigations between tool pages). */
+export function isConverterSessionReady(): boolean {
+  return converterInstance !== null;
 }
 
 function mapProgress(onProgress: ProgressHandler | undefined, start: number, end: number) {
@@ -399,6 +476,7 @@ export async function convertDocumentFile(
   outputFormat: OutputFormat,
   onProgress?: ProgressHandler
 ): Promise<ConvertedDocument> {
+  const conversionTimeoutMs = converterTimeouts().conversionMs;
   const runConversion = async (): Promise<ConvertedDocument> => {
     activeProgressHandler = onProgress ?? null;
     emitProgress({ percent: 1, message: 'Preparing document...' });
@@ -419,7 +497,7 @@ export async function convertDocumentFile(
           { inputFormat: 'pdf', outputFormat: 'html' },
           file.name
         ),
-        CONVERSION_TIMEOUT_MS,
+        conversionTimeoutMs,
         'PDF to HTML conversion'
       );
 
@@ -430,7 +508,7 @@ export async function convertDocumentFile(
           { inputFormat: 'html', outputFormat: 'docx' },
           replaceExtension(file.name, 'html')
         ),
-        CONVERSION_TIMEOUT_MS,
+        conversionTimeoutMs,
         'HTML to DOCX conversion'
       );
     } else {
@@ -445,7 +523,7 @@ export async function convertDocumentFile(
           },
           file.name
         ),
-        CONVERSION_TIMEOUT_MS,
+        conversionTimeoutMs,
         'Document conversion'
       );
     }

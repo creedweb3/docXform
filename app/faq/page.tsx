@@ -13,6 +13,7 @@ import {
   webPageJsonLd,
 } from '@/lib/seo';
 import { JsonLd } from '@/components/json-ld';
+import { FaqDetailsCard } from '@/components/faq-details-card';
 
 const title = 'FAQ - Private Word and PDF Conversion Questions | docXform';
 const description =
@@ -65,21 +66,13 @@ export default function FaqPage() {
                   </div>
                   <div className="space-y-3">
                     {SITE_FAQS.map((faq, index) => (
-                      <details
+                      <FaqDetailsCard
                         key={faq.question}
-                        className="glass rounded-2xl p-5 group cursor-pointer"
-                        open={index === 0}
-                      >
-                        <summary className="font-medium text-sm text-foreground list-none flex items-center justify-between">
-                          {faq.question}
-                          <span className="text-muted-foreground group-open:rotate-45 transition-transform text-lg leading-none">
-                            +
-                          </span>
-                        </summary>
-                        <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
-                          {faq.answer}
-                        </p>
-                      </details>
+                        question={faq.question}
+                        answer={faq.answer}
+                        defaultOpen={index === 0}
+                        variant="glass"
+                      />
                     ))}
                   </div>
                   <div className="mt-12 text-center">

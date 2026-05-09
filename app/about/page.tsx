@@ -2,12 +2,7 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { JsonLd } from '@/components/json-ld';
 import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  Shield01Icon,
-  CpuIcon,
-  EyeIcon,
-  LockKeyIcon,
-} from '@hugeicons/core-free-icons';
+import { CpuIcon, EyeIcon, LockKeyIcon, Shield01Icon } from '@hugeicons/core-free-icons';
 import type { Metadata } from 'next';
 import {
   breadcrumbJsonLd,

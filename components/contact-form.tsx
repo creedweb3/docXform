@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  MailSend01Icon,
-  CheckmarkCircle01Icon,
-  RefreshIcon,
-} from '@hugeicons/core-free-icons';
+import { CheckmarkCircle01Icon, MailSend01Icon, RefreshIcon } from '@hugeicons/core-free-icons';
 
 const CONTACT_RESET_SECONDS = 12;
 

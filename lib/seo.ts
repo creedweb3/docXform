@@ -18,6 +18,11 @@ export const OG_IMAGES = {
   legal: '/og/legal.png',
 } as const;
 
+const SAME_AS_LINKS =
+  typeof process.env.NEXT_PUBLIC_SITE_SAMEAS === 'string'
+    ? process.env.NEXT_PUBLIC_SITE_SAMEAS.split(',').map((link) => link.trim()).filter(Boolean)
+    : [];
+
 export const PUBLIC_ROUTES = [
   { path: '/', priority: 1, changeFrequency: 'weekly' },
   { path: '/word-to-pdf', priority: 0.95, changeFrequency: 'weekly' },
@@ -27,6 +32,16 @@ export const PUBLIC_ROUTES = [
   { path: '/articles/formatting-guide', priority: 0.7, changeFrequency: 'monthly' },
   { path: '/articles/docx-standards', priority: 0.7, changeFrequency: 'monthly' },
   { path: '/articles/pdf-optimization', priority: 0.7, changeFrequency: 'monthly' },
+  { path: '/articles/word-to-pdf-without-upload', priority: 0.68, changeFrequency: 'monthly' },
+  { path: '/articles/pdf-to-word-scanned-ocr', priority: 0.68, changeFrequency: 'monthly' },
+  { path: '/articles/batch-word-to-pdf', priority: 0.68, changeFrequency: 'monthly' },
+  { path: '/articles/font-embedding-pdf', priority: 0.68, changeFrequency: 'monthly' },
+  { path: '/articles/table-heavy-pdf-to-word', priority: 0.68, changeFrequency: 'monthly' },
+  { path: '/articles/docx-to-pdf-legal-briefs', priority: 0.68, changeFrequency: 'monthly' },
+  { path: '/articles/pdf-to-word-privacy-compliance', priority: 0.68, changeFrequency: 'monthly' },
+  { path: '/articles/wasm-converter-troubleshooting', priority: 0.68, changeFrequency: 'monthly' },
+  { path: '/articles/first-load-wasm-slow-devices', priority: 0.68, changeFrequency: 'monthly' },
+  { path: '/articles/browser-conversion-future', priority: 0.68, changeFrequency: 'monthly' },
   { path: '/faq', priority: 0.65, changeFrequency: 'monthly' },
   { path: '/about', priority: 0.55, changeFrequency: 'monthly' },
   { path: '/contact', priority: 0.45, changeFrequency: 'monthly' },
@@ -142,6 +157,7 @@ export function organizationJsonLd() {
     url: SITE_URL,
     logo: absoluteUrl('/brand/docxform-logo-icon.png'),
     description: SITE_DESCRIPTION,
+    ...(SAME_AS_LINKS.length ? { sameAs: SAME_AS_LINKS } : {}),
   };
 }
 

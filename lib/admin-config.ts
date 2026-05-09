@@ -15,10 +15,14 @@ export function getAdminEntrySlug() {
   return normalized.length > 0 ? normalized : null;
 }
 
-export function getPublicAdminPath(section: 'login' | 'inbox') {
+export const ADMIN_INTERNAL_CONVERTER_METRICS_PATH = `${ADMIN_INTERNAL_PREFIX}/converter-metrics`;
+
+export function getPublicAdminPath(section: 'login' | 'inbox' | 'converter-metrics') {
   const slug = getAdminEntrySlug();
   if (!slug) return null;
-  return `/${slug}/${section}`;
+  if (section === 'login') return `/${slug}/login`;
+  if (section === 'inbox') return `/${slug}/inbox`;
+  return `/${slug}/converter-metrics`;
 }
 
 export function getAllowedAdminEmails() {
@@ -39,5 +43,9 @@ export function isAllowedAdminEmail(email: string | null | undefined) {
 export function isPrivateAdminPublicPath(pathname: string) {
   const slug = getAdminEntrySlug();
   if (!slug) return false;
-  return pathname === `/${slug}/login` || pathname === `/${slug}/inbox`;
+  return (
+    pathname === `/${slug}/login` ||
+    pathname === `/${slug}/inbox` ||
+    pathname === `/${slug}/converter-metrics`
+  );
 }

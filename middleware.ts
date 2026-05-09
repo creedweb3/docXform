@@ -30,6 +30,20 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Keep converter runtime URLs same-origin while offloading heavy binaries to R2.
+  // Versioned paths (`/wasm/bin/<rev>/…`) enable long-lived immutable browser cache per deploy.
+  const versionedWasm = /^\/wasm\/bin\/[^/]+\/soffice\.wasm$/;
+  const versionedData = /^\/wasm\/bin\/[^/]+\/soffice\.data$/;
+  if (versionedWasm.test(pathname)) {
+    return withWasmBinaryIsolation(
+      NextResponse.rewrite('https://wasm.docxform.com/wasm/soffice.wasm')
+    );
+  }
+  if (versionedData.test(pathname)) {
+    return withWasmBinaryIsolation(
+      NextResponse.rewrite('https://wasm.docxform.com/wasm/soffice.data')
+    );
+  }
+
   if (pathname === '/wasm/soffice.wasm') {
     return withWasmBinaryIsolation(
       NextResponse.rewrite('https://wasm.docxform.com/wasm/soffice.wasm')
@@ -53,6 +67,7 @@ export function middleware(request: NextRequest) {
 
   const publicLoginPath = `/${slug}/login`;
   const publicInboxPath = `/${slug}/inbox`;
+  const publicConverterMetricsPath = `/${slug}/converter-metrics`;
 
   if (pathname === publicLoginPath) {
     return withIsolationHeaders(
@@ -63,6 +78,12 @@ export function middleware(request: NextRequest) {
   if (pathname === publicInboxPath) {
     return withIsolationHeaders(
       NextResponse.rewrite(new URL(`${ADMIN_INTERNAL_PREFIX}/inbox`, request.url))
+    );
+  }
+
+  if (pathname === publicConverterMetricsPath) {
+    return withIsolationHeaders(
+      NextResponse.rewrite(new URL(`${ADMIN_INTERNAL_PREFIX}/converter-metrics`, request.url))
     );
   }
 

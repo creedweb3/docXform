@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
+const withBundleAnalyzer =
+  process.env.ANALYZE === 'true'
+    ? require('@next/bundle-analyzer')({ enabled: true, openAnalyzer: false })
+    : (config) => config;
+
 const buildId =
   process.env.CF_PAGES_COMMIT_SHA ||
   process.env.VERCEL_GIT_COMMIT_SHA ||
@@ -56,6 +61,32 @@ const nextConfig = {
 
     return [
       {
+        source: '/wasm/bin/:revision/soffice.wasm',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+        ],
+      },
+      {
+        source: '/wasm/bin/:revision/soffice.data',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+        ],
+      },
+      {
         source: '/wasm/:path*',
         headers: [
           {
@@ -105,4 +136,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withBundleAnalyzer(nextConfig);

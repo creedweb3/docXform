@@ -64,10 +64,12 @@ function statusClass(status: SubmissionStatus) {
 export function AdminInboxPanel({
   loginPath,
   inboxPath,
+  converterMetricsPath,
   adminEmail,
 }: {
   loginPath: string;
   inboxPath: string;
+  converterMetricsPath: string;
   adminEmail: string;
 }) {
   const [searchInput, setSearchInput] = useState('');
@@ -309,6 +311,7 @@ export function AdminInboxPanel({
         inboxPath={inboxPath}
         identityLabel={adminEmail}
         inboxActive
+        converterMetricsPath={converterMetricsPath}
         showLogout
         onLogout={() => void handleLogout()}
       />

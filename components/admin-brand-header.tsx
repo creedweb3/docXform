@@ -15,6 +15,8 @@ interface AdminBrandHeaderProps {
   inboxPath: string;
   identityLabel: string;
   inboxActive?: boolean;
+  converterMetricsPath?: string | null;
+  converterMetricsActive?: boolean;
   showLogout?: boolean;
   onLogout?: () => void;
 }
@@ -23,6 +25,8 @@ export function AdminBrandHeader({
   inboxPath,
   identityLabel,
   inboxActive = false,
+  converterMetricsPath,
+  converterMetricsActive = false,
   showLogout = false,
   onLogout,
 }: AdminBrandHeaderProps) {
@@ -82,6 +86,20 @@ export function AdminBrandHeader({
                     Inbox
                   </Link>
                 </DropdownMenuItem>
+                {converterMetricsPath ? (
+                  <DropdownMenuItem asChild className="cursor-pointer p-0">
+                    <Link
+                      href={converterMetricsPath}
+                      className={`w-full rounded-md px-3 py-2 text-sm font-medium ${
+                        converterMetricsActive
+                          ? 'bg-foreground/90 text-background'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      Converter metrics
+                    </Link>
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem asChild className="cursor-pointer p-0">
                   <Link
                     href="/"
@@ -125,6 +143,19 @@ export function AdminBrandHeader({
           >
             Inbox
           </Link>
+
+          {converterMetricsPath ? (
+            <Link
+              href={converterMetricsPath}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
+                converterMetricsActive
+                  ? 'bg-foreground/90 text-background shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/55'
+              }`}
+            >
+              Converter metrics
+            </Link>
+          ) : null}
 
           <Link
             href="/"

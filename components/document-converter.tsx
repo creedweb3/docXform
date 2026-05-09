@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, CSSProperties, DragEvent } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Add01Icon,
@@ -18,6 +18,7 @@ import {
 import {
   convertDocumentFile,
   conversionErrorMessage,
+  isConverterSessionReady,
   warmConverter,
   type ConvertedDocument,
 } from '@/lib/client-document-converter';
@@ -34,6 +35,13 @@ import {
 } from '@/lib/client-file-validation';
 import type { QueuedFile } from '@/lib/converter-queue-types';
 import { useConverterQueue } from '@/components/converter-queue-provider';
+import {
+  debugLogEligibility,
+  getConverterEligibility,
+  subscribeConnectionEligibilityInvalidation,
+} from '@/lib/converter-eligibility';
+import { getCachedPerfProfile, getMotionBudget, getWarmScheduling } from '@/lib/perf-profile';
+import { reportConverterMetric } from '@/lib/converter-metrics-client';
 
 interface DocumentConverterProps {
   mode: ConversionMode;
@@ -60,13 +68,11 @@ interface ShowNoticeOptions {
   transient?: boolean;
 }
 
-type WarmState = 'idle' | 'warming' | 'ready' | 'failed';
+type WarmState = 'idle' | 'warming' | 'ready' | 'failed' | 'deferred';
 
-const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
 /** Brief flash for “N files added” / duplicate skipped */
 const TRANSIENT_NOTICE_DURATION = 900;
 const DEFAULT_NOTICE_DURATION = 3500;
-const chipMotion = { duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] as const };
 /** Only enable list scrolling (and scrollbar width sync) after this many files. */
 const QUEUE_SCROLL_AFTER_FILE_COUNT = 6;
 
@@ -164,11 +170,18 @@ function converterStatusLabel(state: WarmState) {
   if (state === 'ready') return 'Converter ready';
   if (state === 'failed') return 'Service unavailable';
   if (state === 'warming') return 'Preparing converter';
+  if (state === 'deferred') return 'Loads when you convert';
   return 'Ready on demand';
 }
 
 export function DocumentConverter({ mode }: DocumentConverterProps) {
   const config = converterConfig[mode];
+  const reducedMotion = useReducedMotion();
+  const perfProfile = useMemo(() => getCachedPerfProfile(), []);
+  const { spring, chipMotion, rowExpand } = useMemo(
+    () => getMotionBudget(perfProfile, Boolean(reducedMotion)),
+    [perfProfile, reducedMotion]
+  );
   const [items, setItems] = useConverterQueue(mode);
   const downloadIdleHintRollRef = useRef(false);
   const [downloadSecondaryIdleHint, setDownloadSecondaryIdleHint] = useState<
@@ -188,6 +201,13 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const queueListScrollRef = useRef<HTMLDivElement>(null);
   const [queueScrollbarPadPx, setQueueScrollbarPadPx] = useState(0);
 
+  useLayoutEffect(() => {
+    if (!isConverterSessionReady()) return;
+    setWarmState('ready');
+    setWarmMessage('Converter ready');
+    warmStartedRef.current = true;
+  }, []);
+
   const totalBytes = useMemo(
     () => items.reduce((total, item) => total + item.file.size, 0),
     [items]
@@ -203,6 +223,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const visibleConverterStatus = converterStatusLabel(warmState);
   const converterReady = warmState === 'ready';
   const warmPreloadFailed = warmState === 'failed';
+  const warmDeferred = warmState === 'deferred';
   const showQueueStatusRow = hasQueuedItems;
   const inlineTransientSuccess =
     Boolean(
@@ -267,43 +288,91 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       .then(() => {
         setWarmState('ready');
         setWarmMessage('Converter ready');
+        reportConverterMetric({ event: 'warm_ready', mode });
       })
       .catch((err) => {
         warmStartedRef.current = false;
         console.error('[docXform] Converter warm-up failed:', err);
         setWarmState('failed');
         setWarmMessage('Converter warm-up unavailable');
+        reportConverterMetric({
+          event: 'warm_failed',
+          mode,
+          detail: conversionErrorMessage(err).slice(0, 500),
+        });
         showNotice(conversionErrorMessage(err), { kind: 'error' });
       });
+  }, [mode, showNotice]);
+
+  useEffect(() => {
+    subscribeConnectionEligibilityInvalidation();
   }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     let cancelled = false;
-    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
     let idleId: number | null = null;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const warm = () => {
-      if (!cancelled) startWarmConverter();
+    const runDecisionAndMaybeWarm = () => {
+      if (cancelled) return;
+      if (isConverterSessionReady()) {
+        setWarmState('ready');
+        setWarmMessage('Converter ready');
+        warmStartedRef.current = true;
+        return;
+      }
+      void (async () => {
+        try {
+          const eligibility = await getConverterEligibility();
+          debugLogEligibility(eligibility);
+          if (cancelled) return;
+          if (!eligibility.autoPreload) {
+            setWarmState('deferred');
+            setWarmMessage(
+              'Converter will load when you tap Convert — estimated wait is long on this connection or device.'
+            );
+            reportConverterMetric({ event: 'warm_deferred', mode });
+            return;
+          }
+          startWarmConverter();
+        } catch {
+          if (!cancelled) startWarmConverter();
+        }
+      })();
     };
 
-    if ('requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(warm, { timeout: 1800 });
+    const scheduleIdle = () => {
+      const { idleTimeoutMs, fallbackMs } = getWarmScheduling(getCachedPerfProfile());
+      if ('requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(runDecisionAndMaybeWarm, { timeout: idleTimeoutMs });
+      } else {
+        fallbackTimer = globalThis.setTimeout(runDecisionAndMaybeWarm, fallbackMs);
+      }
+    };
+
+    const onLoad = () => {
+      if (!cancelled) scheduleIdle();
+    };
+
+    if (document.readyState === 'complete') {
+      scheduleIdle();
     } else {
-      fallbackTimer = setTimeout(warm, 500);
+      window.addEventListener('load', onLoad);
     }
 
     return () => {
       cancelled = true;
+      window.removeEventListener('load', onLoad);
       if (idleId !== null && 'cancelIdleCallback' in window) {
         window.cancelIdleCallback(idleId);
       }
-      if (fallbackTimer) {
+      if (fallbackTimer !== null) {
         clearTimeout(fallbackTimer);
       }
     };
-  }, [startWarmConverter]);
+  }, [mode, startWarmConverter]);
 
   useEffect(() => {
     if (downloadIdleHintRollRef.current) return;
@@ -553,7 +622,10 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                 : item
             )
           );
+          reportConverterMetric({ event: 'convert_success', mode, count: 1 });
         } catch (error) {
+          const msg = conversionErrorMessage(error);
+          reportConverterMetric({ event: 'convert_fail', mode, detail: msg.slice(0, 500) });
           setItems((current) =>
             current.map((item) =>
               item.id === target.id
@@ -562,7 +634,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                     status: 'failed',
                     progress: 0,
                     message: undefined,
-                    error: conversionErrorMessage(error),
+                    error: msg,
                   }
                 : item
             )
@@ -572,7 +644,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
 
       setIsConverting(false);
     },
-    [config.outputFormat, showNotice]
+    [config.outputFormat, mode, showNotice]
   );
 
   const handleConvert = useCallback(async () => {
@@ -596,13 +668,14 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     `${ctaFlexLayout} border border-dashed border-slate-300/75 bg-slate-100 text-slate-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-100`;
 
   const handleDownloadSingle = useCallback((file: ConvertedDocument) => {
+    reportConverterMetric({ event: 'download', mode, count: 1 });
     const url = URL.createObjectURL(file.blob);
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = file.name;
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, []);
+  }, [mode]);
 
   const handleDownloadAll = useCallback(async () => {
     if (convertedItems.length === 0) return;
@@ -622,13 +695,14 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     });
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
+    reportConverterMetric({ event: 'download', mode, count: convertedItems.length });
     const url = URL.createObjectURL(zipBlob);
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = config.zipName;
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, [config.zipName, convertedItems, handleDownloadSingle]);
+  }, [config.zipName, convertedItems, handleDownloadSingle, mode]);
 
   return (
     <div className="w-full space-y-4">
@@ -743,12 +817,12 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   </motion.span>
                 )}
               </AnimatePresence>
-              <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
+                <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
                 <HugeiconsIcon
-                  icon={converterReady ? CheckmarkCircle01Icon : RefreshIcon}
+                  icon={converterReady ? CheckmarkCircle01Icon : warmDeferred ? File01Icon : RefreshIcon}
                   size={12}
                   strokeWidth={2}
-                  className={`${config.iconClass} ${converterReady || warmPreloadFailed ? '' : 'animate-spin'}`}
+                  className={`${config.iconClass} ${converterReady || warmPreloadFailed || warmDeferred ? '' : 'animate-spin'}`}
                 />
                 {visibleConverterStatus}
               </motion.span>
@@ -912,7 +986,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                         <motion.div
                           className={`h-full rounded-full bg-gradient-to-r ${config.progressClass}`}
                           animate={{ width: `${Math.min(item.progress, 100)}%` }}
-                          transition={{ duration: 0.3 }}
+                          transition={rowExpand}
                         />
                       </div>
                     )}
