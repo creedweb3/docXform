@@ -19,11 +19,26 @@ function withIsolationHeaders(response: NextResponse) {
  * `Cross-Origin-Resource-Policy: cross-origin`, some browsers block the proxied
  * R2 body even when the URL is same-origin (edge rewrite). Worker JS already
  * gets CORP via static config; match that for .wasm / .data rewrites.
+ *
+ * Cache-Control is set here so browsers still see strong caching when the edge
+ * rewrites to R2 and upstream metadata headers are weak or absent.
  */
+const CACHE_VERSIONED_WASM = 'public, max-age=31536000, immutable';
+/** Align with next.config `/wasm/:path*` for non-revision URLs. */
+const CACHE_LEGACY_WASM =
+  'public, max-age=600, stale-while-revalidate=86400';
+
 function withWasmBinaryIsolation(response: NextResponse) {
   withIsolationHeaders(response);
   response.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
   return response;
+}
+
+function wasmBinaryRewrite(rewriteTarget: string, cacheControl: string): NextResponse {
+  const res = NextResponse.rewrite(rewriteTarget);
+  withWasmBinaryIsolation(res);
+  res.headers.set('Cache-Control', cacheControl);
+  return res;
 }
 
 export function middleware(request: NextRequest) {
@@ -34,25 +49,29 @@ export function middleware(request: NextRequest) {
   const versionedWasm = /^\/wasm\/bin\/[^/]+\/soffice\.wasm$/;
   const versionedData = /^\/wasm\/bin\/[^/]+\/soffice\.data$/;
   if (versionedWasm.test(pathname)) {
-    return withWasmBinaryIsolation(
-      NextResponse.rewrite('https://wasm.docxform.com/wasm/soffice.wasm')
+    return wasmBinaryRewrite(
+      'https://wasm.docxform.com/wasm/soffice.wasm',
+      CACHE_VERSIONED_WASM
     );
   }
   if (versionedData.test(pathname)) {
-    return withWasmBinaryIsolation(
-      NextResponse.rewrite('https://wasm.docxform.com/wasm/soffice.data')
+    return wasmBinaryRewrite(
+      'https://wasm.docxform.com/wasm/soffice.data',
+      CACHE_VERSIONED_WASM
     );
   }
 
   if (pathname === '/wasm/soffice.wasm') {
-    return withWasmBinaryIsolation(
-      NextResponse.rewrite('https://wasm.docxform.com/wasm/soffice.wasm')
+    return wasmBinaryRewrite(
+      'https://wasm.docxform.com/wasm/soffice.wasm',
+      CACHE_LEGACY_WASM
     );
   }
 
   if (pathname === '/wasm/soffice.data') {
-    return withWasmBinaryIsolation(
-      NextResponse.rewrite('https://wasm.docxform.com/wasm/soffice.data')
+    return wasmBinaryRewrite(
+      'https://wasm.docxform.com/wasm/soffice.data',
+      CACHE_LEGACY_WASM
     );
   }
 
