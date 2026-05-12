@@ -136,40 +136,48 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
     });
     probeCache = stillInHttpCache ? 'default' : 'no-store';
   }
-  for (const name of ['soffice.wasm', 'soffice.data'] as const) {
-    const url = wasmBinaryFetchUrl(base, name);
-    try {
-      const res = await fetchWithTimeout(
-        url,
-        {
-        method: 'GET',
-        headers: { Range: 'bytes=0-0' },
-        cache: probeCache,
-        },
-        probeMs
-      );
-      if (res.status !== 200 && res.status !== 206) {
-        throw new Error(
-          `WASM file returned HTTP ${res.status} for ${url}. ` +
-            (crossOrigin
-              ? 'Confirm objects exist on the WASM host and CORS allows this origin (scheme + host + port).'
-              : 'Copy soffice.wasm and soffice.data into public/wasm/, or set NEXT_PUBLIC_WASM_ASSET_BASE for production (see .env.example).')
+  const targets = ['soffice.wasm', 'soffice.data'] as const;
+  const results = await Promise.all(
+    targets.map(async (name) => {
+      const url = wasmBinaryFetchUrl(base, name);
+      try {
+        const res = await fetchWithTimeout(
+          url,
+          {
+            method: 'GET',
+            headers: { Range: 'bytes=0-0' },
+            cache: probeCache,
+          },
+          probeMs
         );
+        if (res.status !== 200 && res.status !== 206) {
+          throw new Error(
+            `WASM file returned HTTP ${res.status} for ${url}. ` +
+              (crossOrigin
+                ? 'Confirm objects exist on the WASM host and CORS allows this origin (scheme + host + port).'
+                : 'Copy soffice.wasm and soffice.data into public/wasm/, or set NEXT_PUBLIC_WASM_ASSET_BASE for production (see .env.example).')
+          );
+        }
+        return null;
+      } catch (e) {
+        return e;
       }
-    } catch (e) {
-      if (e instanceof Error && e.message.startsWith('WASM file returned')) throw e;
-      const inner = e instanceof Error ? e.message : String(e);
-      const timeoutHint =
-        e instanceof Error && e.name === 'AbortError'
-          ? ` (request timed out after ${Math.round(probeMs / 1000)}s)`
-          : '';
-      throw new Error(
-        `Cannot fetch ${name} from ${url}: ${inner}${timeoutHint}. ` +
-          (crossOrigin
-            ? 'Typical fix: CORS on your WASM CDN must include this exact page origin; redeploy after changing NEXT_PUBLIC_WASM_ASSET_BASE.'
-            : 'Typical fix: add binaries under public/wasm/ or point NEXT_PUBLIC_WASM_ASSET_BASE at a deployed /wasm/ mirror.')
-      );
-    }
+    })
+  );
+  const firstError = results.find((e) => e);
+  if (firstError) {
+    const e = firstError;
+    if (e instanceof Error && e.message.startsWith('WASM file returned')) throw e;
+    const inner = e instanceof Error ? e.message : String(e);
+    const timeoutHint = e instanceof Error && (e as Error).name === 'AbortError'
+      ? ` (request timed out after ${Math.round(probeMs / 1000)}s)`
+      : '';
+    throw new Error(
+      `Cannot fetch WASM asset from ${base}: ${inner}${timeoutHint}. ` +
+        (crossOrigin
+          ? 'Typical fix: CORS on your WASM CDN must include this exact page origin; redeploy after changing NEXT_PUBLIC_WASM_ASSET_BASE.'
+          : 'Typical fix: add binaries under public/wasm/ or point NEXT_PUBLIC_WASM_ASSET_BASE at a deployed /wasm/ mirror.')
+    );
   }
 }
 
@@ -184,75 +192,44 @@ async function resolveBinaryAssetBase(): Promise<string> {
     return b;
   };
 
-  if (base.startsWith('/wasm/')) {
-    try {
-      return await tryProbe(versioned);
-    } catch (vErr) {
+  const tryProbeFirst = async (candidates: string[]) => {
+    for (const candidate of candidates) {
       try {
-        return await tryProbe(base);
+        return await tryProbe(candidate);
       } catch {
-        /* fall through */
-      }
-      const primaryError = vErr;
-      const canFallbackToCdn =
-        process.env.NODE_ENV === 'production' &&
-        base.startsWith('/wasm/') &&
-        typeof window !== 'undefined';
-
-      if (!canFallbackToCdn) {
-        throw primaryError;
-      }
-
-      const envBase = process.env.NEXT_PUBLIC_WASM_ASSET_BASE?.trim();
-      const fallbackBase =
-        envBase && /^https?:\/\//i.test(envBase)
-          ? (envBase.endsWith('/') ? envBase : `${envBase}/`)
-          : FALLBACK_WASM_CDN_BASE;
-
-      try {
-        await probeCoreWasmAssets(fallbackBase);
-        console.warn(
-          `[docXform] Falling back to CDN WASM base because same-origin /wasm/ probe failed: ${String(
-            primaryError
-          )}`
-        );
-        return fallbackBase;
-      } catch {
-        throw primaryError;
+        /* keep trying */
       }
     }
-  }
+    return null;
+  };
 
-  try {
-    return await tryProbe(base);
-  } catch (primaryError) {
+  const tryCdnFallbackOrThrow = async (primaryBase: string, phase: 'probe' | 'init') => {
     const canFallbackToCdn =
-      process.env.NODE_ENV === 'production' &&
-      base.startsWith('/wasm/') &&
-      typeof window !== 'undefined';
-
+      process.env.NODE_ENV === 'production' && primaryBase.startsWith('/wasm/') && typeof window !== 'undefined';
     if (!canFallbackToCdn) {
-      throw primaryError;
+      throw new Error(`WASM ${phase} failed for ${primaryBase} and CDN fallback is disabled.`);
     }
 
     const envBase = process.env.NEXT_PUBLIC_WASM_ASSET_BASE?.trim();
     const fallbackBase =
-      envBase && /^https?:\/\//i.test(envBase)
-        ? (envBase.endsWith('/') ? envBase : `${envBase}/`)
-        : FALLBACK_WASM_CDN_BASE;
+      envBase && /^https?:\/\//i.test(envBase) ? (envBase.endsWith('/') ? envBase : `${envBase}/`) : FALLBACK_WASM_CDN_BASE;
 
-    try {
-      await probeCoreWasmAssets(fallbackBase);
-      console.warn(
-        `[docXform] Falling back to CDN WASM base because same-origin /wasm/ probe failed: ${String(
-          primaryError
-        )}`
-      );
-      return fallbackBase;
-    } catch {
-      throw primaryError;
-    }
+    await probeCoreWasmAssets(fallbackBase);
+    console.warn(
+      `[docXform] Falling back to CDN WASM base during ${phase} because same-origin ${primaryBase} failed.`
+    );
+    return fallbackBase;
+  };
+
+  if (base.startsWith('/wasm/')) {
+    const firstWorking = await tryProbeFirst([versioned, base]);
+    if (firstWorking) return firstWorking;
+    return await tryCdnFallbackOrThrow(base, 'probe');
   }
+
+  const sameOrigin = await tryProbe(base).catch(() => null);
+  if (sameOrigin) return sameOrigin;
+  return await tryCdnFallbackOrThrow(base, 'init');
 }
 
 function getCdnBinaryBase(): string {
@@ -287,16 +264,17 @@ async function getConverter(onProgress?: ProgressHandler) {
         percent: 2,
         message: 'Probing WASM URLs (soffice.wasm / soffice.data)…',
       });
-      const binaryBase = await resolveBinaryAssetBase();
+      const [binaryBase, converterModule] = await Promise.all([
+        resolveBinaryAssetBase(),
+        import('@matbee/libreoffice-converter/browser'),
+      ]);
 
       activeProgressHandler?.({
         percent: 8,
         message: 'Loading converter module and worker…',
       });
 
-      const { WorkerBrowserConverter, createWasmPaths } = await import(
-        '@matbee/libreoffice-converter/browser'
-      );
+      const { WorkerBrowserConverter, createWasmPaths } = converterModule;
 
       const createAndInitialize = async (base: string) => {
         // Stable WASM/data URLs (version path + HTTPS revision query — see `wasm-binary-urls.ts`).

@@ -15,6 +15,15 @@ For production, the robust setup is to keep runtime same-origin (`/wasm/`) and p
 Code is also hardened to default to same-origin `/wasm/` unless
 `NEXT_PUBLIC_WASM_FORCE_SAME_ORIGIN=0` is explicitly set.
 
+### Cloudflare edge hints (optional)
+
+- If your plan supports **103 Early Hints**, you can add a small ruleset to send **only glue-sized assets** (not the 140MB binaries) as preload hints. Do not hint `soffice.{wasm,data}`—it wastes bandwidth. Hints help the tiny JS/worker files under `/wasm/`.
+- Keep immutable cache headers on the hinted files.
+
+### R2 Cache-Control (direct hits)
+
+- Even though the app rewrites to same-origin, some flows (e.g. diagnostics) may hit `https://wasm.docxform.com/wasm/...` directly. Set bucket/object **Cache-Control: public, max-age=31536000, immutable** on the R2 side so direct requests stay cacheable by browsers and Cloudflare edge.
+
 ## Cloudflare R2 (recommended)
 
 Cloudflare has a generous free tier and works well with large files.

@@ -109,6 +109,8 @@ export default function Home() {
               <div className="grid md:grid-cols-2 gap-6 sm:gap-8 max-w-[52rem] mx-auto">
                 <Link
                   href="/pdf-to-word"
+                  prefetch
+                  scroll={false}
                   className="group converter-card converter-card-rose rounded-[2rem] p-6 sm:p-7 text-left shadow-[0_6px_16px_rgba(244,114,182,0.10)] transition-all duration-300 hover:shadow-[0_12px_24px_rgba(244,114,182,0.14)] hover:-translate-y-1 border md:aspect-square min-h-[18.75rem] flex flex-col"
                 >
                   <div className="w-[4.5rem] h-[4.5rem] rounded-2xl icon-box-rose flex items-center justify-center mb-6">
@@ -134,6 +136,8 @@ export default function Home() {
 
                 <Link
                   href="/word-to-pdf"
+                  prefetch
+                  scroll={false}
                   className="group converter-card converter-card-blue rounded-[2rem] p-6 sm:p-7 text-left shadow-[0_6px_16px_rgba(59,130,246,0.10)] transition-all duration-300 hover:shadow-[0_12px_24px_rgba(59,130,246,0.14)] hover:-translate-y-1 border md:aspect-square min-h-[18.75rem] flex flex-col"
                 >
                   <div className="w-[4.5rem] h-[4.5rem] rounded-2xl icon-box-blue flex items-center justify-center mb-6">

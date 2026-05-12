@@ -100,6 +100,22 @@ export async function verifyMarkedWasmRevisionStillInHttpCache(urls: {
     return true;
   }
 
+  // Prefer Cache API (service worker cache) when available to avoid noisy only-if-cached misses.
+  if (typeof caches !== 'undefined') {
+    try {
+      const cache = await caches.open('docxform-wasm-v1');
+      const [wasmHit, dataHit] = await Promise.all([
+        cache.match(urls.wasm),
+        cache.match(urls.data),
+      ]);
+      if (wasmHit && dataHit) {
+        return true;
+      }
+    } catch {
+      /* ignore and fall back to HTTP cache probe */
+    }
+  }
+
   const [wasmOk, dataOk] = await Promise.all([
     resourceInHttpCacheOnlyIfCached(urls.wasm),
     resourceInHttpCacheOnlyIfCached(urls.data),

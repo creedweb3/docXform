@@ -39,9 +39,17 @@ export function WasmCacheServiceWorker() {
     };
 
     const t = window.setTimeout(register, 0);
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        void navigator.serviceWorker?.getRegistration()?.then((reg) => reg?.update()).catch(() => {});
+      }
+    };
+    window.addEventListener('pageshow', onPageShow);
+
     return () => {
       cancelled = true;
       window.clearTimeout(t);
+      window.removeEventListener('pageshow', onPageShow);
     };
   }, []);
 
