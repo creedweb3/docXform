@@ -53,18 +53,35 @@ function isAbsoluteUrlSameOrigin(absoluteUrl: string): boolean {
 }
 
 /**
- * True only if both responses are served from the HTTP cache (no network).
+ * True only if a response is served from the HTTP cache (no network).
  * Requires `mode: 'same-origin'` per fetch spec for `only-if-cached`.
+ *
+ * We avoid `Range` here: Emscripten caches full 200 responses; a ranged
+ * `only-if-cached` request often misses that entry and surfaces as `ERR_CACHE_MISS`,
+ * which looked like a broken load and cleared the revision mark incorrectly.
  */
-async function rangeGetOnlyIfCached(absoluteUrl: string): Promise<boolean> {
+async function resourceInHttpCacheOnlyIfCached(absoluteUrl: string): Promise<boolean> {
   try {
-    const res = await fetch(absoluteUrl, {
-      method: 'GET',
-      headers: { Range: 'bytes=0-0' },
+    const headRes = await fetch(absoluteUrl, {
+      method: 'HEAD',
       cache: 'only-if-cached',
       mode: 'same-origin',
     });
-    return res.status === 200 || res.status === 206;
+    if (headRes.ok) return true;
+  } catch {
+    /* try GET below */
+  }
+  try {
+    const res = await fetch(absoluteUrl, {
+      method: 'GET',
+      cache: 'only-if-cached',
+      mode: 'same-origin',
+    });
+    if (!res.ok) return false;
+    if (res.body) {
+      await res.body.cancel();
+    }
+    return true;
   } catch {
     return false;
   }
@@ -90,8 +107,8 @@ export async function verifyMarkedWasmRevisionStillInHttpCache(urls: {
   }
 
   const [wasmOk, dataOk] = await Promise.all([
-    rangeGetOnlyIfCached(urls.wasm),
-    rangeGetOnlyIfCached(urls.data),
+    resourceInHttpCacheOnlyIfCached(urls.wasm),
+    resourceInHttpCacheOnlyIfCached(urls.data),
   ]);
 
   if (wasmOk && dataOk) {
