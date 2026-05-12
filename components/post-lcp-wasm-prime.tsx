@@ -3,9 +3,12 @@
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { getConverterEligibility } from '@/lib/converter-eligibility';
+import {
+  isCurrentWasmRevisionMarkedCached,
+  markCurrentWasmRevisionCached,
+  verifyMarkedWasmRevisionStillInHttpCache,
+} from '@/lib/wasm-client-cache';
 import { buildWasmPrimeAbsoluteUrls } from '@/lib/wasm-prime-urls';
-
-const SESSION_KEY = 'docxform_wasm_http_prime_v1';
 
 /** Converter routes already warm WASM aggressively; avoid competing fetches. */
 const EXCLUDE_CONVERTER_PATH =
@@ -25,6 +28,9 @@ function isPostLcpPrimeEnabled(): boolean {
 /**
  * After LCP, wait one animation frame + short delay, then optionally GET soffice.wasm / soffice.data
  * with low fetch priority so the HTTP cache is warm before opening a tool page.
+ * Skips entirely when this build's WASM revision is marked cached **and** a same-origin
+ * `only-if-cached` check confirms both binaries are still in the HTTP cache (see `wasm-client-cache.ts`).
+
  * Gated by the same eligibility rules as converter auto-preload (save-data / slow link skips).
  */
 export function PostLcpWasmPrime() {
@@ -35,10 +41,10 @@ export function PostLcpWasmPrime() {
     if (!isPostLcpPrimeEnabled()) return;
     if (typeof window === 'undefined') return;
     if (EXCLUDE_CONVERTER_PATH.test(pathname)) return;
-    if (sessionStorage.getItem(SESSION_KEY) === '1') return;
 
     const token = ++runTokenRef.current;
     const ac = new AbortController();
+    let cancelled = false;
     let postLcpTimer: ReturnType<typeof setTimeout> | null = null;
     let lcpFallbackTimer: ReturnType<typeof setTimeout> | null = null;
     let lcpObserver: PerformanceObserver | null = null;
@@ -46,13 +52,14 @@ export function PostLcpWasmPrime() {
 
     const runPrime = async () => {
       if (token !== runTokenRef.current) return;
-      if (sessionStorage.getItem(SESSION_KEY) === '1') return;
+      if (isCurrentWasmRevisionMarkedCached()) return;
       if (ac.signal.aborted) return;
 
       try {
         const eligibility = await getConverterEligibility();
         if (token !== runTokenRef.current || ac.signal.aborted) return;
         if (!eligibility.autoPreload) return;
+        if (isCurrentWasmRevisionMarkedCached()) return;
 
         const urls = buildWasmPrimeAbsoluteUrls();
         if (!urls) return;
@@ -72,7 +79,7 @@ export function PostLcpWasmPrime() {
         if (!resData.ok) return;
 
         if (token === runTokenRef.current && !ac.signal.aborted) {
-          sessionStorage.setItem(SESSION_KEY, '1');
+          markCurrentWasmRevisionCached();
         }
       } catch {
         /* aborted, offline, or non-OK — ignore */
@@ -108,26 +115,44 @@ export function PostLcpWasmPrime() {
       }
     };
 
-    if ('PerformanceObserver' in window) {
-      try {
-        lcpObserver = new PerformanceObserver((list) => {
-          if (list.getEntries().length > 0) kick();
-        });
-        lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true } as PerformanceObserverInit);
-      } catch {
-        lcpObserver = null;
-      }
-    }
+    const startLcpWatchers = () => {
+      if (token !== runTokenRef.current || cancelled || ac.signal.aborted) return;
 
-    if (!lcpObserver) {
-      lcpFallbackTimer = setTimeout(kick, 2800);
-    } else {
-      lcpFallbackTimer = setTimeout(() => {
-        if (!lcpSeen) kick();
-      }, 9000);
-    }
+      if ('PerformanceObserver' in window) {
+        try {
+          lcpObserver = new PerformanceObserver((list) => {
+            if (list.getEntries().length > 0) kick();
+          });
+          lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true } as PerformanceObserverInit);
+        } catch {
+          lcpObserver = null;
+        }
+      }
+
+      if (!lcpObserver) {
+        lcpFallbackTimer = setTimeout(kick, 2800);
+      } else {
+        lcpFallbackTimer = setTimeout(() => {
+          if (!lcpSeen) kick();
+        }, 9000);
+      }
+    };
+
+    void (async () => {
+      if (isCurrentWasmRevisionMarkedCached()) {
+        const urls = buildWasmPrimeAbsoluteUrls();
+        if (urls) {
+          const inHttpCache = await verifyMarkedWasmRevisionStillInHttpCache(urls);
+          if (cancelled || token !== runTokenRef.current || ac.signal.aborted) return;
+          if (inHttpCache) return;
+        }
+      }
+      if (cancelled || token !== runTokenRef.current || ac.signal.aborted) return;
+      startLcpWatchers();
+    })();
 
     return () => {
+      cancelled = true;
       ac.abort();
       if (postLcpTimer !== null) clearTimeout(postLcpTimer);
       if (lcpFallbackTimer !== null) clearTimeout(lcpFallbackTimer);

@@ -13,6 +13,11 @@ import {
 } from '@/lib/wasm-asset-base';
 import { subscribeConnectionEligibilityInvalidation } from '@/lib/converter-eligibility';
 import { getCachedPerfProfile, getConverterTimeouts } from '@/lib/perf-profile';
+import {
+  isCurrentWasmRevisionMarkedCached,
+  markCurrentWasmRevisionCached,
+  verifyMarkedWasmRevisionStillInHttpCache,
+} from '@/lib/wasm-client-cache';
 import { getWasmAssetRevision, getVersionedWasmBinPathPrefix } from '@/lib/wasm-revision';
 
 export interface ClientConversionProgress {
@@ -146,6 +151,16 @@ function resolveWasmUrl(base: string, name: string): string {
 async function probeCoreWasmAssets(base: string): Promise<void> {
   const crossOrigin = /^https?:\/\//i.test(base);
   const probeMs = converterTimeouts().wasmProbeMs;
+  let probeCache: RequestCache = 'no-store';
+  if (isCurrentWasmRevisionMarkedCached()) {
+    const wasmUrl = wasmBinaryFetchUrl(base, 'soffice.wasm');
+    const dataUrl = wasmBinaryFetchUrl(base, 'soffice.data');
+    const stillInHttpCache = await verifyMarkedWasmRevisionStillInHttpCache({
+      wasm: wasmUrl,
+      data: dataUrl,
+    });
+    probeCache = stillInHttpCache ? 'default' : 'no-store';
+  }
   for (const name of ['soffice.wasm', 'soffice.data'] as const) {
     const url = wasmBinaryFetchUrl(base, name);
     try {
@@ -154,7 +169,7 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
         {
         method: 'GET',
         headers: { Range: 'bytes=0-0' },
-        cache: 'no-store',
+        cache: probeCache,
         },
         probeMs
       );
@@ -327,6 +342,7 @@ async function getConverter(onProgress?: ProgressHandler) {
       try {
         const converter = await createAndInitialize(binaryBase);
         converterInstance = converter;
+        markCurrentWasmRevisionCached();
         return converter;
       } catch (primaryInitError) {
         const shouldTryCdnFallback =
@@ -352,6 +368,7 @@ async function getConverter(onProgress?: ProgressHandler) {
             )}`
           );
           converterInstance = converter;
+          markCurrentWasmRevisionCached();
           return converter;
         } catch {
           throw primaryInitError;
