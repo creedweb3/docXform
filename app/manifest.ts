@@ -13,15 +13,15 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#f8fafc',
     icons: [
       {
-        src: '/brand/docxform-logo-icon.png',
-        sizes: '512x512',
-        type: 'image/png',
+        src: '/brand/docxform-logo-icon-64.webp',
+      sizes: '64x64',
+        type: 'image/webp',
         purpose: 'any',
       },
       {
-        src: '/brand/docxform-logo-icon.png',
-        sizes: '512x512',
-        type: 'image/png',
+        src: '/brand/docxform-logo-icon-64.webp',
+      sizes: '64x64',
+        type: 'image/webp',
         purpose: 'maskable',
       },
     ],

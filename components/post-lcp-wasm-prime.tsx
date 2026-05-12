@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { getConverterEligibility } from '@/lib/converter-eligibility';
+import { getCachedPerfProfile } from '@/lib/perf-profile';
 import {
   isCurrentWasmRevisionMarkedCached,
   markCurrentWasmRevisionCached,
@@ -13,6 +14,7 @@ import { buildWasmPrimeAbsoluteUrls } from '@/lib/wasm-prime-urls';
 /** Converter routes already warm WASM aggressively; avoid competing fetches. */
 const EXCLUDE_CONVERTER_PATH =
   /^\/(?:word-to-pdf|pdf-to-word|doc-to-pdf|docx-to-pdf)(?:\/|$)/i;
+// Add new converter routes here to avoid double-warming when those pages already preload.
 
 /**
  * Enabled in production by default (opt out with NEXT_PUBLIC_WASM_POST_LCP_PRIME=0).
@@ -23,6 +25,17 @@ function isPostLcpPrimeEnabled(): boolean {
   if (raw === '0' || raw === 'false') return false;
   if (raw === '1' || raw === 'true') return true;
   return process.env.NODE_ENV === 'production';
+}
+
+function getPrimeDelayMs(profile: ReturnType<typeof getCachedPerfProfile>): number {
+  switch (profile) {
+    case 'high':
+      return 320;
+    case 'low':
+      return 520;
+    default:
+      return 420;
+  }
 }
 
 /**
@@ -36,6 +49,7 @@ function isPostLcpPrimeEnabled(): boolean {
 export function PostLcpWasmPrime() {
   const pathname = usePathname() ?? '';
   const runTokenRef = useRef(0);
+  const perfProfileRef = useRef(getCachedPerfProfile());
 
   useEffect(() => {
     if (!isPostLcpPrimeEnabled()) return;
@@ -73,10 +87,13 @@ export function PostLcpWasmPrime() {
           priority: 'low' as const,
         };
 
-        const resWasm = await fetch(urls.wasm, init as RequestInit);
-        if (!resWasm.ok) return;
-        const resData = await fetch(urls.data, init as RequestInit);
-        if (!resData.ok) return;
+        const [resWasm, resData] = await Promise.all([
+          fetch(urls.wasm, init as RequestInit),
+          fetch(urls.data, init as RequestInit),
+        ]);
+        if (!resWasm.ok || !resData.ok) return;
+        // Do not hold bodies in memory when warming; cancel streams once cache eligibility is known.
+        await Promise.all([resWasm.body?.cancel?.(), resData.body?.cancel?.()]);
 
         if (token === runTokenRef.current && !ac.signal.aborted) {
           markCurrentWasmRevisionCached();
@@ -106,7 +123,7 @@ export function PostLcpWasmPrime() {
         postLcpTimer = setTimeout(() => {
           postLcpTimer = null;
           void runPrime();
-        }, 450);
+        }, getPrimeDelayMs(perfProfileRef.current));
       };
       if (typeof requestAnimationFrame === 'function') {
         requestAnimationFrame(() => requestAnimationFrame(schedule));

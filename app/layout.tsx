@@ -15,6 +15,7 @@ import {
   SITE_URL,
   websiteJsonLd,
 } from '@/lib/seo';
+import { WasmCdnResourceHints } from '@/components/wasm-cdn-resource-hints';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -83,6 +84,7 @@ export default function RootLayout({
           data={schemaGraph([organizationJsonLd(), websiteJsonLd()])}
         />
         <AdsenseLoader />
+        <WasmCdnResourceHints />
         <WasmCacheServiceWorker />
         <PostLcpWasmPrime />
         <ConverterQueueProvider>{children}</ConverterQueueProvider>

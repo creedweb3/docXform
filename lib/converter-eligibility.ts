@@ -120,6 +120,12 @@ export function subscribeConnectionEligibilityInvalidation(): void {
     invalidatePerfProfileCache();
   };
   conn.addEventListener('change', onChange);
+  // Some browsers emit `typechange` for network type swaps; listen when available.
+  try {
+    conn.addEventListener?.('typechange', onChange);
+  } catch {
+    /* ignore */
+  }
 }
 
 function isSaveData(): boolean {

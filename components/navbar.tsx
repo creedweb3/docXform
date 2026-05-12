@@ -58,6 +58,7 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  scroll={false}
                   aria-current={active ? 'page' : undefined}
                   className={`min-h-12 px-3 py-2.5 rounded-lg text-xs transition-all duration-200 whitespace-nowrap inline-flex items-center justify-center ${
                     active
@@ -84,6 +85,7 @@ export function Navbar() {
                     <Link
                       key={link.href}
                       href={link.href}
+                      scroll={false}
                       aria-current={active ? 'page' : undefined}
                       className={`block w-full rounded-md px-3 py-2 text-sm ${
                         active
