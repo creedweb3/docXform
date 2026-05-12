@@ -11,9 +11,15 @@ import {
   getBrowserWorkerJsUrl,
   getWasmAssetBaseForCreatePaths,
 } from '@/lib/wasm-asset-base';
+import { wasmBinaryFetchUrl } from '@/lib/wasm-binary-urls';
 import { subscribeConnectionEligibilityInvalidation } from '@/lib/converter-eligibility';
 import { getCachedPerfProfile, getConverterTimeouts } from '@/lib/perf-profile';
-import { getWasmAssetRevision, getVersionedWasmBinPathPrefix } from '@/lib/wasm-revision';
+import {
+  isCurrentWasmRevisionMarkedCached,
+  markCurrentWasmRevisionCached,
+  verifyMarkedWasmRevisionStillInHttpCache,
+} from '@/lib/wasm-client-cache';
+import { getVersionedWasmBinPathPrefix } from '@/lib/wasm-revision';
 
 export interface ClientConversionProgress {
   percent: number;
@@ -39,21 +45,6 @@ let connectionEligibilitySubscribed = false;
 
 function converterTimeouts() {
   return getConverterTimeouts(getCachedPerfProfile());
-}
-
-/** Query-string cache bust for HTTPS WASM bases (path may not be versioned on CDN). */
-function wasmBinaryUrlWithRevision(url: string): string {
-  const key = '_wx';
-  const v = encodeURIComponent(getWasmAssetRevision());
-  return `${url}${url.includes('?') ? '&' : '?'}${key}=${v}`;
-}
-
-function wasmBinaryFetchUrl(base: string, name: 'soffice.wasm' | 'soffice.data'): string {
-  const resolved = resolveWasmUrl(base, name);
-  if (/^https?:\/\//i.test(base)) {
-    return wasmBinaryUrlWithRevision(resolved);
-  }
-  return resolved;
 }
 
 async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: number): Promise<Response> {
@@ -132,20 +123,19 @@ async function resetConverter() {
  * Fail fast with a clear message: repo `.gitignore` omits large `soffice.wasm` / `soffice.data`;
  * they must exist under `public/wasm/` for same-origin `/wasm/*` requests to succeed.
  */
-function resolveWasmUrl(base: string, name: string): string {
-  const normalizedBase = base.endsWith('/') ? base : `${base}/`;
-  if (/^https?:\/\//i.test(normalizedBase)) {
-    return new URL(name, normalizedBase).href;
-  }
-  if (typeof window !== 'undefined') {
-    return new URL(name, `${window.location.origin}${normalizedBase}`).href;
-  }
-  return `${normalizedBase}${name}`;
-}
-
 async function probeCoreWasmAssets(base: string): Promise<void> {
   const crossOrigin = /^https?:\/\//i.test(base);
   const probeMs = converterTimeouts().wasmProbeMs;
+  let probeCache: RequestCache = 'no-store';
+  if (isCurrentWasmRevisionMarkedCached()) {
+    const wasmUrl = wasmBinaryFetchUrl(base, 'soffice.wasm');
+    const dataUrl = wasmBinaryFetchUrl(base, 'soffice.data');
+    const stillInHttpCache = await verifyMarkedWasmRevisionStillInHttpCache({
+      wasm: wasmUrl,
+      data: dataUrl,
+    });
+    probeCache = stillInHttpCache ? 'default' : 'no-store';
+  }
   for (const name of ['soffice.wasm', 'soffice.data'] as const) {
     const url = wasmBinaryFetchUrl(base, name);
     try {
@@ -154,7 +144,7 @@ async function probeCoreWasmAssets(base: string): Promise<void> {
         {
         method: 'GET',
         headers: { Range: 'bytes=0-0' },
-        cache: 'no-store',
+        cache: probeCache,
         },
         probeMs
       );
@@ -309,7 +299,7 @@ async function getConverter(onProgress?: ProgressHandler) {
       );
 
       const createAndInitialize = async (base: string) => {
-        // Stable WASM/data URLs (version path + optional _wx on HTTPS) so the browser HTTP cache can reuse ~100MB binaries.
+        // Stable WASM/data URLs (version path + HTTPS revision query — see `wasm-binary-urls.ts`).
         const wasmPaths = buildWasmPathsForBinaryBase(createWasmPaths, base);
         const converter = new WorkerBrowserConverter({
           ...wasmPaths,
@@ -327,6 +317,7 @@ async function getConverter(onProgress?: ProgressHandler) {
       try {
         const converter = await createAndInitialize(binaryBase);
         converterInstance = converter;
+        markCurrentWasmRevisionCached();
         return converter;
       } catch (primaryInitError) {
         const shouldTryCdnFallback =
@@ -352,6 +343,7 @@ async function getConverter(onProgress?: ProgressHandler) {
             )}`
           );
           converterInstance = converter;
+          markCurrentWasmRevisionCached();
           return converter;
         } catch {
           throw primaryInitError;

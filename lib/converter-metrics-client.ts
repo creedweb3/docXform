@@ -10,7 +10,7 @@ export type ConverterMetricEvent =
 
 /**
  * Fire-and-forget client → `/api/metrics/converter`. When Supabase is not configured,
- * the API returns 204 and the client ignores failures.
+ * the API returns 204; insert failures also return 204 so previews stay quiet.
  */
 export function reportConverterMetric(payload: {
   event: ConverterMetricEvent;

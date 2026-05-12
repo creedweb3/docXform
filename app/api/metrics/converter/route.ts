@@ -54,8 +54,9 @@ export async function POST(request: NextRequest) {
     meta: { path, count, ts },
   });
 
+  // Best-effort: previews often lack schema/RLS; keep the client silent (no 500 spam).
   if (error) {
-    return NextResponse.json({ error: 'Storage failed', detail: error.message }, { status: 500 });
+    return new NextResponse(null, { status: 204 });
   }
 
   return NextResponse.json({ ok: true });
