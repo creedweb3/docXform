@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import { AdsenseLoader } from '@/components/adsense-loader';
 import { ConverterQueueProvider } from '@/components/converter-queue-provider';
 import { PostLcpWasmPrime } from '@/components/post-lcp-wasm-prime';
+import { WasmCacheServiceWorker } from '@/components/wasm-cache-service-worker';
 import { JsonLd } from '@/components/json-ld';
 import {
   createPageMetadata,
@@ -52,8 +53,8 @@ export const metadata: Metadata = {
   creator: SITE_NAME,
   publisher: SITE_NAME,
   icons: {
-    icon: [{ url: '/brand/docxform-logo-icon.png', sizes: '512x512', type: 'image/png' }],
-    apple: [{ url: '/brand/docxform-logo-icon.png', sizes: '180x180', type: 'image/png' }],
+    icon: [{ url: '/brand/docxform-logo-icon-64.webp', sizes: '64x64', type: 'image/webp' }],
+    apple: [{ url: '/brand/docxform-logo-icon-64.webp', sizes: '64x64', type: 'image/webp' }],
   },
   appleWebApp: {
     capable: true,
@@ -82,6 +83,7 @@ export default function RootLayout({
           data={schemaGraph([organizationJsonLd(), websiteJsonLd()])}
         />
         <AdsenseLoader />
+        <WasmCacheServiceWorker />
         <PostLcpWasmPrime />
         <ConverterQueueProvider>{children}</ConverterQueueProvider>
       </body>

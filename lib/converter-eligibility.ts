@@ -69,7 +69,7 @@ function initOverheadSec(profile: PerfProfile): number {
 
 async function measureProbeMbps(signal: AbortSignal): Promise<number | null> {
   if (typeof window === 'undefined') return null;
-  const url = `/favicon.ico?docxform_probe=${encodeURIComponent(getWasmAssetRevision())}`;
+  const url = `/brand/docxform-logo-icon-64.webp?docxform_probe=${encodeURIComponent(getWasmAssetRevision())}`;
   const t0 = performance.now();
   try {
     const res = await fetch(url, { cache: 'no-store', signal });

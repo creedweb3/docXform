@@ -119,6 +119,15 @@ const nextConfig = {
         ],
       },
       {
+        source: '/wasm-cache-sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-cache, must-revalidate',
+          },
+        ],
+      },
+      {
         source: '/:path*',
         headers: [
           ...securityHeaders,

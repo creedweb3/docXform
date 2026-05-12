@@ -1,3 +1,6 @@
+/wasm-cache-sw.js
+  Cache-Control: private, no-cache, must-revalidate
+
 /wasm/*
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Resource-Policy: cross-origin
