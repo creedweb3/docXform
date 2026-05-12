@@ -1,16 +1,10 @@
 import { getWasmAssetBaseForCreatePaths } from '@/lib/wasm-asset-base';
-import { getWasmAssetRevision, getVersionedWasmBinPathPrefix } from '@/lib/wasm-revision';
-
-/** Match converter CDN query for revisioned fetches (see `lib/client-document-converter.ts`). */
-function withRevisionQuery(url: string): string {
-  const key = '_wx';
-  const v = encodeURIComponent(getWasmAssetRevision());
-  return `${url}${url.includes('?') ? '&' : '?'}${key}=${v}`;
-}
+import { wasmBinaryFetchUrl } from '@/lib/wasm-binary-urls';
+import { getVersionedWasmBinPathPrefix } from '@/lib/wasm-revision';
 
 /**
  * Absolute URLs used only for optional HTTP cache priming after LCP.
- * Same-origin production uses `/wasm/bin/<rev>/soffice.{wasm,data}`; HTTPS bases get `_wx` like the converter.
+ * Uses the same URL rules as the document converter (`lib/wasm-binary-urls.ts`).
  */
 export function buildWasmPrimeAbsoluteUrls(): { wasm: string; data: string } | null {
   if (typeof window === 'undefined') return null;
@@ -18,17 +12,15 @@ export function buildWasmPrimeAbsoluteUrls(): { wasm: string; data: string } | n
   const base = getWasmAssetBaseForCreatePaths();
 
   if (/^https?:\/\//i.test(base)) {
-    const normalized = base.endsWith('/') ? base : `${base}/`;
-    const wasm = withRevisionQuery(new URL('soffice.wasm', normalized).href);
-    const data = withRevisionQuery(new URL('soffice.data', normalized).href);
-    return { wasm, data };
+    return {
+      wasm: wasmBinaryFetchUrl(base, 'soffice.wasm'),
+      data: wasmBinaryFetchUrl(base, 'soffice.data'),
+    };
   }
 
   const prefix = getVersionedWasmBinPathPrefix();
-  const origin = window.location.origin;
-  const dir = `${origin}${prefix}`;
   return {
-    wasm: new URL('soffice.wasm', dir).href,
-    data: new URL('soffice.data', dir).href,
+    wasm: wasmBinaryFetchUrl(prefix, 'soffice.wasm'),
+    data: wasmBinaryFetchUrl(prefix, 'soffice.data'),
   };
 }

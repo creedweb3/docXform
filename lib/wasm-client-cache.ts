@@ -56,21 +56,15 @@ function isAbsoluteUrlSameOrigin(absoluteUrl: string): boolean {
  * True only if a response is served from the HTTP cache (no network).
  * Requires `mode: 'same-origin'` per fetch spec for `only-if-cached`.
  *
+ * Uses **GET** only (no HEAD): Chrome often does not satisfy `only-if-cached` for HEAD
+ * when the entry was stored from a prior GET, which surfaced as `ERR_CACHE_MISS` and
+ * cleared the revision mark even though the full binary was still cached.
+ *
  * We avoid `Range` here: Emscripten caches full 200 responses; a ranged
  * `only-if-cached` request often misses that entry and surfaces as `ERR_CACHE_MISS`,
  * which looked like a broken load and cleared the revision mark incorrectly.
  */
 async function resourceInHttpCacheOnlyIfCached(absoluteUrl: string): Promise<boolean> {
-  try {
-    const headRes = await fetch(absoluteUrl, {
-      method: 'HEAD',
-      cache: 'only-if-cached',
-      mode: 'same-origin',
-    });
-    if (headRes.ok) return true;
-  } catch {
-    /* try GET below */
-  }
   try {
     const res = await fetch(absoluteUrl, {
       method: 'GET',

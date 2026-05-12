@@ -61,3 +61,8 @@ GEMINI.md
 
 # typescript
 *.tsbuildinfo
+
+# local-only maintenance scripts (untracked, see scripts/*.mjs)
+/scripts/wasm-version-tracker.mjs
+/scripts/supabase-keepalive.mjs
+/wasm-versions/
