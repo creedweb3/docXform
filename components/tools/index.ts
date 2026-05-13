@@ -11,3 +11,7 @@ export { PdfOrganizeTool } from './pdf-organize-tool';
 export { PdfWatermarkTool } from './pdf-watermark-tool';
 export { PdfUnlockTool } from './pdf-unlock-tool';
 export { PdfToTextTool } from './pdf-to-text-tool';
+export { ImageConvertTool } from './image-convert-tool';
+export { ImageCompressTool } from './image-compress-tool';
+export { DocxToPdfTool } from './docx-to-pdf-tool';
+export { DocxToTextTool } from './docx-to-text-tool';

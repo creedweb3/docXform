@@ -3,7 +3,11 @@
 import { ToolExperience } from '@/components/tools/tool-experience';
 import {
   DocxScrubTool,
+  DocxToPdfTool,
   DocxToPptxTool,
+  DocxToTextTool,
+  ImageCompressTool,
+  ImageConvertTool,
   ImagesToPdfTool,
   PdfCompressTool,
   PdfMergeTool,
@@ -49,6 +53,14 @@ export function ToolExperienceClient({ tool }: Props) {
         return <PdfUnlockTool />;
       case 'pdf-to-text':
         return <PdfToTextTool />;
+      case 'image-convert':
+        return <ImageConvertTool />;
+      case 'image-compress':
+        return <ImageCompressTool />;
+      case 'docx-to-pdf':
+        return <DocxToPdfTool />;
+      case 'docx-to-text':
+        return <DocxToTextTool />;
       default:
         return null;
     }
