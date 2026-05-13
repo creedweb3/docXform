@@ -1,20 +1,16 @@
 import { notFound } from 'next/navigation';
 import { createPageMetadata, breadcrumbJsonLd, webPageJsonLd, softwareApplicationJsonLd } from '@/lib/seo';
 import { JsonLd } from '@/components/json-ld';
-import { getToolBySlug, toolDefinitions, type ToolDefinition } from '@/lib/tools';
+import { getToolBySlug, type ToolDefinition } from '@/lib/tools';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { ToolExperienceClient } from '@/components/tools/tool-experience-client';
 
 type ToolPageProps = { params: { slug: string } };
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-export function generateStaticParams() {
-  return toolDefinitions.map((tool) => ({ slug: tool.slug }));
-}
 
 export function generateMetadata({ params }: ToolPageProps) {
   const tool = getToolBySlug(params.slug);

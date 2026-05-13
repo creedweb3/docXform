@@ -8,6 +8,8 @@ const eslintConfig = [
       'node_modules/**',
       'out/**',
       'build/**',
+      'test-results/**',
+      'playwright-report/**',
       'public/wasm/**',
       'next-env.d.ts',
     ],

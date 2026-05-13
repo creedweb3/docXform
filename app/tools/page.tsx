@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { createPageMetadata } from '@/lib/seo';
 import { ToolsIndexClient } from '@/components/tools/tools-index-client';
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
