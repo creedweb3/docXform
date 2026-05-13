@@ -1,0 +1,70 @@
+'use client';
+
+import { useCallback } from 'react';
+import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { unlockPdf } from '@/lib/tool-runs/pdf-unlock';
+import { validatePdfFiles } from '@/lib/tool-validations';
+import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
+import { getToolBySlug } from '@/lib/tools';
+
+const tool = getToolBySlug('pdf-unlock')!;
+
+const config: WorkspaceConfig = {
+  title: 'Drop a PDF to remove permission locks',
+  hint: 'or click to browse - .pdf - works for owner-restricted files you can already open',
+  accept: '.pdf',
+  allowMultiple: true,
+  cardClass: 'converter-main-card-rose',
+  iconBoxClass: 'icon-box-rose',
+  iconClass: 'text-rose-700',
+  dragClass: 'ring-2 ring-rose-300/50 bg-rose-50/60 scale-[1.01]',
+  primaryButtonClass: 'from-rose-600 to-rose-500',
+  progressClass: 'from-rose-400 to-pink-400',
+  iconPair: tool.iconPair,
+  tone: tool.tone,
+  storageKey: tool.slug,
+};
+
+export function PdfUnlockTool() {
+  const footer = (
+    <div className="rounded-xl border border-border/50 bg-card/50 p-3 text-xs text-muted-foreground">
+      Owner restrictions (print/copy/edit) are stripped. PDFs that require a password to open cannot be unlocked here.
+    </div>
+  );
+
+  const processFiles = useCallback(
+    async (files: WorkspaceFile[], setProgress: (id: string, percent: number, message?: string) => void) => {
+      const results: WorkspaceFile[] = [];
+      for (const item of files) {
+        try {
+          setProgress(item.id, 10, 'Unlocking...');
+          const out = await unlockPdf(item.file, (pct) => setProgress(item.id, pct, 'Unlocking...'));
+          results.push({
+            ...item,
+            status: 'done',
+            message: 'Unlocked',
+            outputs: [{ name: item.file.name.replace(/\.pdf$/i, '') + '-unlocked.pdf', blob: out }],
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          results.push({ ...item, status: 'failed', error: message, message });
+        }
+      }
+      return results;
+    },
+    []
+  );
+
+  const validateFiles = useCallback(
+    (files: File[]) => validatePdfFiles(files, MAX_CONVERSION_FILE_SIZE_BYTES, MAX_CONVERSION_BATCH_FILES),
+    []
+  );
+
+  return (
+    <ToolWorkspace
+      config={config}
+      actions={{ processFiles, zipName: 'unlocked-pdfs.zip', validateFiles }}
+      footer={footer}
+    />
+  );
+}

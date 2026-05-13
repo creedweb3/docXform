@@ -13,6 +13,11 @@ import {
   GitMergeIcon,
   Minimize01Icon,
   FileSecurityIcon,
+  RotateClockwiseIcon,
+  HierarchyFilesIcon,
+  DropletIcon,
+  FileUnlockedIcon,
+  TextIcon,
 } from '@hugeicons/core-free-icons';
 
 export type ToolDefinition = {
@@ -27,7 +32,7 @@ export type ToolDefinition = {
     back: typeof Files01Icon;
     front: typeof Files01Icon;
   };
-  tone: 'emerald' | 'amber' | 'teal' | 'purple' | 'cyan' | 'orange' | 'indigo' | 'slate';
+  tone: 'emerald' | 'amber' | 'teal' | 'purple' | 'cyan' | 'orange' | 'indigo' | 'slate' | 'rose' | 'sky' | 'violet' | 'lime' | 'fuchsia';
   keywords: string[];
   metaTitle: string;
   metaDescription: string;
@@ -245,6 +250,134 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Does layout change?', a: 'Content stays; tracked changes removal may accept changes—review before sharing.' },
     ],
     features: ['Remove comments/properties', 'Local privacy', 'Share-ready output'],
+  },
+  {
+    slug: 'pdf-rotate',
+    name: 'PDF Rotate',
+    description: 'Rotate all or selected PDF pages in your browser.',
+    accentClass: 'bg-sky-50 text-sky-700 border-sky-100',
+    badgeClass: 'text-sky-700 bg-sky-100',
+    buttonClass: 'from-sky-600 to-sky-500',
+    icon: RotateClockwiseIcon,
+    iconPair: { back: Pdf01Icon, front: RotateClockwiseIcon },
+    tone: 'sky',
+    keywords: ['rotate pdf', 'pdf orientation', 'rotate pages offline'],
+    metaTitle: 'PDF Rotate – flip pages locally | docXform',
+    metaDescription: 'Rotate every page or just odd/even pages of a PDF in your browser. No uploads, free, privacy-first.',
+    howToSteps: [
+      'Open PDF Rotate and add your PDF',
+      'Pick an angle and whether to rotate all, odd, or even pages',
+      'Click Process locally to rotate without uploads',
+      'Download the rotated PDF',
+    ],
+    faqs: [
+      { q: 'Do you upload my PDF?', a: 'No. Rotation is performed in your browser with pdf-lib.' },
+      { q: 'Can I rotate selected pages?', a: 'Yes. Choose all, only odd, or only even pages.' },
+      { q: 'Are my files re-encoded?', a: 'No. Only the page rotation metadata is updated.' },
+    ],
+    features: ['Quick 90/180/270 rotation', 'Odd/even scope', 'Local-only processing'],
+  },
+  {
+    slug: 'pdf-organize',
+    name: 'PDF Organize',
+    description: 'Reorder or delete PDF pages without uploads.',
+    accentClass: 'bg-violet-50 text-violet-700 border-violet-100',
+    badgeClass: 'text-violet-700 bg-violet-100',
+    buttonClass: 'from-violet-600 to-violet-500',
+    icon: HierarchyFilesIcon,
+    iconPair: { back: Pdf01Icon, front: HierarchyFilesIcon },
+    tone: 'violet',
+    keywords: ['reorder pdf', 'delete pdf pages', 'arrange pdf'],
+    metaTitle: 'Reorder & Delete PDF Pages – locally | docXform',
+    metaDescription: 'Rearrange and remove PDF pages in your browser. No uploads, free, privacy-first.',
+    howToSteps: [
+      'Open PDF Organize and add your PDF',
+      'Enter the page order you want, e.g. 1,3,5-7',
+      'Click Process locally to rebuild the PDF',
+      'Download the reorganized PDF',
+    ],
+    faqs: [
+      { q: 'How do I delete pages?', a: 'Omit them from the order list. Anything not listed is dropped.' },
+      { q: 'Do you support page ranges?', a: 'Yes. Use ranges like 1-3 mixed with single pages.' },
+      { q: 'Is my PDF uploaded?', a: 'No. Reordering uses pdf-lib in your browser only.' },
+    ],
+    features: ['Drag-friendly ranges', 'Delete by omission', 'Local-only processing'],
+  },
+  {
+    slug: 'pdf-watermark',
+    name: 'PDF Watermark',
+    description: 'Add a custom text watermark to every page.',
+    accentClass: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100',
+    badgeClass: 'text-fuchsia-700 bg-fuchsia-100',
+    buttonClass: 'from-fuchsia-600 to-fuchsia-500',
+    icon: DropletIcon,
+    iconPair: { back: Pdf01Icon, front: DropletIcon },
+    tone: 'fuchsia',
+    keywords: ['watermark pdf', 'stamp pdf', 'confidential watermark'],
+    metaTitle: 'PDF Watermark – stamp pages locally | docXform',
+    metaDescription: 'Add a custom text watermark to PDF pages in your browser. No uploads, free, privacy-first.',
+    howToSteps: [
+      'Open PDF Watermark and add your PDF',
+      'Type the watermark text and pick a position',
+      'Adjust opacity, size, and color',
+      'Click Process locally and download the stamped PDF',
+    ],
+    faqs: [
+      { q: 'Is the watermark removable?', a: 'It is rendered into each page. Removal would require redoing layout.' },
+      { q: 'Can I tile across the page?', a: 'Yes. Choose Tile for repeated diagonal watermarks.' },
+      { q: 'Is my PDF uploaded?', a: 'No. Watermarking happens in your browser with pdf-lib.' },
+    ],
+    features: ['Text watermark', 'Position presets', 'Opacity & color control'],
+  },
+  {
+    slug: 'pdf-unlock',
+    name: 'PDF Unlock',
+    description: 'Remove owner restrictions on permission-locked PDFs.',
+    accentClass: 'bg-rose-50 text-rose-700 border-rose-100',
+    badgeClass: 'text-rose-700 bg-rose-100',
+    buttonClass: 'from-rose-600 to-rose-500',
+    icon: FileUnlockedIcon,
+    iconPair: { back: Pdf01Icon, front: FileUnlockedIcon },
+    tone: 'rose',
+    keywords: ['unlock pdf', 'remove pdf permissions', 'enable print copy'],
+    metaTitle: 'PDF Unlock – clear owner restrictions | docXform',
+    metaDescription: 'Remove print/copy/edit restrictions from PDFs you own. Local-only, no uploads.',
+    howToSteps: [
+      'Open PDF Unlock and add the restricted PDF',
+      'Click Process locally to strip owner restrictions',
+      'Download the unrestricted PDF',
+    ],
+    faqs: [
+      { q: 'Does this crack open-passwords?', a: 'No. Only owner restrictions on files you can already open are removed.' },
+      { q: 'Is my PDF uploaded?', a: 'No. Everything runs in your browser via pdf-lib.' },
+      { q: 'Is this legal?', a: 'Use only on documents you own or have permission to modify.' },
+    ],
+    features: ['Local-only processing', 'Restore print/copy/edit', 'No watermark added'],
+  },
+  {
+    slug: 'pdf-to-text',
+    name: 'PDF to Text',
+    description: 'Extract clean text from PDFs without uploading.',
+    accentClass: 'bg-lime-50 text-lime-700 border-lime-100',
+    badgeClass: 'text-lime-700 bg-lime-100',
+    buttonClass: 'from-lime-600 to-lime-500',
+    icon: TextIcon,
+    iconPair: { back: Pdf01Icon, front: TextIcon },
+    tone: 'lime',
+    keywords: ['pdf to text', 'pdf to txt', 'extract pdf text'],
+    metaTitle: 'PDF to Text – extract content locally | docXform',
+    metaDescription: 'Pull plain text out of any text-based PDF in your browser. No uploads, free, privacy-first.',
+    howToSteps: [
+      'Open PDF to Text and add your PDF',
+      'Click Process locally to extract text in the browser',
+      'Download the .txt file or per-page snippets',
+    ],
+    faqs: [
+      { q: 'Does this OCR scanned PDFs?', a: 'No. Image-only PDFs return empty strings; use a dedicated OCR tool first.' },
+      { q: 'Is my PDF uploaded?', a: 'No. Extraction runs on-device using pdfjs.' },
+      { q: 'Can I keep per-page splits?', a: 'Yes. Per-page text and a combined transcript are both available.' },
+    ],
+    features: ['Local text extraction', 'Per-page output', 'No OCR needed for text PDFs'],
   },
 ];
 

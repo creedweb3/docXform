@@ -62,6 +62,36 @@ const toneClasses: Record<ToolDefinition['tone'], { base: string; front: string;
     glow: 'shadow-slate-500/20',
     text: 'text-slate-700',
   },
+  rose: {
+    base: 'from-rose-50 to-pink-50 border-rose-100',
+    front: 'bg-rose-600 text-white border-rose-400',
+    glow: 'shadow-rose-500/20',
+    text: 'text-rose-700',
+  },
+  sky: {
+    base: 'from-sky-50 to-blue-50 border-sky-100',
+    front: 'bg-sky-600 text-white border-sky-400',
+    glow: 'shadow-sky-500/20',
+    text: 'text-sky-700',
+  },
+  violet: {
+    base: 'from-violet-50 to-purple-50 border-violet-100',
+    front: 'bg-violet-600 text-white border-violet-400',
+    glow: 'shadow-violet-500/20',
+    text: 'text-violet-700',
+  },
+  lime: {
+    base: 'from-lime-50 to-green-50 border-lime-100',
+    front: 'bg-lime-600 text-white border-lime-400',
+    glow: 'shadow-lime-500/20',
+    text: 'text-lime-700',
+  },
+  fuchsia: {
+    base: 'from-fuchsia-50 to-pink-50 border-fuchsia-100',
+    front: 'bg-fuchsia-600 text-white border-fuchsia-400',
+    glow: 'shadow-fuchsia-500/20',
+    text: 'text-fuchsia-700',
+  },
 };
 
 export function ToolIcon({ pair, tone, variant = 'tile', className, label }: ToolIconProps) {

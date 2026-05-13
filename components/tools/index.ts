@@ -6,3 +6,8 @@ export { ImagesToPdfTool } from './images-to-pdf-tool';
 export { PptxToPdfTool } from './pptx-to-pdf-tool';
 export { DocxToPptxTool } from './docx-to-pptx-tool';
 export { DocxScrubTool } from './docx-scrub-tool';
+export { PdfRotateTool } from './pdf-rotate-tool';
+export { PdfOrganizeTool } from './pdf-organize-tool';
+export { PdfWatermarkTool } from './pdf-watermark-tool';
+export { PdfUnlockTool } from './pdf-unlock-tool';
+export { PdfToTextTool } from './pdf-to-text-tool';

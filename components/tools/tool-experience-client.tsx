@@ -7,8 +7,13 @@ import {
   ImagesToPdfTool,
   PdfCompressTool,
   PdfMergeTool,
+  PdfOrganizeTool,
+  PdfRotateTool,
   PdfSplitTool,
   PdfToImagesTool,
+  PdfToTextTool,
+  PdfUnlockTool,
+  PdfWatermarkTool,
   PptxToPdfTool,
 } from '@/components/tools';
 import type { ToolDefinition } from '@/lib/tools';
@@ -34,6 +39,16 @@ export function ToolExperienceClient({ tool }: Props) {
         return <DocxToPptxTool />;
       case 'docx-scrub':
         return <DocxScrubTool />;
+      case 'pdf-rotate':
+        return <PdfRotateTool />;
+      case 'pdf-organize':
+        return <PdfOrganizeTool />;
+      case 'pdf-watermark':
+        return <PdfWatermarkTool />;
+      case 'pdf-unlock':
+        return <PdfUnlockTool />;
+      case 'pdf-to-text':
+        return <PdfToTextTool />;
       default:
         return null;
     }
