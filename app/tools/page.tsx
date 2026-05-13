@@ -2,10 +2,6 @@ import type { Metadata } from 'next';
 import { createPageMetadata } from '@/lib/seo';
 import { ToolsIndexClient } from '@/components/tools/tools-index-client';
 
-export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 export const metadata: Metadata = createPageMetadata({
   title: 'All tools – browser-based PDF & Office utilities | docXform',
   description:

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { restInsert } from '@/lib/supabase-rest';
 
 export const runtime = 'edge';
 
@@ -70,12 +70,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const client = createSupabaseServiceClient();
     const ipSalt = process.env.CONTACT_IP_SALT ?? 'docxform-contact';
     const ipHash = await hashIpAddress(getClientIp(request), ipSalt);
     const userAgent = normalizeText(request.headers.get('user-agent'));
 
-    const { error } = await client.from('contact_submissions').insert({
+    await restInsert('contact_submissions', {
       name,
       email,
       message,
@@ -84,13 +83,6 @@ export async function POST(request: NextRequest) {
       ip_hash: ipHash,
       user_agent: userAgent || null,
     });
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to submit message. Please try again shortly.' },
-        { status: 500 }
-      );
-    }
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch {

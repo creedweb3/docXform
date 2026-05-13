@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminUserFromCookies } from '@/lib/admin-api-auth';
-import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { restSelect } from '@/lib/supabase-rest';
 
 export const runtime = 'edge';
 
@@ -27,33 +27,33 @@ export async function GET(request: NextRequest) {
   const to = from + limit - 1;
 
   try {
-    const client = createSupabaseServiceClient();
-    let query = client
-      .from('contact_submissions')
-      .select(
-        'id,created_at,name,email,message,status,source_page,archived_at,replied_at',
-        { count: 'exact' }
-      )
-      .order('created_at', { ascending: false })
-      .range(from, to);
+    const query = new URLSearchParams({
+      select: 'id,created_at,name,email,message,status,source_page,archived_at,replied_at',
+      order: 'created_at.desc',
+      offset: String(from),
+      limit: String(to - from + 1),
+    });
 
     if (VALID_STATUSES.has(status)) {
-      query = query.eq('status', status);
+      query.set('status', `eq.${status}`);
     }
 
     if (search.length > 0) {
       const escaped = search.replace(/[%_]/g, '').slice(0, 120);
-      query = query.or(`name.ilike.%${escaped}%,email.ilike.%${escaped}%`);
+      query.set('or', `(name.ilike.*${escaped}*,email.ilike.*${escaped}*)`);
     }
 
-    const { data, error, count } = await query;
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to load submissions.' },
-        { status: 500 }
-      );
-    }
+    const { data, count } = await restSelect<{
+      id: string;
+      created_at: string;
+      name: string;
+      email: string;
+      message: string;
+      status: 'new' | 'read' | 'replied' | 'archived';
+      source_page?: string | null;
+      archived_at?: string | null;
+      replied_at?: string | null;
+    }>('contact_submissions', query, { count: true });
 
     const items = (data ?? []).map((row) => {
       const preview =

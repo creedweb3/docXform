@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdminUserFromCookies } from '@/lib/admin-api-auth';
-import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { restSelect } from '@/lib/supabase-rest';
 
 export const runtime = 'edge';
 
@@ -11,18 +11,19 @@ export async function GET() {
   }
 
   try {
-    const client = createSupabaseServiceClient();
-    const { data, error } = await client
-      .from('converter_metrics')
-      .select('id,created_at,event,mode,detail,meta')
-      .order('created_at', { ascending: false })
-      .limit(200);
-
-    if (error) {
-      return NextResponse.json({ error: 'Failed to load metrics.', detail: error.message }, { status: 500 });
-    }
-
-    const rows = data ?? [];
+    const query = new URLSearchParams({
+      select: 'id,created_at,event,mode,detail,meta',
+      order: 'created_at.desc',
+      limit: '200',
+    });
+    const { data: rows } = await restSelect<{
+      id: string;
+      created_at: string;
+      event: string;
+      mode: string | null;
+      detail: string | null;
+      meta: Record<string, unknown> | null;
+    }>('converter_metrics', query);
     const aggregates: Record<string, number> = {};
     for (const row of rows) {
       const e = typeof row.event === 'string' ? row.event : 'unknown';

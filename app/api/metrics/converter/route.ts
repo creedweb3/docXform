@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { restInsert } from '@/lib/supabase-rest';
 
 export const runtime = 'edge';
 
@@ -11,12 +11,6 @@ const ALLOWED_EVENTS = new Set([
   'convert_fail',
   'download',
 ]);
-
-function getServiceEnv() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-  return { url, key };
-}
 
 type IncomingEvent = {
   event: string;
@@ -59,15 +53,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid event' }, { status: 400 });
   }
 
-  const { url, key } = getServiceEnv();
-  if (!url || !key) {
-    return new NextResponse(null, { status: 204 });
-  }
-
-  const client = createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
-  });
-
   const rows = normalized.map(({ event, mode, detail, path, count, ts }) => ({
     event,
     mode,
@@ -75,12 +60,13 @@ export async function POST(request: NextRequest) {
     meta: { path, count, ts },
   }));
 
-  const { error } = await client.from('converter_metrics').insert(rows);
-
   // Best-effort: previews often lack schema/RLS; keep the client silent (no 500 spam).
-  if (error) {
+  try {
+    await restInsert('converter_metrics', rows);
+  } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('[converter metrics] insert failed', error.message);
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn('[converter metrics] insert failed', message);
     }
     return new NextResponse(null, { status: 204 });
   }
