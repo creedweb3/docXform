@@ -8,6 +8,8 @@ import { JsonLd } from '@/components/json-ld';
 import { useMemo } from 'react';
 import { Upload04Icon, Shield01Icon, SparklesIcon } from '@hugeicons/core-free-icons';
 
+export const runtime = 'edge';
+
 function ToolSchema({ slug }: { slug: string }) {
   const tool = getToolBySlug(slug);
   if (!tool) return null;
