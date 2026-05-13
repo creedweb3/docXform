@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { SparklesIcon } from '@hugeicons/core-free-icons';
 import { toolDefinitions } from '@/lib/tools';
+import { ToolIcon } from '@/components/tools/tool-icon';
 
 export function ToolsIndexClient() {
   return (
@@ -27,7 +28,6 @@ export function ToolsIndexClient() {
 
         <div className="max-w-6xl mx-auto mt-10 grid gap-4 sm:gap-6 md:grid-cols-2">
           {toolDefinitions.map((tool) => {
-            const Icon = tool.icon;
             return (
               <Link
                 key={tool.slug}
@@ -35,11 +35,16 @@ export function ToolsIndexClient() {
                 className="group block rounded-2xl border border-white/50 glass-subtle p-5 sm:p-6 transition-all hover:-translate-y-1 hover:shadow-lg"
                 aria-label={`${tool.name} - ${tool.description}`}
               >
-                <div className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold border ${tool.accentClass}`}>
-                  <HugeiconsIcon icon={Icon} size={18} strokeWidth={2} />
-                  <span>{tool.name}</span>
+                <div className="flex items-start gap-4">
+                  <ToolIcon pair={tool.iconPair} tone={tool.tone} label={`${tool.name} icon`} />
+                  <div className="min-w-0">
+                    <div className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold border ${tool.accentClass}`}>
+                      <ToolIcon pair={tool.iconPair} tone={tool.tone} variant="inline" />
+                      <span>{tool.name}</span>
+                    </div>
+                    <p className="mt-3 text-sm sm:text-base text-muted-foreground">{tool.description}</p>
+                  </div>
                 </div>
-                <p className="mt-3 text-sm sm:text-base text-muted-foreground">{tool.description}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {tool.keywords.map((kw) => (
                     <span

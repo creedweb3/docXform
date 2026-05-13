@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { SparklesIcon, Shield01Icon, Upload04Icon } from '@hugeicons/core-free-icons';
 import { type ToolDefinition } from '@/lib/tools';
+import { ToolIcon } from '@/components/tools/tool-icon';
 
 type ToolExperienceProps = {
   tool: ToolDefinition;
@@ -37,11 +38,9 @@ export function ToolExperience({ tool, workspace }: ToolExperienceProps) {
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-foreground">{tool.name}</h1>
           <p className="text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto">{tool.description}</p>
-          <div
-            className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold border ${tool.accentClass}`}
-          >
-            <HugeiconsIcon icon={tool.icon} size={18} strokeWidth={2} />
-            <span>{tool.metaTitle}</span>
+          <div className={`inline-flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold border ${tool.accentClass}`}>
+            <ToolIcon pair={tool.iconPair} tone={tool.tone} variant="tile" label={`${tool.name} icon`} />
+            <span className="text-left">{tool.metaTitle}</span>
           </div>
         </div>
 

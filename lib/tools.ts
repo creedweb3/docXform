@@ -6,6 +6,13 @@ import {
   Presentation02Icon,
   Presentation01Icon,
   Shield01Icon,
+  Pdf01Icon,
+  Doc01Icon,
+  Ppt01Icon,
+  FileImageIcon,
+  GitMergeIcon,
+  Minimize01Icon,
+  FileSecurityIcon,
 } from '@hugeicons/core-free-icons';
 
 export type ToolDefinition = {
@@ -16,6 +23,11 @@ export type ToolDefinition = {
   badgeClass: string;
   buttonClass: string;
   icon: typeof Files01Icon;
+  iconPair: {
+    back: typeof Files01Icon;
+    front: typeof Files01Icon;
+  };
+  tone: 'emerald' | 'amber' | 'teal' | 'purple' | 'cyan' | 'orange' | 'indigo' | 'slate';
   keywords: string[];
   metaTitle: string;
   metaDescription: string;
@@ -33,6 +45,8 @@ export const toolDefinitions: ToolDefinition[] = [
     badgeClass: 'text-emerald-700 bg-emerald-100',
     buttonClass: 'from-emerald-600 to-emerald-500',
     icon: Files01Icon,
+    iconPair: { back: Pdf01Icon, front: GitMergeIcon },
+    tone: 'emerald',
     keywords: ['merge pdf', 'combine pdf', 'offline pdf merge'],
     metaTitle: 'PDF Merge – combine PDFs in your browser | docXform',
     metaDescription: 'Merge PDFs locally with no uploads. Keep page order, privacy-first, WebAssembly fast.',
@@ -58,6 +72,8 @@ export const toolDefinitions: ToolDefinition[] = [
     badgeClass: 'text-amber-700 bg-amber-100',
     buttonClass: 'from-amber-500 to-amber-400',
     icon: SplitIcon,
+    iconPair: { back: Pdf01Icon, front: SplitIcon },
+    tone: 'amber',
     keywords: ['split pdf', 'extract pdf pages', 'split pdf offline'],
     metaTitle: 'Split PDF – extract pages locally | docXform',
     metaDescription: 'Split PDF pages without uploads. Choose ranges, extract in-browser, privacy-first.',
@@ -82,6 +98,8 @@ export const toolDefinitions: ToolDefinition[] = [
     badgeClass: 'text-teal-700 bg-teal-100',
     buttonClass: 'from-teal-600 to-teal-500',
     icon: Files01Icon,
+    iconPair: { back: Pdf01Icon, front: Minimize01Icon },
+    tone: 'teal',
     keywords: ['compress pdf', 'reduce pdf size', 'shrink pdf offline'],
     metaTitle: 'Compress PDF – reduce size locally | docXform',
     metaDescription: 'Compress PDFs on-device with quality presets and image downsampling. No uploads.',
@@ -106,6 +124,8 @@ export const toolDefinitions: ToolDefinition[] = [
     badgeClass: 'text-purple-700 bg-purple-100',
     buttonClass: 'from-purple-600 to-purple-500',
     icon: Image01Icon,
+    iconPair: { back: Pdf01Icon, front: FileImageIcon },
+    tone: 'purple',
     keywords: ['pdf to png', 'pdf to jpg', 'export pdf pages'],
     metaTitle: 'PDF to Images – export pages locally | docXform',
     metaDescription: 'Convert PDF pages to PNG or JPEG on-device. No uploads, privacy-first, quick exports.',
@@ -130,6 +150,8 @@ export const toolDefinitions: ToolDefinition[] = [
     badgeClass: 'text-cyan-700 bg-cyan-100',
     buttonClass: 'from-cyan-600 to-cyan-500',
     icon: ImageDownloadIcon,
+    iconPair: { back: FileImageIcon, front: Pdf01Icon },
+    tone: 'cyan',
     keywords: ['jpg to pdf', 'png to pdf', 'images to pdf'],
     metaTitle: 'Images to PDF – batch convert locally | docXform',
     metaDescription: 'Combine JPG/PNG into one PDF on-device. No uploads, privacy-safe, order control.',
@@ -154,6 +176,8 @@ export const toolDefinitions: ToolDefinition[] = [
     badgeClass: 'text-orange-700 bg-orange-100',
     buttonClass: 'from-orange-600 to-orange-500',
     icon: Presentation02Icon,
+    iconPair: { back: Ppt01Icon, front: Pdf01Icon },
+    tone: 'orange',
     keywords: ['ppt to pdf', 'pptx to pdf', 'slides to pdf'],
     metaTitle: 'PPTX to PDF – convert slides locally | docXform',
     metaDescription: 'Convert PPTX to PDF on-device. No uploads, keep layout and fonts where possible.',
@@ -178,6 +202,8 @@ export const toolDefinitions: ToolDefinition[] = [
     badgeClass: 'text-indigo-700 bg-indigo-100',
     buttonClass: 'from-indigo-600 to-indigo-500',
     icon: Presentation01Icon,
+    iconPair: { back: Doc01Icon, front: Ppt01Icon },
+    tone: 'indigo',
     keywords: ['word to ppt', 'docx to pptx', 'doc to ppt'],
     metaTitle: 'DOCX to PPTX – create slides locally | docXform',
     metaDescription: 'Generate PPTX slides from Word on-device. No uploads, privacy-first, fast outline-to-slides.',
@@ -202,6 +228,8 @@ export const toolDefinitions: ToolDefinition[] = [
     badgeClass: 'text-slate-700 bg-slate-200',
     buttonClass: 'from-slate-700 to-slate-600',
     icon: Shield01Icon,
+    iconPair: { back: Doc01Icon, front: FileSecurityIcon },
+    tone: 'slate',
     keywords: ['remove metadata', 'clean docx', 'strip comments'],
     metaTitle: 'DOCX Metadata Scrub – clean docs locally | docXform',
     metaDescription: 'Remove comments and metadata from DOCX on-device. Keep privacy, ship clean files.',
