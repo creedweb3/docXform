@@ -10,7 +10,7 @@ test.describe('WASM assets (browser)', () => {
     await expect(page.getByRole('heading', { level: 1, name: /^Word to PDF converter$/i })).toBeVisible();
 
     const result = await page.evaluate(async () => {
-      const baseRoot = window.__DOCXFORM_WASM_BASE__ || '/wasm/';
+      const baseRoot = (window as typeof window & { __DOCXFORM_WASM_BASE__?: string }).__DOCXFORM_WASM_BASE__ || '/wasm/';
       const wasmRev = '2026-05-06';
       const versionedBin = `${window.location.origin}/wasm/bin/${wasmRev}/`;
       const resolveUrl = (name: string) => {

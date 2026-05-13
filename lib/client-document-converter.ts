@@ -370,6 +370,8 @@ function getInputFormat(filename: string): InputFormat {
   if (
     ext === 'doc' ||
     ext === 'docx' ||
+    ext === 'ppt' ||
+    ext === 'pptx' ||
     ext === 'pdf' ||
     ext === 'rtf' ||
     ext === 'txt' ||
@@ -423,6 +425,19 @@ function assertValidOutput(result: ConversionResult, outputFormat: OutputFormat)
 
     if (!startsWithZip) {
       throw new Error('Conversion did not produce a valid DOCX file.');
+    }
+  }
+
+  if (outputFormat === 'pptx') {
+    const startsWithZip =
+      bytes.length >= 4 &&
+      bytes[0] === 0x50 &&
+      bytes[1] === 0x4b &&
+      bytes[2] === 0x03 &&
+      bytes[3] === 0x04;
+
+    if (!startsWithZip) {
+      throw new Error('Conversion did not produce a valid PPTX file.');
     }
   }
 }

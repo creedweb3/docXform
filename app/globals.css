@@ -118,6 +118,11 @@
     background-image: radial-gradient(circle at 1px 1px, rgb(37 99 235 / 0.22) 1px, transparent 0);
     background-size: 28px 28px;
   }
+  .glass-subtle {
+    background: rgba(255, 255, 255, 0.5);
+    @apply backdrop-blur-2xl border border-white/40;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  }
   .bg-noise-svg {
     background-color: hsl(var(--background));
     background-image: url('/bg-noise.svg');
@@ -147,6 +152,78 @@
   }
   .converter-main-card-blue:hover {
     box-shadow: 0 12px 24px rgba(59, 130, 246, 0.14);
+  }
+  .converter-main-card-emerald {
+    @apply backdrop-blur-md border;
+    background: rgba(209, 250, 229, 0.55);
+    border-color: rgba(167, 243, 208, 0.6);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.12);
+  }
+  .converter-main-card-emerald:hover {
+    box-shadow: 0 12px 24px rgba(16, 185, 129, 0.16);
+  }
+  .converter-main-card-teal {
+    @apply backdrop-blur-md border;
+    background: rgba(204, 251, 241, 0.55);
+    border-color: rgba(153, 246, 228, 0.6);
+    box-shadow: 0 6px 16px rgba(13, 148, 136, 0.12);
+  }
+  .converter-main-card-teal:hover {
+    box-shadow: 0 12px 24px rgba(13, 148, 136, 0.16);
+  }
+  .converter-main-card-purple {
+    @apply backdrop-blur-md border;
+    background: rgba(237, 233, 254, 0.55);
+    border-color: rgba(221, 214, 254, 0.6);
+    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.12);
+  }
+  .converter-main-card-purple:hover {
+    box-shadow: 0 12px 24px rgba(124, 58, 237, 0.16);
+  }
+  .converter-main-card-cyan {
+    @apply backdrop-blur-md border;
+    background: rgba(224, 246, 255, 0.55);
+    border-color: rgba(186, 230, 253, 0.6);
+    box-shadow: 0 6px 16px rgba(8, 145, 178, 0.12);
+  }
+  .converter-main-card-cyan:hover {
+    box-shadow: 0 12px 24px rgba(8, 145, 178, 0.16);
+  }
+  .converter-main-card-orange {
+    @apply backdrop-blur-md border;
+    background: rgba(255, 237, 213, 0.6);
+    border-color: rgba(254, 215, 170, 0.65);
+    box-shadow: 0 6px 16px rgba(234, 88, 12, 0.12);
+  }
+  .converter-main-card-orange:hover {
+    box-shadow: 0 12px 24px rgba(234, 88, 12, 0.16);
+  }
+  .converter-main-card-indigo {
+    @apply backdrop-blur-md border;
+    background: rgba(224, 231, 255, 0.55);
+    border-color: rgba(199, 210, 254, 0.6);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.12);
+  }
+  .converter-main-card-indigo:hover {
+    box-shadow: 0 12px 24px rgba(79, 70, 229, 0.16);
+  }
+  .converter-main-card-slate {
+    @apply backdrop-blur-md border;
+    background: rgba(241, 245, 249, 0.55);
+    border-color: rgba(226, 232, 240, 0.65);
+    box-shadow: 0 6px 16px rgba(100, 116, 139, 0.12);
+  }
+  .converter-main-card-slate:hover {
+    box-shadow: 0 12px 24px rgba(100, 116, 139, 0.16);
+  }
+  .converter-main-card-amber {
+    @apply backdrop-blur-md border;
+    background: rgba(255, 251, 235, 0.6);
+    border-color: rgba(254, 240, 199, 0.7);
+    box-shadow: 0 6px 16px rgba(217, 119, 6, 0.12);
+  }
+  .converter-main-card-amber:hover {
+    box-shadow: 0 12px 24px rgba(217, 119, 6, 0.16);
   }
   .converter-main-card-rose {
     @apply backdrop-blur-md border;
@@ -227,6 +304,27 @@
   }
   .icon-box-peach {
     @apply bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100/50;
+  }
+  .icon-box-emerald {
+    @apply bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100/50;
+  }
+  .icon-box-teal {
+    @apply bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100/50;
+  }
+  .icon-box-purple {
+    @apply bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-100/50;
+  }
+  .icon-box-cyan {
+    @apply bg-gradient-to-br from-cyan-50 to-sky-50 border border-cyan-100/50;
+  }
+  .icon-box-orange {
+    @apply bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100/50;
+  }
+  .icon-box-indigo {
+    @apply bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100/50;
+  }
+  .icon-box-slate {
+    @apply bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200/60;
   }
   .section-divider {
     @apply w-12 h-1 rounded-full bg-gradient-to-r from-blue-400 to-cyan-400;

@@ -203,9 +203,12 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
 
   useLayoutEffect(() => {
     if (!isConverterSessionReady()) return;
-    setWarmState('ready');
-    setWarmMessage('Converter ready');
-    warmStartedRef.current = true;
+    // Defer to next microtask to avoid setState during render of layout effect
+    queueMicrotask(() => {
+      setWarmState('ready');
+      setWarmMessage('Converter ready');
+      warmStartedRef.current = true;
+    });
   }, []);
 
   const totalBytes = useMemo(
@@ -501,7 +504,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       resetInput();
       startWarmConverter();
     },
-    [busy, items, mode, resetInput, showNotice, startWarmConverter, totalBytes]
+    [busy, items, mode, resetInput, setItems, showNotice, startWarmConverter, totalBytes]
   );
 
   const addFiles = useCallback(
@@ -535,27 +538,28 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     [addFiles]
   );
 
-  const handleRemove = useCallback((id: string) => {
-    setItems((current) => current.filter((item) => item.id !== id));
-  }, []);
+  const handleRemove = useCallback(
+    (id: string) => {
+      setItems((current) => current.filter((item) => item.id !== id));
+    },
+    [setItems]
+  );
 
   const handleClear = useCallback(() => {
     setItems([]);
     setDuplicatePrompt(null);
     showNotice('');
     resetInput();
-  }, [resetInput, showNotice]);
+  }, [resetInput, setItems, showNotice]);
 
   const handleSkipDuplicates = useCallback(() => {
     const count = duplicatePrompt?.files.length ?? 0;
     setDuplicatePrompt(null);
     showNotice(
-      count > 0
-        ? `${count} duplicate ${count === 1 ? 'file' : 'files'} skipped`
-        : '',
+      count > 0 ? `${count} duplicate ${count === 1 ? 'file' : 'files'} skipped` : '',
       { kind: 'success', autoClear: true, transient: true }
     );
-  }, [duplicatePrompt?.files.length, showNotice]);
+  }, [duplicatePrompt?.files, showNotice]);
 
   const handleAddDuplicates = useCallback(() => {
     const files = duplicatePrompt?.files ?? [];
@@ -646,7 +650,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
         setIsConverting(false);
       }
     },
-    [config.outputFormat, mode, showNotice]
+    [config.outputFormat, mode, showNotice, setItems]
   );
 
   const handleConvert = useCallback(async () => {

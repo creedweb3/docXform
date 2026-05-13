@@ -77,14 +77,14 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     slug: 'pdf-compress',
     name: 'PDF Compress',
-    description: 'Shrink PDFs with on-device compression presets.',
+    description: 'Shrink PDFs with on-device quality presets and image downsampling.',
     accentClass: 'bg-teal-50 text-teal-700 border-teal-100',
     badgeClass: 'text-teal-700 bg-teal-100',
     buttonClass: 'from-teal-600 to-teal-500',
     icon: Files01Icon,
     keywords: ['compress pdf', 'reduce pdf size', 'shrink pdf offline'],
     metaTitle: 'Compress PDF – reduce size locally | docXform',
-    metaDescription: 'Compress PDFs on-device with quality presets. No uploads, keep privacy intact.',
+    metaDescription: 'Compress PDFs on-device with quality presets and image downsampling. No uploads.',
     howToSteps: [
       'Open the PDF Compress tool and add your PDF',
       'Choose a quality preset (smaller vs higher quality)',
@@ -93,10 +93,10 @@ export const toolDefinitions: ToolDefinition[] = [
     ],
     faqs: [
       { q: 'Are my PDFs uploaded?', a: 'No. Compression runs locally in your browser; nothing leaves your device.' },
-      { q: 'Will text stay searchable?', a: 'Yes, text-based PDFs remain searchable; images may be downsampled per preset.' },
-      { q: 'What presets exist?', a: 'Light, Balanced, and Max reduce image quality progressively while keeping text crisp.' },
+      { q: 'What presets exist?', a: 'Light, Balanced, and Max reduce image resolution progressively for smaller files.' },
+      { q: 'Does this change appearance?', a: 'Images are recompressed; text and vector artwork are flattened to preserve layout while saving space.' },
     ],
-    features: ['Quality presets', 'Local-only compression', 'Searchable text preserved'],
+    features: ['Quality presets', 'Image downsampling', 'Local-only compression'],
   },
   {
     slug: 'pdf-to-images',

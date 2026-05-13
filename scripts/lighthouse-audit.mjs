@@ -52,5 +52,4 @@ if (r.status !== 0) {
   process.exit(r.status ?? 1);
 }
 
-// eslint-disable-next-line no-console -- CLI output
 console.log(`\nReports: ${outBase}.report.html and .json under tmp/\n`);

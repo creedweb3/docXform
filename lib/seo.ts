@@ -23,10 +23,27 @@ const SAME_AS_LINKS =
     ? process.env.NEXT_PUBLIC_SITE_SAMEAS.split(',').map((link) => link.trim()).filter(Boolean)
     : [];
 
+const TOOL_ROUTES = (() => {
+  try {
+    // Lazy import to avoid circular deps when seo utilities are used outside Next
+    // contexts that already load icons. This stays synchronous for server usage.
+    const { toolDefinitions }: typeof import('./tools') = require('./tools');
+    return toolDefinitions.map((tool) => ({
+      path: `/tools/${tool.slug}`,
+      priority: 0.64 as const,
+      changeFrequency: 'monthly' as const,
+    }));
+  } catch {
+    return [];
+  }
+})();
+
 export const PUBLIC_ROUTES = [
   { path: '/', priority: 1, changeFrequency: 'weekly' },
   { path: '/word-to-pdf', priority: 0.95, changeFrequency: 'weekly' },
   { path: '/pdf-to-word', priority: 0.95, changeFrequency: 'weekly' },
+  { path: '/tools', priority: 0.7, changeFrequency: 'weekly' },
+  ...TOOL_ROUTES,
   { path: '/articles', priority: 0.75, changeFrequency: 'weekly' },
   { path: '/articles/modern-word-security', priority: 0.7, changeFrequency: 'monthly' },
   { path: '/articles/formatting-guide', priority: 0.7, changeFrequency: 'monthly' },
