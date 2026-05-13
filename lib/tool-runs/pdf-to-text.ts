@@ -16,7 +16,9 @@ export async function pdfToText(
   }
 
   const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
-  GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+  if (!GlobalWorkerOptions.workerSrc) {
+    GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+  }
 
   const pdf = await getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
   const total = pdf.numPages;

@@ -13,7 +13,9 @@ export async function pdfToImages(
   }
 
   const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
-  GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+  if (!GlobalWorkerOptions.workerSrc) {
+    GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+  }
 
   const arrayBuffer = await file.arrayBuffer();
   const pdf: PDFDocumentProxy = await getDocument({ data: new Uint8Array(arrayBuffer) }).promise;

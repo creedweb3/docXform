@@ -31,7 +31,9 @@ export async function compressPdf(file: File, preset: Preset, onProgress?: (perc
   }
 
   const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
-  GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+  if (!GlobalWorkerOptions.workerSrc) {
+    GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+  }
 
   const mimeQuality = preset === 'light' ? 0.55 : preset === 'balanced' ? 0.7 : 0.82;
   const renderScale = preset === 'light' ? 1 : preset === 'balanced' ? 1.2 : 1.4;

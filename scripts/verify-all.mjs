@@ -102,6 +102,31 @@ checks.push(() => must(wasmRev.includes('getWasmAssetRevision') && wasmRev.inclu
 
 checks.push(() => must(!existsSync(join(repoRoot, 'lib/dev-converter-flags.ts')), 'lib/dev-converter-flags.ts removed'));
 
+const toolsCatalog = read('lib/tools.ts');
+const expectedTools = [
+  'pdf-merge',
+  'pdf-split',
+  'pdf-compress',
+  'pdf-to-images',
+  'images-to-pdf',
+  'pptx-to-pdf',
+  'docx-to-pptx',
+  'docx-scrub',
+  'pdf-rotate',
+  'pdf-organize',
+  'pdf-watermark',
+  'pdf-unlock',
+  'pdf-to-text',
+  'image-convert',
+  'image-compress',
+  'docx-to-pdf',
+  'docx-to-text',
+];
+for (const slug of expectedTools) {
+  checks.push(() => must(toolsCatalog.includes(`slug: '${slug}'`), `lib/tools.ts registers ${slug}`));
+  checks.push(() => must(existsSync(join(repoRoot, 'app/tools', slug, 'page.tsx')), `route exists app/tools/${slug}/page.tsx`));
+}
+
 const envExample = read('.env.example');
 checks.push(() => must(!envExample.includes('DEV_CONVERTER'), '.env.example has no dev converter env'));
 
