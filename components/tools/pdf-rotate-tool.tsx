@@ -25,6 +25,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'PDF ready to rotate',
+  actionLabel: 'Rotate',
 };
 
 export function PdfRotateTool() {

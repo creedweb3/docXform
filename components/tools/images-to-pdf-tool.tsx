@@ -25,6 +25,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'Images ready to combine',
+  actionLabel: 'Combine',
 };
 
 export function ImagesToPdfTool() {

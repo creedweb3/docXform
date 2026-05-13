@@ -25,6 +25,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'Images ready to convert',
+  actionLabel: 'Convert',
 };
 
 export function ImageConvertTool() {

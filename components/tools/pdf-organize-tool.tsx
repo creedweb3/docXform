@@ -24,6 +24,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'PDF ready to reorganize',
+  actionLabel: 'Reorganize',
 };
 
 export function PdfOrganizeTool() {

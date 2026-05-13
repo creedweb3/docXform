@@ -23,6 +23,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'DOCX files ready',
+  actionLabel: 'Convert',
 };
 
 export function DocxToPdfTool() {

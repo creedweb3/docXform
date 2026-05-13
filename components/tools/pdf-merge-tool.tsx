@@ -23,6 +23,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'PDFs ready to merge',
+  actionLabel: 'Merge',
 };
 
 export function PdfMergeTool() {

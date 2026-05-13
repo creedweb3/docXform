@@ -23,6 +23,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'PDF ready to split',
+  actionLabel: 'Split',
 };
 
 export function PdfSplitTool() {

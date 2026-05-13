@@ -25,6 +25,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'PDFs ready to compress',
+  actionLabel: 'Compress',
 };
 
 type Preset = 'light' | 'balanced' | 'max';

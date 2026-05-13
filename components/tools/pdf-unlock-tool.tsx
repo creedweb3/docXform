@@ -23,6 +23,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'PDFs ready to unlock',
+  actionLabel: 'Unlock',
 };
 
 export function PdfUnlockTool() {

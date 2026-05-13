@@ -25,6 +25,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'DOCX files ready to extract',
+  actionLabel: 'Extract',
 };
 
 export function DocxToTextTool() {

@@ -26,6 +26,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'DOCX files ready to clean',
+  actionLabel: 'Clean',
 };
 
 export function DocxScrubTool() {
@@ -37,7 +39,7 @@ export function DocxScrubTool() {
 
   const subtitle = useMemo(
     () => (
-      <span className="inline-flex items-center gap-1.5 bg-card/50 rounded-full px-3 py-1.5 border border-border/30">
+      <span className="inline-flex items-center gap-1.5 bg-white/50 rounded-full px-3 py-1.5 border border-border/30">
         <HugeiconsIcon icon={Shield01Icon} size={12} strokeWidth={2} className="text-slate-700" />
         Cleans comments, properties, and custom XML locally
       </span>

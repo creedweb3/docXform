@@ -23,6 +23,8 @@ const config: WorkspaceConfig = {
   iconPair: tool.iconPair,
   tone: tool.tone,
   storageKey: tool.slug,
+  queuedTitle: 'Documents ready to slide',
+  actionLabel: 'Convert',
 };
 
 export function DocxToPptxTool() {
