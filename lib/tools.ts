@@ -489,3 +489,10 @@ export const toolDefinitions: ToolDefinition[] = [
 export function getToolBySlug(slug: string): ToolDefinition | undefined {
   return toolDefinitions.find((t) => t.slug === slug);
 }
+
+export function toolFaqsForJsonLd(tool: ToolDefinition) {
+  return tool.faqs.map((faq) => ({
+    question: faq.q,
+    answer: faq.a,
+  }));
+}
