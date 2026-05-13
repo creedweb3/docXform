@@ -13,7 +13,7 @@ import {
   Shield01Icon,
   Upload04Icon,
 } from '@hugeicons/core-free-icons';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import clsx from 'clsx';
 import JSZip from 'jszip';
 import { formatBytes } from '@/lib/client-file-validation';
@@ -21,8 +21,10 @@ import {
   MAX_CONVERSION_BATCH_FILES,
   MAX_CONVERSION_FILE_SIZE_LABEL,
 } from '@/lib/conversion-limits';
+import { getCachedPerfProfile, getMotionBudget } from '@/lib/perf-profile';
 import { ToolIcon } from '@/components/tools/tool-icon';
 import type { ToolDefinition } from '@/lib/tools';
+import { TONE_CHIP_CLASS } from '@/components/tools/tone-styles';
 
 type Status = 'idle' | 'validating' | 'ready' | 'processing' | 'done' | 'failed';
 
@@ -74,26 +76,6 @@ type ToolWorkspaceProps = {
   footer?: React.ReactNode;
 };
 
-const TONE_CHIP_CLASS: Record<ToolDefinition['tone'], string> = {
-  emerald: 'border-emerald-200/70 bg-white/65',
-  amber: 'border-amber-200/70 bg-white/65',
-  teal: 'border-teal-200/70 bg-white/65',
-  purple: 'border-purple-200/70 bg-white/65',
-  cyan: 'border-cyan-200/70 bg-white/65',
-  orange: 'border-orange-200/70 bg-white/65',
-  indigo: 'border-indigo-200/70 bg-white/65',
-  slate: 'border-slate-200/70 bg-white/65',
-  rose: 'border-rose-200/70 bg-white/65',
-  sky: 'border-sky-200/70 bg-white/65',
-  violet: 'border-violet-200/70 bg-white/65',
-  lime: 'border-lime-200/70 bg-white/65',
-  fuchsia: 'border-fuchsia-200/70 bg-white/65',
-};
-
-const SPRING = { type: 'spring' as const, stiffness: 180, damping: 22 };
-const CHIP_MOTION = { type: 'spring' as const, stiffness: 260, damping: 24 };
-const ROW_EXPAND = { type: 'tween' as const, duration: 0.25, ease: 'easeOut' as const };
-
 const TRANSIENT_NOTICE_DURATION = 1100;
 const STANDARD_NOTICE_DURATION = 3600;
 
@@ -118,6 +100,13 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
   const [notice, setNotice] = useState<{ kind: 'info' | 'error' | 'success'; message: string } | null>(null);
   const [toast, setToast] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const reducedMotion = useReducedMotion();
+  const perfProfile = useMemo(() => getCachedPerfProfile(), []);
+  const { spring, chipMotion, rowExpand } = useMemo(
+    () => getMotionBudget(perfProfile, Boolean(reducedMotion)),
+    [perfProfile, reducedMotion]
+  );
 
   const chipClass = config.tone
     ? TONE_CHIP_CLASS[config.tone]
@@ -363,7 +352,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
 
   return (
     <div className="w-full space-y-4">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={SPRING}>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
         <div
           className={clsx(
             `${config.cardClass} rounded-3xl p-7 sm:p-8 transition-all duration-300`,
@@ -402,7 +391,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
             <motion.div
               className={`w-14 h-14 rounded-2xl ${config.iconBoxClass} flex items-center justify-center`}
               animate={dragOver ? { scale: 1.08 } : { scale: 1 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              transition={spring}
             >
               {config.iconPair && config.tone ? (
                 <ToolIcon pair={config.iconPair} tone={config.tone} variant="tile" />
@@ -435,7 +424,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            transition={CHIP_MOTION}
+            transition={chipMotion}
             className="flex justify-center px-2 py-0.5"
             aria-live="polite"
           >
@@ -466,7 +455,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            transition={CHIP_MOTION}
+            transition={chipMotion}
             className="px-2 py-0.5"
           >
             <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground">
@@ -501,7 +490,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={SPRING}
+            transition={spring}
             className="glass flex flex-col gap-3 rounded-3xl p-5 sm:p-6"
           >
             <div className="flex w-full flex-col gap-3 px-1">
@@ -617,7 +606,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
                               <motion.div
                                 className={`h-full rounded-full bg-gradient-to-r ${config.progressClass}`}
                                 animate={{ width: `${Math.min(item.progress, 100)}%` }}
-                                transition={ROW_EXPAND}
+                                transition={rowExpand}
                               />
                             </div>
                           )}
@@ -715,7 +704,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
-            transition={CHIP_MOTION}
+            transition={chipMotion}
             className={clsx(
               'fixed bottom-5 right-5 z-50 rounded-2xl border px-4 py-3 text-sm font-semibold shadow-lg backdrop-blur-xl',
               toast.kind === 'success'
