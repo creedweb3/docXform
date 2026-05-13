@@ -49,7 +49,7 @@ export function ToolsIndexClient() {
                   {tool.keywords.map((kw) => (
                     <span
                       key={kw}
-                      className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-white/60 text-muted-foreground border border-white/70"
+                      className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-card/60 text-muted-foreground border border-border/40"
                     >
                       {kw}
                     </span>

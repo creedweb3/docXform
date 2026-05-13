@@ -1,10 +1,15 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
 import { pdfToImages, type ImageFormat } from '@/lib/tool-runs/pdf-to-images';
 import { validatePdfFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_FILE_SIZE_BYTES, MAX_CONVERSION_BATCH_FILES } from '@/lib/conversion-limits';
+import { getToolBySlug } from '@/lib/tools';
+import { RadioGroup } from '@/components/ui/radio-group';
+import { useLocalSetting } from '@/lib/hooks/use-local-setting';
+
+const tool = getToolBySlug('pdf-to-images')!;
 
 const config: WorkspaceConfig = {
   title: 'Drop a PDF to export pages as images',
@@ -17,37 +22,39 @@ const config: WorkspaceConfig = {
   dragClass: 'ring-2 ring-purple-300/50 bg-purple-50/60 scale-[1.01]',
   primaryButtonClass: 'from-purple-600 to-purple-500',
   progressClass: 'from-purple-400 to-indigo-400',
+  iconPair: tool.iconPair,
+  tone: tool.tone,
+  storageKey: tool.slug,
 };
 
 export function PdfToImagesTool() {
-  const [format, setFormat] = useState<ImageFormat>('png');
-  const [scale, setScale] = useState(1.5);
+  const [format, setFormat] = useLocalSetting<ImageFormat>('docxform:pdf-to-images:format', 'png');
+  const [scale, setScale] = useLocalSetting<number>('docxform:pdf-to-images:scale', 1.5);
 
   const footer = (
-    <div className="rounded-xl border border-border/50 bg-white/50 p-3 space-y-2 text-xs text-muted-foreground">
-      <p className="font-semibold text-foreground text-sm">Export settings</p>
-      <div className="flex flex-col gap-2">
-        <label className="flex items-center gap-2">
-          <input type="radio" checked={format === 'png'} onChange={() => setFormat('png')} />
-          PNG (best quality, larger)
-        </label>
-        <label className="flex items-center gap-2">
-          <input type="radio" checked={format === 'jpeg'} onChange={() => setFormat('jpeg')} />
-          JPEG (smaller)
-        </label>
-        <label className="flex items-center gap-2">
-          Scale:
-          <input
-            type="number"
-            min={0.5}
-            max={3}
-            step={0.1}
-            value={scale}
-            onChange={(e) => setScale(Math.min(3, Math.max(0.5, Number(e.target.value) || 1.5)))}
-            className="w-20 rounded-lg border border-border/50 bg-white/80 px-2 py-1 text-sm text-foreground"
-          />
-        </label>
-      </div>
+    <div className="rounded-xl border border-border/50 bg-card/50 p-3 space-y-3 text-xs text-muted-foreground">
+      <RadioGroup<ImageFormat>
+        name="pdf-to-images-format"
+        label="Image format"
+        value={format}
+        onChange={setFormat}
+        options={[
+          { value: 'png', label: 'PNG', description: 'Lossless, larger files' },
+          { value: 'jpeg', label: 'JPEG', description: 'Smaller, slightly lossy' },
+        ]}
+      />
+      <label className="flex items-center gap-2 text-foreground">
+        Render scale
+        <input
+          type="number"
+          min={0.5}
+          max={3}
+          step={0.1}
+          value={scale}
+          onChange={(event) => setScale(Math.min(3, Math.max(0.5, Number(event.target.value) || 1.5)))}
+          className="w-20 rounded-lg border border-border/50 bg-card/80 px-2 py-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+      </label>
     </div>
   );
 

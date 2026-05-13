@@ -5,6 +5,9 @@ import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/compo
 import { parseRanges, splitPdf, type SplitMode } from '@/lib/tool-runs/pdf-split';
 import { validatePdfFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
+import { getToolBySlug } from '@/lib/tools';
+
+const tool = getToolBySlug('pdf-split')!;
 
 const config: WorkspaceConfig = {
   title: 'Drop a PDF to split',
@@ -17,6 +20,9 @@ const config: WorkspaceConfig = {
   dragClass: 'ring-2 ring-amber-300/50 bg-amber-50/60 scale-[1.01]',
   primaryButtonClass: 'from-amber-500 to-amber-400',
   progressClass: 'from-amber-400 to-orange-400',
+  iconPair: tool.iconPair,
+  tone: tool.tone,
+  storageKey: tool.slug,
 };
 
 export function PdfSplitTool() {

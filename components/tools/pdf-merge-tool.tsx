@@ -5,6 +5,9 @@ import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/compo
 import { mergePdfs } from '@/lib/tool-runs/pdf-merge';
 import { validatePdfFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
+import { getToolBySlug } from '@/lib/tools';
+
+const tool = getToolBySlug('pdf-merge')!;
 
 const config: WorkspaceConfig = {
   title: 'Drop PDFs to merge',
@@ -17,6 +20,9 @@ const config: WorkspaceConfig = {
   dragClass: 'ring-2 ring-emerald-300/50 bg-emerald-50/60 scale-[1.01]',
   primaryButtonClass: 'from-emerald-600 to-emerald-500',
   progressClass: 'from-emerald-400 to-lime-400',
+  iconPair: tool.iconPair,
+  tone: tool.tone,
+  storageKey: tool.slug,
 };
 
 export function PdfMergeTool() {

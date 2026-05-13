@@ -5,6 +5,9 @@ import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/compo
 import { convertDocumentFile } from '@/lib/client-document-converter';
 import { validatePptxFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
+import { getToolBySlug } from '@/lib/tools';
+
+const tool = getToolBySlug('pptx-to-pdf')!;
 
 const config: WorkspaceConfig = {
   title: 'Drop PPTX files to convert to PDF',
@@ -17,6 +20,9 @@ const config: WorkspaceConfig = {
   dragClass: 'ring-2 ring-orange-300/50 bg-orange-50/60 scale-[1.01]',
   primaryButtonClass: 'from-orange-600 to-orange-500',
   progressClass: 'from-orange-400 to-amber-400',
+  iconPair: tool.iconPair,
+  tone: tool.tone,
+  storageKey: tool.slug,
 };
 
 export function PptxToPdfTool() {
