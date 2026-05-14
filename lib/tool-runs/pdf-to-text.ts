@@ -15,9 +15,12 @@ export async function pdfToText(
     throw new Error('PDF text extraction runs only in the browser.');
   }
 
-  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
+  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf');
   if (!GlobalWorkerOptions.workerSrc) {
-    GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+    GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
+      import.meta.url
+    ).toString();
   }
 
   const pdf = await getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;

@@ -27,6 +27,13 @@ const config: WorkspaceConfig = {
   storageKey: tool.slug,
   queuedTitle: 'Images ready to combine',
   actionLabel: 'Combine',
+  studioStageTitle: 'Page order',
+  studioHint: (
+    <>
+      Reorder on the stage or in the queue — that order becomes pages in the PDF. Pick fit options in the sidebar before
+      processing.
+    </>
+  ),
 };
 
 export function ImagesToPdfTool() {

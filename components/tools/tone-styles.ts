@@ -3,6 +3,8 @@ import type { ToolDefinition } from '@/lib/tools';
 export type ToneKey = ToolDefinition['tone'];
 
 export type ToneStyle = {
+  /** Selected card tint for PageGrid (border + background). */
+  pageGridSelected: string;
   /** Tailwind class fragment for `bg-gradient-to-br` (from/to). */
   gradientText: string;
   /** Tinted icon color matching the tone (medium weight). */
@@ -25,6 +27,7 @@ export type ToneStyle = {
 
 export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   emerald: {
+    pageGridSelected: 'border-emerald-300/80 bg-emerald-50/75 text-emerald-900',
     gradientText: 'from-emerald-500 to-teal-400',
     pillIcon: 'text-emerald-500',
     iconBox: 'icon-box-emerald',
@@ -36,6 +39,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(52, 211, 153, 0.88)',
   },
   amber: {
+    pageGridSelected: 'border-amber-300/80 bg-amber-50/75 text-amber-900',
     gradientText: 'from-amber-500 to-yellow-400',
     pillIcon: 'text-amber-500',
     iconBox: 'icon-box-amber',
@@ -47,6 +51,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(245, 158, 11, 0.88)',
   },
   teal: {
+    pageGridSelected: 'border-teal-300/80 bg-teal-50/75 text-teal-900',
     gradientText: 'from-teal-500 to-cyan-400',
     pillIcon: 'text-teal-500',
     iconBox: 'icon-box-teal',
@@ -58,6 +63,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(45, 212, 191, 0.88)',
   },
   purple: {
+    pageGridSelected: 'border-purple-300/80 bg-purple-50/75 text-purple-900',
     gradientText: 'from-purple-500 to-violet-400',
     pillIcon: 'text-purple-500',
     iconBox: 'icon-box-purple',
@@ -69,6 +75,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(192, 132, 252, 0.88)',
   },
   cyan: {
+    pageGridSelected: 'border-cyan-300/80 bg-cyan-50/75 text-cyan-900',
     gradientText: 'from-cyan-500 to-sky-400',
     pillIcon: 'text-cyan-500',
     iconBox: 'icon-box-cyan',
@@ -80,6 +87,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(34, 211, 238, 0.88)',
   },
   orange: {
+    pageGridSelected: 'border-orange-300/80 bg-orange-50/75 text-orange-900',
     gradientText: 'from-orange-500 to-amber-400',
     pillIcon: 'text-orange-500',
     iconBox: 'icon-box-orange',
@@ -91,6 +99,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(251, 146, 60, 0.88)',
   },
   indigo: {
+    pageGridSelected: 'border-indigo-300/80 bg-indigo-50/75 text-indigo-900',
     gradientText: 'from-indigo-500 to-blue-400',
     pillIcon: 'text-indigo-500',
     iconBox: 'icon-box-indigo',
@@ -102,6 +111,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(129, 140, 248, 0.88)',
   },
   slate: {
+    pageGridSelected: 'border-slate-300/80 bg-slate-50/75 text-slate-900',
     gradientText: 'from-slate-600 to-gray-400',
     pillIcon: 'text-slate-500',
     iconBox: 'icon-box-slate',
@@ -113,6 +123,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(148, 163, 184, 0.88)',
   },
   rose: {
+    pageGridSelected: 'border-rose-300/80 bg-rose-50/75 text-rose-900',
     gradientText: 'from-rose-400 to-pink-400',
     pillIcon: 'text-rose-500',
     iconBox: 'icon-box-rose',
@@ -124,6 +135,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(253, 164, 175, 0.88)',
   },
   sky: {
+    pageGridSelected: 'border-sky-300/80 bg-sky-50/75 text-sky-900',
     gradientText: 'from-sky-500 to-cyan-400',
     pillIcon: 'text-sky-500',
     iconBox: 'icon-box-sky',
@@ -135,6 +147,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(56, 189, 248, 0.88)',
   },
   violet: {
+    pageGridSelected: 'border-violet-300/80 bg-violet-50/75 text-violet-900',
     gradientText: 'from-violet-500 to-purple-400',
     pillIcon: 'text-violet-500',
     iconBox: 'icon-box-violet',
@@ -146,6 +159,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(167, 139, 250, 0.88)',
   },
   lime: {
+    pageGridSelected: 'border-lime-300/80 bg-lime-50/75 text-lime-900',
     gradientText: 'from-lime-500 to-green-400',
     pillIcon: 'text-lime-500',
     iconBox: 'icon-box-lime',
@@ -157,6 +171,7 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(163, 230, 53, 0.88)',
   },
   fuchsia: {
+    pageGridSelected: 'border-fuchsia-300/80 bg-fuchsia-50/75 text-fuchsia-900',
     gradientText: 'from-fuchsia-500 to-pink-400',
     pillIcon: 'text-fuchsia-500',
     iconBox: 'icon-box-fuchsia',

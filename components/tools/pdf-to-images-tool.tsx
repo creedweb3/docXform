@@ -1,13 +1,21 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import {
+  ToolWorkspace,
+  type PdfPageGridProcessContext,
+  type WorkspaceConfig,
+  type WorkspaceFile,
+  type WorkspaceSurfaceApi,
+} from '@/components/tools/tool-workspace';
+import { PdfToImagesStudioSurface } from '@/components/tools/studio/pdf-tool-studio-surfaces';
 import { pdfToImages, type ImageFormat } from '@/lib/tool-runs/pdf-to-images';
 import { validatePdfFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_FILE_SIZE_BYTES, MAX_CONVERSION_BATCH_FILES } from '@/lib/conversion-limits';
 import { getToolBySlug } from '@/lib/tools';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { useLocalSetting } from '@/lib/hooks/use-local-setting';
+import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-to-images')!;
 
@@ -15,7 +23,7 @@ const config: WorkspaceConfig = {
   title: 'Drop a PDF to export pages as images',
   hint: 'or click to browse - .pdf - choose PNG or JPEG output',
   accept: '.pdf',
-  allowMultiple: false,
+  allowMultiple: true,
   cardClass: 'converter-main-card-purple',
   iconBoxClass: 'icon-box-purple',
   iconClass: 'text-purple-700',
@@ -27,11 +35,19 @@ const config: WorkspaceConfig = {
   storageKey: tool.slug,
   queuedTitle: 'PDFs ready to export',
   actionLabel: 'Export',
+  pageGrid: { layout: 'perFile', allowReorder: false },
+  studioHint: (
+    <>
+      The strip previews pages that will become images. Use the <strong>Pages</strong> grid to export only selected pages
+      or change order.
+    </>
+  ),
 };
 
 export function PdfToImagesTool() {
   const [format, setFormat] = useLocalSetting<ImageFormat>('docxform:pdf-to-images:format', 'png');
   const [scale, setScale] = useLocalSetting<number>('docxform:pdf-to-images:scale', 1.5);
+  const [jpegQuality, setJpegQuality] = useLocalSetting<number>('docxform:pdf-to-images:jpeg-quality', 0.92);
 
   const footer = (
     <div className="rounded-xl border border-border/50 bg-card/50 p-3 space-y-3 text-xs text-muted-foreground">
@@ -57,25 +73,51 @@ export function PdfToImagesTool() {
           className="w-20 rounded-lg border border-border/50 bg-card/80 px-2 py-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </label>
+      {format === 'jpeg' && (
+        <label className="flex items-center gap-2 text-foreground">
+          JPEG quality
+          <input
+            type="range"
+            min={0.5}
+            max={1}
+            step={0.02}
+            value={jpegQuality}
+            onChange={(event) => setJpegQuality(Number(event.target.value))}
+          />
+          <span className="text-[11px] text-muted-foreground">{Math.round(jpegQuality * 100)}%</span>
+        </label>
+      )}
     </div>
   );
 
   const processFiles = useCallback(
-    async (files: WorkspaceFile[], setProgress: (id: string, percent: number, message?: string) => void) => {
+    async (
+      files: WorkspaceFile[],
+      setProgress: (id: string, percent: number, message?: string) => void,
+      pageGrid?: PdfPageGridProcessContext
+    ) => {
       if (!files.length) return files;
-      const file = files[0];
-      const images = await pdfToImages(file.file, format, scale, (pct) => setProgress(file.id, pct, 'Rendering...'));
-
-      return [
-        {
+      const results: WorkspaceFile[] = [];
+      for (const file of files) {
+        const pageList = pageGrid?.active ? pageGrid.orderedPagesByFileId[file.id] : undefined;
+        const images = await pdfToImages(
+          file.file,
+          format,
+          scale,
+          (pct) => setProgress(file.id, pct, 'Rendering...'),
+          pageList && pageList.length > 0 ? pageList : undefined,
+          format === 'jpeg' ? jpegQuality : undefined
+        );
+        results.push({
           ...file,
           status: 'done',
           message: `Rendered ${images.length} page(s)`,
           outputs: images,
-        },
-      ] as WorkspaceFile[];
+        });
+      }
+      return results;
     },
-    [format, scale]
+    [format, scale, jpegQuality]
   );
 
   const validateFiles = useCallback(
@@ -83,5 +125,14 @@ export function PdfToImagesTool() {
     []
   );
 
-  return <ToolWorkspace config={config} actions={{ processFiles, zipName: 'pages.zip', validateFiles }} footer={footer} />;
+  const studioSurface = useCallback((api: WorkspaceSurfaceApi) => <PdfToImagesStudioSurface api={api} />, []);
+
+  return (
+    <ToolWorkspace
+      config={config}
+      actions={{ processFiles, zipName: 'pages.zip', validateFiles, generatePreview: generatePdfPreview }}
+      footer={footer}
+      studioSurface={studioSurface}
+    />
+  );
 }

@@ -1,12 +1,20 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import {
+  ToolWorkspace,
+  type PdfPageGridProcessContext,
+  type WorkspaceConfig,
+  type WorkspaceFile,
+  type WorkspaceSurfaceApi,
+} from '@/components/tools/tool-workspace';
+import { PdfOrganizeStudioSurface } from '@/components/tools/studio/pdf-tool-studio-surfaces';
 import { organizePdf, parsePageOrder } from '@/lib/tool-runs/pdf-organize';
 import { validatePdfFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
 import { getToolBySlug } from '@/lib/tools';
 import { useLocalSetting } from '@/lib/hooks/use-local-setting';
+import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-organize')!;
 
@@ -26,6 +34,13 @@ const config: WorkspaceConfig = {
   storageKey: tool.slug,
   queuedTitle: 'PDF ready to reorganize',
   actionLabel: 'Reorganize',
+  pageGrid: { layout: 'single', allowReorder: true },
+  studioHint: (
+    <>
+      The stage mirrors your page order string and cover previews. Use the <strong>Pages</strong> grid to pick pages
+      visually; anything omitted from the list is removed from the output.
+    </>
+  ),
 };
 
 export function PdfOrganizeTool() {
@@ -56,7 +71,11 @@ export function PdfOrganizeTool() {
   );
 
   const processFiles = useCallback(
-    async (files: WorkspaceFile[], setProgress: (id: string, percent: number, message?: string) => void) => {
+    async (
+      files: WorkspaceFile[],
+      setProgress: (id: string, percent: number, message?: string) => void,
+      pageGrid?: PdfPageGridProcessContext
+    ) => {
       if (!files.length) return files;
       const file = files[0];
 
@@ -67,9 +86,20 @@ export function PdfOrganizeTool() {
 
       let indices: number[];
       try {
-        indices = parsePageOrder(order, totalPages);
+        if (pageGrid?.active) {
+          const picked = pageGrid.orderedPagesByFileId[file.id] ?? [];
+          indices = picked.map((p) => p - 1);
+        } else {
+          indices = parsePageOrder(order, totalPages);
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Invalid page order';
+        setError(message);
+        return [{ ...file, status: 'failed', message, error: message }] as WorkspaceFile[];
+      }
+
+      if (!indices.length) {
+        const message = 'Select at least one page to keep.';
         setError(message);
         return [{ ...file, status: 'failed', message, error: message }] as WorkspaceFile[];
       }
@@ -94,5 +124,17 @@ export function PdfOrganizeTool() {
     []
   );
 
-  return <ToolWorkspace config={config} actions={{ processFiles, validateFiles }} footer={footer} />;
+  const studioSurface = useCallback(
+    (api: WorkspaceSurfaceApi) => <PdfOrganizeStudioSurface api={api} order={order} />,
+    [order]
+  );
+
+  return (
+    <ToolWorkspace
+      config={config}
+      actions={{ processFiles, validateFiles, generatePreview: generatePdfPreview }}
+      footer={footer}
+      studioSurface={studioSurface}
+    />
+  );
 }

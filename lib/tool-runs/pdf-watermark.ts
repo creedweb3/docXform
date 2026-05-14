@@ -13,7 +13,10 @@ export type WatermarkOptions = {
 export async function watermarkPdf(
   file: File,
   options: WatermarkOptions,
-  onProgress?: (percent: number) => void
+  onProgress?: (percent: number) => void,
+  ranges?: number[][],
+  /** When set, only these 1-based pages may receive the watermark (intersected with ranges). */
+  gridPages?: number[]
 ): Promise<Blob> {
   if (!options.text.trim()) {
     throw new Error('Watermark text is required.');
@@ -24,11 +27,21 @@ export async function watermarkPdf(
   const font = await pdf.embedFont(StandardFonts.HelveticaBold);
   const pages = pdf.getPages();
   const color = rgb(options.color.r, options.color.g, options.color.b);
+  const gridSet = gridPages && gridPages.length > 0 ? new Set(gridPages) : null;
 
   pages.forEach((page, index) => {
     const { width, height } = page.getSize();
     const textWidth = font.widthOfTextAtSize(options.text, options.fontSize);
     const textHeight = font.heightAtSize(options.fontSize);
+    const pageNumber = index + 1;
+    if (gridSet && !gridSet.has(pageNumber)) {
+      return;
+    }
+    const inRange =
+      !ranges || ranges.length === 0 || ranges.some(([start, end]) => pageNumber >= start && pageNumber <= end);
+    if (!inRange) {
+      return;
+    }
 
     if (options.position === 'tile') {
       const stepX = Math.max(textWidth * 1.4, 180);

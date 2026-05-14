@@ -8,6 +8,7 @@ import { MAX_CONVERSION_FILE_SIZE_BYTES, MAX_CONVERSION_BATCH_FILES } from '@/li
 import { getToolBySlug } from '@/lib/tools';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { useLocalSetting } from '@/lib/hooks/use-local-setting';
+import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-compress')!;
 
@@ -15,7 +16,7 @@ const config: WorkspaceConfig = {
   title: 'Drop a PDF to compress',
   hint: 'or click to browse - .pdf - choose a quality preset',
   accept: '.pdf',
-  allowMultiple: false,
+  allowMultiple: true,
   cardClass: 'converter-main-card-teal',
   iconBoxClass: 'icon-box-teal',
   iconClass: 'text-teal-700',
@@ -27,6 +28,13 @@ const config: WorkspaceConfig = {
   storageKey: tool.slug,
   queuedTitle: 'PDFs ready to compress',
   actionLabel: 'Compress',
+  studioStageTitle: 'Selected PDFs',
+  studioHint: (
+    <>
+      Choose a quality preset in the sidebar — <strong>Light</strong> for smallest files, <strong>Max quality</strong> when
+      clarity matters most.
+    </>
+  ),
 };
 
 type Preset = 'light' | 'balanced' | 'max';
@@ -53,17 +61,18 @@ export function PdfCompressTool() {
   const processFiles = useCallback(
     async (files: WorkspaceFile[], setProgress: (id: string, percent: number, message?: string) => void) => {
       if (!files.length) return files;
-      const file = files[0];
-      setProgress(file.id, 5, 'Compressing...');
-      const compressed = await compressPdf(file.file, preset, (pct) => setProgress(file.id, pct, 'Compressing...'));
-      return [
-        {
+      const results: WorkspaceFile[] = [];
+      for (const file of files) {
+        setProgress(file.id, 5, 'Compressing...');
+        const compressed = await compressPdf(file.file, preset, (pct) => setProgress(file.id, pct, 'Compressing...'));
+        results.push({
           ...file,
           status: 'done',
           message: 'Compressed',
           outputs: [{ name: file.file.name.replace(/\.pdf$/i, '') + '-compressed.pdf', blob: compressed }],
-        },
-      ] as WorkspaceFile[];
+        });
+      }
+      return results;
     },
     [preset]
   );
@@ -73,5 +82,11 @@ export function PdfCompressTool() {
     []
   );
 
-  return <ToolWorkspace config={config} actions={{ processFiles, validateFiles }} footer={footer} />;
+  return (
+    <ToolWorkspace
+      config={config}
+      actions={{ processFiles, validateFiles, generatePreview: generatePdfPreview }}
+      footer={footer}
+    />
+  );
 }

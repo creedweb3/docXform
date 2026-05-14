@@ -8,6 +8,7 @@ import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/li
 import { getToolBySlug } from '@/lib/tools';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { useLocalSetting } from '@/lib/hooks/use-local-setting';
+import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-to-text')!;
 
@@ -15,7 +16,7 @@ const config: WorkspaceConfig = {
   title: 'Drop a PDF to extract its text',
   hint: 'or click to browse - .pdf - text-only output, no OCR',
   accept: '.pdf',
-  allowMultiple: false,
+  allowMultiple: true,
   cardClass: 'converter-main-card-lime',
   iconBoxClass: 'icon-box-lime',
   iconClass: 'text-lime-700',
@@ -27,6 +28,13 @@ const config: WorkspaceConfig = {
   storageKey: tool.slug,
   queuedTitle: 'PDFs ready to extract',
   actionLabel: 'Extract',
+  studioStageTitle: 'Selected PDFs',
+  studioHint: (
+    <>
+      Pulls selectable text only — <strong>scanned</strong> PDFs need OCR first. Use the sidebar to choose a single transcript
+      or per-page files.
+    </>
+  ),
 };
 
 type Mode = 'combined' | 'per-page';
@@ -52,36 +60,36 @@ export function PdfToTextTool() {
   const processFiles = useCallback(
     async (files: WorkspaceFile[], setProgress: (id: string, percent: number, message?: string) => void) => {
       if (!files.length) return files;
-      const file = files[0];
-      setProgress(file.id, 5, 'Extracting...');
-      const result = await pdfToText(file.file, (pct) => setProgress(file.id, pct, 'Extracting...'));
+      const results: WorkspaceFile[] = [];
+      for (const file of files) {
+        setProgress(file.id, 5, 'Extracting...');
+        const result = await pdfToText(file.file, (pct) => setProgress(file.id, pct, 'Extracting...'));
 
-      const baseName = file.file.name.replace(/\.pdf$/i, '');
-      if (mode === 'combined') {
-        const blob = new Blob([result.combined], { type: 'text/plain' });
-        return [
-          {
+        const baseName = file.file.name.replace(/\.pdf$/i, '');
+        if (mode === 'combined') {
+          const blob = new Blob([result.combined], { type: 'text/plain' });
+          results.push({
             ...file,
             status: 'done',
             message: `Extracted ${result.pages.length} page(s)`,
             outputs: [{ name: `${baseName}.txt`, blob }],
-          },
-        ] as WorkspaceFile[];
-      }
+          });
+          continue;
+        }
 
-      const outputs = result.pages.map((page) => ({
-        name: `${baseName}-page-${String(page.pageNumber).padStart(3, '0')}.txt`,
-        blob: new Blob([page.text || '(no text on this page)'], { type: 'text/plain' }),
-      }));
+        const outputs = result.pages.map((page) => ({
+          name: `${baseName}-page-${String(page.pageNumber).padStart(3, '0')}.txt`,
+          blob: new Blob([page.text || '(no text on this page)'], { type: 'text/plain' }),
+        }));
 
-      return [
-        {
+        results.push({
           ...file,
           status: 'done',
           message: `Extracted ${result.pages.length} page(s)`,
           outputs,
-        },
-      ] as WorkspaceFile[];
+        });
+      }
+      return results;
     },
     [mode]
   );
@@ -94,7 +102,7 @@ export function PdfToTextTool() {
   return (
     <ToolWorkspace
       config={config}
-      actions={{ processFiles, zipName: 'pdf-text.zip', validateFiles }}
+      actions={{ processFiles, zipName: 'pdf-text.zip', validateFiles, generatePreview: generatePdfPreview }}
       footer={footer}
     />
   );

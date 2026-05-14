@@ -6,6 +6,7 @@ import { unlockPdf } from '@/lib/tool-runs/pdf-unlock';
 import { validatePdfFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
 import { getToolBySlug } from '@/lib/tools';
+import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-unlock')!;
 
@@ -25,6 +26,13 @@ const config: WorkspaceConfig = {
   storageKey: tool.slug,
   queuedTitle: 'PDFs ready to unlock',
   actionLabel: 'Unlock',
+  studioStageTitle: 'Selected PDFs',
+  studioHint: (
+    <>
+      Strips owner restrictions (print, copy, edit) on PDFs you can already open. Files that need a password to open are
+      not supported here.
+    </>
+  ),
 };
 
 export function PdfUnlockTool() {
@@ -65,7 +73,7 @@ export function PdfUnlockTool() {
   return (
     <ToolWorkspace
       config={config}
-      actions={{ processFiles, zipName: 'unlocked-pdfs.zip', validateFiles }}
+      actions={{ processFiles, zipName: 'unlocked-pdfs.zip', validateFiles, generatePreview: generatePdfPreview }}
       footer={footer}
     />
   );

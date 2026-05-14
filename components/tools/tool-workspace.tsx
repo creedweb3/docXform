@@ -17,6 +17,7 @@ import {
   Delete02Icon,
   Download01Icon,
   File01Icon,
+  Pdf01Icon,
   RefreshIcon,
   Shield01Icon,
   Upload04Icon,
@@ -32,8 +33,12 @@ import {
 } from '@/lib/conversion-limits';
 import { getCachedPerfProfile, getMotionBudget } from '@/lib/perf-profile';
 import { ToolIcon } from '@/components/tools/tool-icon';
+import { PageGrid, type PageThumb } from '@/components/tools/page-grid';
 import type { ToolDefinition } from '@/lib/tools';
 import { TONE_STYLES } from '@/components/tools/tone-styles';
+import { StudioFabStack } from '@/components/tools/studio/studio-ui';
+import { DefaultBatchStudioSurface } from '@/components/tools/studio/default-batch-studio-surface';
+import { renderPdfPageThumbnails, revokePdfThumbUrls } from '@/lib/client-previews';
 
 type Status = 'idle' | 'validating' | 'ready' | 'processing' | 'done' | 'failed';
 
@@ -45,6 +50,48 @@ export type WorkspaceFile = {
   message?: string;
   error?: string;
   outputs?: Array<{ name: string; blob: Blob }>;
+  preview?: {
+    /** object URL for thumbnail (pdf first page or image) */
+    thumbUrl?: string;
+    /** number of pages (PDF) or frames (if ever added) */
+    pageCount?: number;
+    /** generic label e.g. PNG, JPEG */
+    label?: string;
+    /** 'loading' shows skeleton, 'ready' renders thumb, 'error' shows fallback chip */
+    status?: 'loading' | 'ready' | 'error';
+    error?: string;
+  };
+};
+
+export type PdfPageGridLayout = 'perFile' | 'single';
+
+export type WorkspacePageGridConfig = {
+  layout: PdfPageGridLayout;
+  /** Drag thumbnails to reorder output within each PDF (merge, organize, split). */
+  allowReorder: boolean;
+  /**
+   * When true, Process does not require a non-empty page selection; the tool validates.
+   * Used by PDF Split when the Range tab ignores grid selection for export.
+   */
+  optionalSelectionForProcess?: boolean;
+  /** Higher values = sharper (slower) page thumbnails in the grid / studio strip. */
+  thumbRender?: { maxWidth?: number; jpegQuality?: number };
+};
+
+/** Passed to `processFiles` when `config.pageGrid` is set. */
+export type PdfPageGridProcessContext = {
+  /** When false, tools treat PDFs as full documents. When true, use per-file page lists. */
+  active: boolean;
+  /** Workspace file id → ordered 1-based page numbers (subset + order). */
+  orderedPagesByFileId: Record<string, number[]>;
+};
+
+type PerFileGridState = {
+  order: number[];
+  selected: number[];
+  thumbs: PageThumb[];
+  thumbsLoad: 'idle' | 'loading' | 'ready' | 'error';
+  thumbsError?: string;
 };
 
 export type WorkspaceConfig = {
@@ -65,6 +112,12 @@ export type WorkspaceConfig = {
   queuedTitle?: string;
   /** Verb used in the primary CTA (e.g. "Merge", "Compress"). Defaults to "Process". */
   actionLabel?: string;
+  /** Optional PDF page thumbnail grid (per-tool). */
+  pageGrid?: WorkspacePageGridConfig;
+  /** Shown in studio sidebar (e.g. drag-and-drop hint). */
+  studioHint?: React.ReactNode;
+  /** Label above the default file-card strip when no custom `studioSurface` is passed. */
+  studioStageTitle?: string;
 };
 
 export type WorkspaceActions = {
@@ -75,9 +128,40 @@ export type WorkspaceActions = {
   validateFiles?: (files: File[]) => Promise<{ ok: boolean; message?: string }>;
   processFiles: (
     files: WorkspaceFile[],
-    setProgress: (id: string, progress: number, message?: string) => void
+    setProgress: (id: string, progress: number, message?: string) => void,
+    pageGrid?: PdfPageGridProcessContext
   ) => Promise<WorkspaceFile[]>;
+  /**
+   * Optional preview generator. Called per accepted file; return minimal metadata
+   * including thumbUrl (object URL) and pageCount if available.
+   */
+  generatePreview?: (file: File) => Promise<WorkspaceFile['preview']>;
   zipName?: string;
+};
+
+/** API passed to `studioSurface` for custom “stage” UIs (merge board, split preview, etc.). */
+export type WorkspaceSurfaceApi = {
+  files: WorkspaceFile[];
+  effectiveBatchMax: number;
+  busy: boolean;
+  config: WorkspaceConfig;
+  draggedFileId: string | null;
+  setDraggedFileId: (id: string | null) => void;
+  reorderFilesInQueue: (targetId: string) => void;
+  handleRemove: (id: string) => void;
+  openFilePicker: () => void;
+  sortFilesAlphabetically: () => void;
+  /** True when this tool uses a PDF page grid and files are queued (always on; no separate toggle). */
+  pageGridActive: boolean;
+  expandedPageGridFileId: string | null;
+  setExpandedPageGridFileId: React.Dispatch<React.SetStateAction<string | null>>;
+  activePageGridFileId: string | null;
+  gridByFileId: Record<string, PerFileGridState>;
+  togglePageSelection: (fileId: string, pageNumber: number) => void;
+  selectAllPagesForFile: (fileId: string) => void;
+  selectNoPagesForFile: (fileId: string) => void;
+  reorderPagesForFile: (fileId: string, fromIndex: number, toIndex: number) => void;
+  pageGridToneClass: string;
 };
 
 type ToolWorkspaceProps = {
@@ -86,7 +170,16 @@ type ToolWorkspaceProps = {
   /** Optional pill rendered alongside the default dropzone hint chips. */
   subtitle?: React.ReactNode;
   /** Settings panel rendered inside the queue card between the file list and CTAs. */
-  footer?: React.ReactNode;
+  footer?: React.ReactNode | ((api: WorkspaceSurfaceApi) => React.ReactNode);
+  /**
+   * Optional custom stage (merge board, split preview, etc.). When omitted, a default file-card strip is used.
+   * With files queued, the workspace always uses the two-column studio shell (stage + sidebar).
+   */
+  studioSurface?: (api: WorkspaceSurfaceApi) => React.ReactNode;
+  /** When provided and returns false, the PageGrid checklist is omitted (thumbnails may still load for studio previews). */
+  showPageGridPanel?: (api: WorkspaceSurfaceApi) => boolean;
+  /** Fires after the grid snapshot updates (selection, select-all/none, reorder). */
+  onPageGridStateChange?: (api: WorkspaceSurfaceApi) => void;
 };
 
 type NoticeKind = 'success' | 'info' | 'error';
@@ -145,7 +238,38 @@ function fileExtension(name: string): string {
   return name.slice(idx).toLowerCase();
 }
 
-export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspaceProps) {
+function defaultPageOrder(pageCount: number): number[] {
+  return Array.from({ length: pageCount }, (_, i) => i + 1);
+}
+
+function resolveOrderedPagesForFile(state: PerFileGridState | undefined, pageCount: number): number[] {
+  if (pageCount <= 0) return [];
+  const order = state?.order?.length === pageCount ? state.order : defaultPageOrder(pageCount);
+  const selected =
+    state?.selected?.length && state.selected.every((p) => p >= 1 && p <= pageCount)
+      ? state.selected
+      : defaultPageOrder(pageCount);
+  const sel = new Set(selected);
+  return order.filter((p) => sel.has(p));
+}
+
+function placeholderThumbs(order: number[]): PageThumb[] {
+  return order.map((p) => ({
+    id: `slot-${p}`,
+    pageNumber: p,
+    status: 'loading' as const,
+  }));
+}
+
+function revokeGridStateThumbs(state: PerFileGridState | undefined) {
+  if (!state?.thumbs?.length) return;
+  const urls = state.thumbs
+    .filter((t): t is PageThumb & { thumbUrl: string } => typeof t.thumbUrl === 'string' && t.thumbUrl.length > 0)
+    .map((t) => ({ thumbUrl: t.thumbUrl }));
+  revokePdfThumbUrls(urls);
+}
+
+export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface, showPageGridPanel, onPageGridStateChange }: ToolWorkspaceProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const processStartedAtRef = useRef<number | null>(null);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -158,7 +282,14 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
   const [toast, setToast] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
-  const [queueScrollbarPadPx, setQueueScrollbarPadPx] = useState(0);
+  const [expandedPageGridFileId, setExpandedPageGridFileId] = useState<string | null>(null);
+  const [gridByFileId, setGridByFileId] = useState<Record<string, PerFileGridState>>({});
+  const thumbAbortRef = useRef<AbortController | null>(null);
+  const gridByFileIdRef = useRef(gridByFileId);
+
+  useLayoutEffect(() => {
+    gridByFileIdRef.current = gridByFileId;
+  }, [gridByFileId]);
 
   const reducedMotion = useReducedMotion();
   const perfProfile = useMemo(() => getCachedPerfProfile(), []);
@@ -171,6 +302,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
   const chipClass = toneStyle?.chip ?? 'border-border/40 bg-white/65';
   const scrollbarThumb = toneStyle?.scrollbarThumb;
   const scrollbarThumbHover = toneStyle?.scrollbarThumbHover;
+  const pageGridToneClass = toneStyle?.pageGridSelected ?? 'border-border/60 bg-muted/40 text-foreground';
   const actionLabel = config.actionLabel ?? 'Process';
   const queuedTitle = config.queuedTitle ?? 'Files ready';
   const effectiveBatchMax = config.allowMultiple ? MAX_CONVERSION_BATCH_FILES : 1;
@@ -183,6 +315,19 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
     () => files.reduce((sum, f) => sum + f.file.size, 0),
     [files]
   );
+
+  const hasFiles = files.length > 0;
+  const pageGridActive = Boolean(config.pageGrid && hasFiles);
+
+  const activePageGridFileId = useMemo(() => {
+    if (!config.pageGrid || !hasFiles) return null;
+    if (config.pageGrid.layout === 'single') return files[0]?.id ?? null;
+    const firstId = files[0]?.id ?? null;
+    if (expandedPageGridFileId && files.some((f) => f.id === expandedPageGridFileId)) {
+      return expandedPageGridFileId;
+    }
+    return firstId;
+  }, [config.pageGrid, expandedPageGridFileId, files, hasFiles]);
 
   const outputs = useMemo(
     () => files.flatMap((f) => f.outputs ?? []).filter(Boolean),
@@ -197,7 +342,6 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
   const pendingCount = files.filter(
     (f) => f.status !== 'done' && f.status !== 'processing'
   ).length;
-  const hasFiles = files.length > 0;
   const queueListUsesScrollRegion = files.length > QUEUE_SCROLL_AFTER_FILE_COUNT;
 
   // ----- Notice & UI state derivation -----
@@ -226,25 +370,161 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
     []
   );
 
-  // ResizeObserver-based scrollbar pad sync so CTA edges stay aligned with the queue list.
-  useLayoutEffect(() => {
-    const el = queueListScrollRef.current;
-    if (!el || !queueListUsesScrollRegion) {
-      setQueueScrollbarPadPx(0);
-      return;
+  useEffect(() => {
+    if (!config.pageGrid) return;
+    const ids = new Set(files.map((f) => f.id));
+    queueMicrotask(() => {
+      setGridByFileId((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const key of Object.keys(next)) {
+          if (!ids.has(key)) {
+            revokeGridStateThumbs(next[key]);
+            delete next[key];
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    });
+  }, [config.pageGrid, files]);
+
+  const thumbTargetKey = useMemo(() => {
+    if (!config.pageGrid || busy || !hasFiles) return null;
+    const id = activePageGridFileId;
+    if (!id) return null;
+    const wf = files.find((f) => f.id === id);
+    const pageCount = wf?.preview?.pageCount ?? 0;
+    if (!wf || pageCount <= 0) return null;
+    return `${id}:${pageCount}:${wf.file.size}:${wf.file.lastModified}`;
+  }, [activePageGridFileId, busy, config.pageGrid, files, hasFiles]);
+
+  useEffect(() => {
+    if (!thumbTargetKey || !activePageGridFileId) return;
+    const wf = files.find((f) => f.id === activePageGridFileId);
+    const pageCount = wf?.preview?.pageCount ?? 0;
+    if (!wf || pageCount <= 0) return;
+
+    thumbAbortRef.current?.abort();
+    const ac = new AbortController();
+    thumbAbortRef.current = ac;
+
+    const curSnap = gridByFileIdRef.current[activePageGridFileId];
+    const orderSnap =
+      curSnap && curSnap.order.length === pageCount && curSnap.order.every((p) => p >= 1 && p <= pageCount)
+        ? curSnap.order
+        : defaultPageOrder(pageCount);
+    const readyMatches =
+      curSnap?.thumbsLoad === 'ready' &&
+      curSnap.thumbs.length === orderSnap.length &&
+      orderSnap.every((p, idx) => curSnap.thumbs[idx]?.pageNumber === p);
+    if (readyMatches) {
+      return () => {
+        ac.abort();
+      };
     }
 
-    const update = () => {
-      setQueueScrollbarPadPx(Math.max(0, el.offsetWidth - el.clientWidth));
-    };
-
-    update();
-    const ro = new ResizeObserver(() => {
-      requestAnimationFrame(update);
+    queueMicrotask(() => {
+      setGridByFileId((prev) => {
+        const cur = prev[activePageGridFileId];
+        const order =
+          cur && cur.order.length === pageCount && cur.order.every((p) => p >= 1 && p <= pageCount)
+            ? cur.order
+            : defaultPageOrder(pageCount);
+        const selected =
+          cur && cur.selected.length && cur.selected.every((p) => p >= 1 && p <= pageCount)
+            ? cur.selected.filter((p) => p <= pageCount)
+            : defaultPageOrder(pageCount);
+        const alreadyReady =
+          cur?.thumbsLoad === 'ready' &&
+          cur.thumbs.length === order.length &&
+          order.every((p, idx) => cur.thumbs[idx]?.pageNumber === p);
+        if (alreadyReady) return prev;
+        revokeGridStateThumbs(cur);
+        return {
+          ...prev,
+          [activePageGridFileId]: {
+            order,
+            selected: selected.length ? selected : [...order],
+            thumbs: placeholderThumbs(order),
+            thumbsLoad: 'loading',
+            thumbsError: undefined,
+          },
+        };
+      });
     });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [queueListUsesScrollRegion, files]);
+
+    void (async () => {
+      try {
+        const { thumbs: loaded } = await renderPdfPageThumbnails(wf.file, {
+          signal: ac.signal,
+          maxWidth: config.pageGrid?.thumbRender?.maxWidth ?? 168,
+          jpegQuality: config.pageGrid?.thumbRender?.jpegQuality ?? 0.78,
+        });
+        if (ac.signal.aborted) return;
+        const byPage = new Map(loaded.map((t) => [t.pageNumber, t.thumbUrl]));
+        setGridByFileId((prev) => {
+          const cur = prev[activePageGridFileId];
+          if (!cur) return prev;
+          const nextThumbs: PageThumb[] = cur.order.map((pageNum) => ({
+            id: `page-${pageNum}`,
+            pageNumber: pageNum,
+            thumbUrl: byPage.get(pageNum),
+            status: byPage.has(pageNum) ? 'ready' : 'error',
+            error: byPage.has(pageNum) ? undefined : 'Preview failed',
+          }));
+          return {
+            ...prev,
+            [activePageGridFileId]: { ...cur, thumbs: nextThumbs, thumbsLoad: 'ready', thumbsError: undefined },
+          };
+        });
+      } catch (err) {
+        if (ac.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Preview failed';
+        setGridByFileId((prev) => {
+          const cur = prev[activePageGridFileId];
+          if (!cur) return prev;
+          return {
+            ...prev,
+            [activePageGridFileId]: {
+              ...cur,
+              thumbsLoad: 'error',
+              thumbsError: message,
+              thumbs: cur.order.map((p) => ({
+                id: `page-${p}`,
+                pageNumber: p,
+                status: 'error' as const,
+                error: message,
+              })),
+            },
+          };
+        });
+      }
+    })();
+
+    return () => {
+      ac.abort();
+    };
+  }, [
+    activePageGridFileId,
+    files,
+    thumbTargetKey,
+    config.pageGrid?.thumbRender?.maxWidth,
+    config.pageGrid?.thumbRender?.jpegQuality,
+  ]);
+
+  useEffect(
+    () => () => {
+      thumbAbortRef.current?.abort();
+      setGridByFileId((prev) => {
+        for (const st of Object.values(prev)) {
+          revokeGridStateThumbs(st);
+        }
+        return {};
+      });
+    },
+    []
+  );
 
   const resetInput = useCallback(() => {
     if (inputRef.current) inputRef.current.value = '';
@@ -400,10 +680,35 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
         }
 
         queuedNames.add(normalizedName);
+
+        // Kick off preview generation if provided; mark loading.
+        let preview: WorkspaceFile['preview'] | undefined;
+        const previewId = crypto.randomUUID();
+        if (actions.generatePreview) {
+          preview = { status: 'loading' };
+          actions
+            .generatePreview(file)
+            .then((result) => {
+              setFiles((current) =>
+                current.map((f) =>
+                  f.id === previewId ? { ...f, preview: { ...result, status: 'ready' } } : f
+                )
+              );
+            })
+            .catch((err) => {
+              const message = err instanceof Error ? err.message : 'Preview failed';
+              setFiles((current) =>
+                current.map((f) =>
+                  f.id === previewId ? { ...f, preview: { status: 'error', error: message } } : f
+                )
+              );
+            });
+        }
         accepted.push({
-          id: crypto.randomUUID(),
+          id: previewId,
           file,
           status: 'idle',
+          preview,
         });
       }
 
@@ -526,6 +831,48 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
     void addFilesFromArray(dupFiles, true);
   }, [addFilesFromArray, duplicatePrompt?.files]);
 
+  const selectPageGridFile = useCallback((id: string) => {
+    setExpandedPageGridFileId(id);
+  }, []);
+
+  const togglePageSelection = useCallback((fileId: string, pageNumber: number) => {
+    setGridByFileId((prev) => {
+      const cur = prev[fileId];
+      if (!cur) return prev;
+      const sel = new Set(cur.selected);
+      if (sel.has(pageNumber)) sel.delete(pageNumber);
+      else sel.add(pageNumber);
+      return { ...prev, [fileId]: { ...cur, selected: Array.from(sel).sort((a, b) => a - b) } };
+    });
+  }, []);
+
+  const selectAllPagesForFile = useCallback((fileId: string) => {
+    setGridByFileId((prev) => {
+      const cur = prev[fileId];
+      if (!cur) return prev;
+      return { ...prev, [fileId]: { ...cur, selected: [...cur.order] } };
+    });
+  }, []);
+
+  const selectNoPagesForFile = useCallback((fileId: string) => {
+    setGridByFileId((prev) => {
+      const cur = prev[fileId];
+      if (!cur) return prev;
+      return { ...prev, [fileId]: { ...cur, selected: [] } };
+    });
+  }, []);
+
+  const reorderPagesForFile = useCallback((fileId: string, fromIndex: number, toIndex: number) => {
+    setGridByFileId((prev) => {
+      const cur = prev[fileId];
+      if (!cur) return prev;
+      const order = [...cur.order];
+      const [moved] = order.splice(fromIndex, 1);
+      order.splice(toIndex, 0, moved);
+      return { ...prev, [fileId]: { ...cur, order } };
+    });
+  }, []);
+
   const setProgress = useCallback((id: string, progress: number, message?: string) => {
     const clamped = Math.min(100, Math.max(0, progress));
     const startedAt = processStartedAtRef.current;
@@ -565,7 +912,51 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
       current.map((f) => ({ ...f, status: 'processing', progress: 0, error: undefined }))
     );
     try {
-      const next = await actions.processFiles(files, setProgress);
+      let pageGridCtx: PdfPageGridProcessContext | undefined;
+      if (config.pageGrid) {
+        pageGridCtx = {
+          active: true,
+          orderedPagesByFileId: Object.fromEntries(
+            files.map((f) => {
+              const n = f.preview?.pageCount ?? 0;
+              return [f.id, n > 0 ? resolveOrderedPagesForFile(gridByFileId[f.id], n) : []];
+            })
+          ),
+        };
+        {
+          const missingPreview = files.some((f) => !(f.preview?.pageCount && f.preview.pageCount > 0));
+          if (missingPreview) {
+            showNotice(
+              'Wait for PDF previews to finish loading before processing with the page grid.',
+              { kind: 'error', autoClear: true }
+            );
+            setBusy(false);
+            setFiles((current) => current.map((f) => ({ ...f, status: 'idle', progress: undefined })));
+            processStartedAtRef.current = null;
+            return;
+          }
+          const requireSelection = config.pageGrid.optionalSelectionForProcess !== true;
+          if (requireSelection) {
+            const emptySelection = files.some((f) => {
+              const n = f.preview?.pageCount ?? 0;
+              if (!n) return false;
+              return resolveOrderedPagesForFile(gridByFileId[f.id], n).length === 0;
+            });
+            if (emptySelection) {
+              showNotice('Select at least one page for each PDF in the page grid.', {
+                kind: 'error',
+                autoClear: true,
+              });
+              setBusy(false);
+              setFiles((current) => current.map((f) => ({ ...f, status: 'idle', progress: undefined })));
+              processStartedAtRef.current = null;
+              return;
+            }
+          }
+        }
+      }
+
+      const next = await actions.processFiles(files, setProgress, pageGridCtx);
       setFiles(next);
       const failures = next.filter((f) => f.status === 'failed').length;
       if (failures === 0) {
@@ -584,11 +975,18 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
       setBusy(false);
       processStartedAtRef.current = null;
     }
-  }, [actions, files, setProgress, showNotice]);
+  }, [actions, config.pageGrid, files, gridByFileId, setProgress, showNotice]);
 
   const handleReset = useCallback(() => {
     setFiles([]);
     setDuplicatePrompt(null);
+    setExpandedPageGridFileId(null);
+    setGridByFileId((prev) => {
+      for (const st of Object.values(prev)) {
+        revokeGridStateThumbs(st);
+      }
+      return {};
+    });
     if (noticeTimerRef.current) {
       clearTimeout(noticeTimerRef.current);
       noticeTimerRef.current = null;
@@ -617,6 +1015,75 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
     },
     [draggedFileId]
   );
+
+  const sortFilesAlphabetically = useCallback(() => {
+    setFiles((cur) => [...cur].sort((a, b) => a.file.name.localeCompare(b.file.name, undefined, { sensitivity: 'base' })));
+  }, []);
+
+  const openFilePicker = useCallback(() => {
+    inputRef.current?.click();
+  }, []);
+
+  const surfaceApi: WorkspaceSurfaceApi = useMemo(
+    () => ({
+      files,
+      effectiveBatchMax,
+      busy,
+      config,
+      draggedFileId,
+      setDraggedFileId,
+      reorderFilesInQueue: handleReorder,
+      handleRemove,
+      openFilePicker,
+      sortFilesAlphabetically,
+      pageGridActive,
+      expandedPageGridFileId,
+      setExpandedPageGridFileId,
+      activePageGridFileId,
+      gridByFileId,
+      togglePageSelection,
+      selectAllPagesForFile,
+      selectNoPagesForFile,
+      reorderPagesForFile,
+      pageGridToneClass,
+    }),
+    [
+      files,
+      effectiveBatchMax,
+      busy,
+      config,
+      draggedFileId,
+      handleReorder,
+      handleRemove,
+      openFilePicker,
+      sortFilesAlphabetically,
+      pageGridActive,
+      expandedPageGridFileId,
+      activePageGridFileId,
+      gridByFileId,
+      togglePageSelection,
+      selectAllPagesForFile,
+      selectNoPagesForFile,
+      reorderPagesForFile,
+      pageGridToneClass,
+    ]
+  );
+
+  const pageGridPanelVisible = useMemo(() => {
+    if (!config.pageGrid || !activePageGridFileId) return false;
+    if (showPageGridPanel && !showPageGridPanel(surfaceApi)) return false;
+    const st = gridByFileId[activePageGridFileId];
+    const wf = files.find((f) => f.id === activePageGridFileId);
+    const pageCount = wf?.preview?.pageCount ?? 0;
+    return !!(st && wf && pageCount > 0);
+  }, [config.pageGrid, activePageGridFileId, showPageGridPanel, surfaceApi, gridByFileId, files]);
+
+  const surfaceApiRef = useRef(surfaceApi);
+  surfaceApiRef.current = surfaceApi;
+
+  useEffect(() => {
+    onPageGridStateChange?.(surfaceApiRef.current);
+  }, [gridByFileId, onPageGridStateChange]);
 
   const handleDownloadSingle = useCallback((output: { name: string; blob: Blob }) => {
     const url = URL.createObjectURL(output.blob);
@@ -648,6 +1115,358 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
   const primaryCtaClass = `${CTA_FLEX_LAYOUT} bg-gradient-to-br ${config.primaryButtonClass} text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45`;
   const secondaryCtaClass = `${CTA_FLEX_LAYOUT} border border-border/40 bg-white/60 text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-45`;
   const downloadIdleCtaClass = `${CTA_FLEX_LAYOUT} border border-dashed border-slate-300/75 bg-slate-100 text-slate-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-100`;
+
+  const renderResultChips = (item: WorkspaceFile) => {
+    const chips: string[] = [];
+    const outputs = item.outputs ?? [];
+    if (outputs.length > 1) {
+      chips.push(`${outputs.length} outputs`);
+    }
+    const beforeBytes = item.file.size;
+    const afterBytes = outputs.reduce((total, out) => total + (out.blob?.size ?? 0), 0);
+    if (afterBytes > 0 && beforeBytes > 0) {
+      const saved = beforeBytes - afterBytes;
+      const savedPct = Math.max(0, Math.round((saved / beforeBytes) * 100));
+      chips.push(
+        saved >= 0
+          ? `${formatBytes(afterBytes)} (${savedPct}% smaller)`
+          : `${formatBytes(afterBytes)}`
+      );
+    }
+    if (item.preview?.pageCount) {
+      chips.push(`${item.preview.pageCount} page${item.preview.pageCount === 1 ? '' : 's'}`);
+    }
+    return chips;
+  };
+
+  const renderPageGridPanel = () => {
+    if (!config.pageGrid || !activePageGridFileId) return null;
+    if (showPageGridPanel && !showPageGridPanel(surfaceApi)) return null;
+    const st = gridByFileId[activePageGridFileId];
+    const wf = files.find((f) => f.id === activePageGridFileId);
+    const pageCount = wf?.preview?.pageCount ?? 0;
+    if (!st || !wf || pageCount <= 0) return null;
+    const byPage = new Map(st.thumbs.map((t) => [t.pageNumber, t]));
+    const gridPages: PageThumb[] = st.order.map((p) => {
+      const t = byPage.get(p);
+      return (
+        t ?? {
+          id: `pending-${p}`,
+          pageNumber: p,
+          status: st.thumbsLoad === 'loading' ? ('loading' as const) : ('error' as const),
+          error: st.thumbsError,
+        }
+      );
+    });
+    const selected = new Set(st.selected);
+    return (
+      <div id={`page-grid-${activePageGridFileId}`} className="px-1 pt-1">
+        <p className="mb-2 text-center text-[11px] text-muted-foreground sm:text-left">
+          {config.pageGrid.layout === 'perFile' ? (
+            <>
+              <span className="font-medium text-foreground">{wf.file.name}</span> — drag to reorder pages, uncheck to
+              omit.
+            </>
+          ) : (
+            <>Drag to reorder pages, uncheck to omit.</>
+          )}
+        </p>
+        <PageGrid
+          toneClass={pageGridToneClass}
+          pages={gridPages}
+          selected={selected}
+          onToggle={(p) => togglePageSelection(activePageGridFileId, p)}
+          onSelectAll={() => selectAllPagesForFile(activePageGridFileId)}
+          onSelectNone={() => selectNoPagesForFile(activePageGridFileId)}
+          reorderable={config.pageGrid.allowReorder}
+          onReorder={
+            config.pageGrid.allowReorder
+              ? (from, to) => reorderPagesForFile(activePageGridFileId, from, to)
+              : undefined
+          }
+          compact
+        />
+      </div>
+    );
+  };
+
+  const renderQueueListScroll = () => {
+    const useToneScrollbar = queueListUsesScrollRegion && Boolean(scrollbarThumb && scrollbarThumbHover);
+
+    return (
+      <div
+        ref={queueListScrollRef}
+        className={clsx(
+          'min-h-0 w-full min-w-0 overflow-x-hidden',
+          queueListUsesScrollRegion
+            ? 'queue-list-scrollbar max-h-72 overflow-y-auto overscroll-contain pr-0.5'
+            : 'max-h-none overflow-y-visible'
+        )}
+        style={
+          useToneScrollbar
+            ? ({
+                '--queue-scrollbar-thumb': scrollbarThumb,
+                '--queue-scrollbar-thumb-hover': scrollbarThumbHover,
+              } as CSSProperties)
+            : undefined
+        }
+      >
+      <div
+        className="flex w-full min-w-0 flex-col gap-2 py-0.5 pr-4"
+        role="list"
+        aria-label="Selected files"
+      >
+        {files.map((item) => {
+          const isReorderable = config.allowMultiple && files.length > 1 && !busy;
+          const itemOutput = item.outputs?.[0];
+          return (
+            <div
+              key={item.id}
+              role="listitem"
+              draggable={isReorderable}
+              onDragStart={() => isReorderable && setDraggedFileId(item.id)}
+              onDragOver={(event) => {
+                if (isReorderable) event.preventDefault();
+              }}
+              onDrop={() => isReorderable && handleReorder(item.id)}
+              onDragEnd={() => setDraggedFileId(null)}
+              className={clsx(
+                'min-h-12 rounded-xl border border-border/45 bg-white/60 px-2.5 py-2 box-border transition focus-within:ring-2 focus-within:ring-ring',
+                draggedFileId === item.id && 'opacity-50',
+                isReorderable && 'cursor-grab active:cursor-grabbing'
+              )}
+            >
+              <div className="flex w-full items-center gap-2.5">
+                <div className={`h-10 w-10 shrink-0 overflow-hidden rounded-lg ${config.iconBoxClass} flex items-center justify-center`}>
+                  {item.status === 'done' ? (
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={22}
+                      strokeWidth={1.7}
+                      className={config.iconClass}
+                    />
+                  ) : item.status === 'processing' ? (
+                    <HugeiconsIcon
+                      icon={RefreshIcon}
+                      size={22}
+                      strokeWidth={1.7}
+                      className={clsx(config.iconClass, 'animate-spin')}
+                    />
+                  ) : /\.pdf$/i.test(item.file.name) ? (
+                    <div
+                      className={clsx(
+                        'flex h-full w-full items-center justify-center rounded-lg bg-white/50',
+                        item.preview?.status === 'loading' && 'animate-pulse'
+                      )}
+                    >
+                      <HugeiconsIcon icon={Pdf01Icon} size={26} strokeWidth={1.55} className={config.iconClass} />
+                    </div>
+                  ) : item.preview?.status === 'ready' && item.preview.thumbUrl ? (
+                    <div className="relative h-full w-full overflow-hidden rounded-lg">
+                      {/* Using img here intentionally to avoid Next.js image overhead for tiny thumbnails */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.preview.thumbUrl}
+                        alt={item.file.name}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : item.preview?.status === 'loading' ? (
+                    <div className="h-full w-full animate-pulse rounded-lg bg-white/60" />
+                  ) : (
+                    <HugeiconsIcon icon={File01Icon} size={22} strokeWidth={1.7} className={config.iconClass} />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                    <div className="min-w-0">
+                      <p
+                        className="truncate text-xs font-medium text-foreground leading-tight"
+                        title={item.file.name}
+                      >
+                        {item.file.name}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug">
+                        {formatBytes(item.file.size)} · {statusLabel(item)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:justify-end">
+                      {itemOutput && (
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadSingle(itemOutput)}
+                          className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium ${config.iconClass} hover:opacity-80`}
+                        >
+                          <HugeiconsIcon icon={Download01Icon} size={12} strokeWidth={2} />
+                          Download
+                        </button>
+                      )}
+                      {config.pageGrid?.layout === 'perFile' &&
+                        pageGridActive &&
+                        !busy &&
+                        (item.preview?.pageCount ?? 0) > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => selectPageGridFile(item.id)}
+                            className={clsx(
+                              `inline-flex items-center justify-center rounded-lg px-2.5 py-1.5 text-[11px] font-medium ${config.iconClass} hover:opacity-80`,
+                              activePageGridFileId === item.id && 'ring-2 ring-offset-1 ring-offset-background ring-current/25'
+                            )}
+                            aria-pressed={activePageGridFileId === item.id}
+                            aria-controls={`page-grid-${item.id}`}
+                          >
+                            Pages
+                          </button>
+                        )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemove(item.id)}
+                        disabled={busy}
+                        aria-label={`Remove ${item.file.name}`}
+                        className="inline-flex items-center justify-center rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Result/preview chips */}
+                  {item.status === 'done' || item.preview?.pageCount ? (
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                      {renderResultChips(item).map((chip) => (
+                        <span
+                          key={chip}
+                          className="inline-flex items-center rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground border border-border/40"
+                        >
+                          {chip}
+                        </span>
+                      ))}
+                      {item.preview?.status === 'error' && item.preview.error && (
+                        <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-600 border border-rose-200/70">
+                          {item.preview.error}
+                        </span>
+                      )}
+                    </div>
+                  ) : null}
+                  {item.status === 'processing' && item.progress !== undefined && (
+                    <div
+                      className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/60"
+                      role="progressbar"
+                      aria-valuenow={item.progress}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
+                      <motion.div
+                        className={`h-full rounded-full bg-gradient-to-r ${config.progressClass}`}
+                        animate={{ width: `${Math.min(item.progress, 100)}%` }}
+                        transition={rowExpand}
+                      />
+                    </div>
+                  )}
+                  {item.error && (
+                    <p className="mt-2 text-[11px] leading-relaxed text-rose-600">{item.error}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+    );
+  };
+
+  const renderQueueToolbar = () => (
+    <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 sm:justify-start">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={busy || files.length >= effectiveBatchMax}
+        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
+        Add files
+      </button>
+      <button
+        type="button"
+        onClick={handleReset}
+        disabled={busy}
+        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
+        Clear all
+      </button>
+    </div>
+  );
+
+  const renderCtaRow = () => (
+    <div className="flex w-full min-w-0 flex-col gap-2">
+      <button
+        type="button"
+        onClick={() => {
+          if (allDone) {
+            handleReset();
+          } else {
+            void handleProcess();
+          }
+        }}
+        disabled={allDone ? busy : busy || pendingCount === 0}
+        className={`${downloadPrimary ? secondaryCtaClass : primaryCtaClass} ${
+          downloadPrimary ? 'order-2 sm:order-2' : 'order-1 sm:order-1'
+        }`}
+      >
+        <HugeiconsIcon
+          icon={busy || allDone ? RefreshIcon : File01Icon}
+          size={15}
+          strokeWidth={2}
+          className={clsx('shrink-0', busy && 'animate-spin')}
+        />
+        {busy
+          ? 'Processing…'
+          : allDone
+            ? 'Start again'
+            : `${actionLabel} ${pendingCount} ${pendingCount === 1 ? 'file' : 'files'}`}
+      </button>
+      <button
+        type="button"
+        onClick={() => void handleDownload()}
+        disabled={!downloadReady}
+        aria-busy={busy}
+        className={`${
+          downloadPrimary
+            ? primaryCtaClass
+            : downloadReady
+              ? secondaryCtaClass
+              : downloadIdleCtaClass
+        } ${downloadPrimary ? 'order-1 sm:order-1' : 'order-2 sm:order-2'}`}
+      >
+        {downloadReady ? (
+          <HugeiconsIcon
+            icon={isBulkDownload ? Archive01Icon : Download01Icon}
+            size={15}
+            strokeWidth={2}
+            className="shrink-0"
+          />
+        ) : busy ? (
+          <HugeiconsIcon
+            icon={RefreshIcon}
+            size={15}
+            strokeWidth={2}
+            className="shrink-0 animate-spin opacity-70"
+          />
+        ) : (
+          <HugeiconsIcon icon={File01Icon} size={15} strokeWidth={2} className="shrink-0 opacity-60" />
+        )}
+        {busy
+          ? 'Your output will appear here shortly'
+          : hasOutputs
+            ? isBulkDownload
+              ? 'Download as ZIP'
+              : 'Download result'
+            : 'Almost there · hit ' + actionLabel}
+      </button>
+    </div>
+  );
 
   return (
     <div className="w-full space-y-4">
@@ -862,236 +1681,71 @@ export function ToolWorkspace({ config, actions, subtitle, footer }: ToolWorkspa
           className="glass flex flex-col gap-3 rounded-3xl p-5 sm:p-6"
         >
           <div className="flex w-full flex-col gap-3 px-1">
-            <div className="flex w-full flex-col gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
-              <div className="min-w-0 w-full sm:w-auto sm:text-left">
-                <h3 className="text-sm font-semibold text-foreground">{queuedTitle}</h3>
-                <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-                  Queue: {files.length} of {effectiveBatchMax} files. Selected total:{' '}
-                  {formatBytes(totalBytes)}.
-                </p>
-              </div>
-              <div className="flex shrink-0 flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => inputRef.current?.click()}
-                  disabled={busy || files.length >= effectiveBatchMax}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
-                  Add files
-                </button>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  disabled={busy}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
-                  Clear all
-                </button>
-              </div>
-            </div>
-
-            {/* Scroll only after QUEUE_SCROLL_AFTER_FILE_COUNT files; pad CTAs by measured scrollbar so edges stay aligned. */}
-            <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-2">
+            <div
+              className={clsx(
+                'grid w-full gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,400px)]',
+                pageGridPanelVisible
+                  ? 'lg:items-start'
+                  : 'lg:items-stretch lg:min-h-[calc(100dvh-9rem)]'
+              )}
+            >
               <div
-                ref={queueListScrollRef}
                 className={clsx(
-                  'min-h-0 w-full min-w-0 overflow-x-hidden',
-                  queueListUsesScrollRegion
-                    ? 'queue-list-scrollbar max-h-72 overflow-y-auto'
-                    : 'max-h-none overflow-y-visible'
+                  'relative flex min-w-0 flex-col gap-4 rounded-2xl border border-border/40 bg-[#f4f5f7] p-4 sm:p-6 dark:bg-muted/25',
+                  pageGridPanelVisible
+                    ? 'min-h-[min(52vh,28rem)] max-h-[calc(100dvh-9rem)] overflow-x-hidden overflow-y-hidden'
+                    : 'h-full min-h-[calc(100dvh-9rem)] min-w-0 overflow-x-hidden'
                 )}
-                style={
-                  queueListUsesScrollRegion && scrollbarThumb && scrollbarThumbHover
-                    ? ({
-                        '--queue-scrollbar-thumb': scrollbarThumb,
-                        '--queue-scrollbar-thumb-hover': scrollbarThumbHover,
-                      } as CSSProperties)
-                    : undefined
-                }
               >
-                <div
-                  className="flex w-full min-w-0 flex-col gap-2 py-0.5 pr-4"
-                  role="list"
-                  aria-label="Selected files"
-                >
-                  {files.map((item) => {
-                    const isReorderable = config.allowMultiple && files.length > 1 && !busy;
-                    const itemOutput = item.outputs?.[0];
-                    return (
-                      <div
-                        key={item.id}
-                        role="listitem"
-                        draggable={isReorderable}
-                        onDragStart={() => isReorderable && setDraggedFileId(item.id)}
-                        onDragOver={(event) => {
-                          if (isReorderable) event.preventDefault();
-                        }}
-                        onDrop={() => isReorderable && handleReorder(item.id)}
-                        onDragEnd={() => setDraggedFileId(null)}
-                        className={clsx(
-                          'min-h-12 rounded-xl border border-border/45 bg-white/60 px-2.5 py-2 box-border transition focus-within:ring-2 focus-within:ring-ring',
-                          draggedFileId === item.id && 'opacity-50',
-                          isReorderable && 'cursor-grab active:cursor-grabbing'
-                        )}
-                      >
-                        <div className="flex w-full items-center gap-2.5">
-                          <div className={`h-8 w-8 shrink-0 rounded-lg ${config.iconBoxClass} flex items-center justify-center`}>
-                            <HugeiconsIcon
-                              icon={
-                                item.status === 'done'
-                                  ? CheckmarkCircle01Icon
-                                  : item.status === 'processing'
-                                    ? RefreshIcon
-                                    : File01Icon
-                              }
-                              size={15}
-                              strokeWidth={1.7}
-                              className={clsx(config.iconClass, item.status === 'processing' && 'animate-spin')}
-                            />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-                              <div className="min-w-0">
-                                <p
-                                  className="truncate text-xs font-medium text-foreground leading-tight"
-                                  title={item.file.name}
-                                >
-                                  {item.file.name}
-                                </p>
-                                <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug">
-                                  {formatBytes(item.file.size)} · {statusLabel(item)}
-                                </p>
-                              </div>
-                              <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:justify-end">
-                                {itemOutput && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDownloadSingle(itemOutput)}
-                                    className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium ${config.iconClass} hover:opacity-80`}
-                                  >
-                                    <HugeiconsIcon icon={Download01Icon} size={12} strokeWidth={2} />
-                                    Download
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemove(item.id)}
-                                  disabled={busy}
-                                  aria-label={`Remove ${item.file.name}`}
-                                  className="inline-flex items-center justify-center rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                  <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
-                                </button>
-                              </div>
-                            </div>
-                            {item.status === 'processing' && item.progress !== undefined && (
-                              <div
-                                className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/60"
-                                role="progressbar"
-                                aria-valuenow={item.progress}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                              >
-                                <motion.div
-                                  className={`h-full rounded-full bg-gradient-to-r ${config.progressClass}`}
-                                  animate={{ width: `${Math.min(item.progress, 100)}%` }}
-                                  transition={rowExpand}
-                                />
-                              </div>
-                            )}
-                            {item.error && (
-                              <p className="mt-2 text-[11px] leading-relaxed text-rose-600">{item.error}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {footer}
-
-              <div
-                className="flex w-full min-w-0 flex-col gap-2 pr-4 sm:flex-row sm:items-stretch"
-                style={
-                  queueListUsesScrollRegion
-                    ? { paddingRight: `calc(1rem + ${queueScrollbarPadPx}px)` }
-                    : undefined
-                }
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (allDone) {
-                      handleReset();
-                    } else {
-                      void handleProcess();
-                    }
-                  }}
-                  disabled={allDone ? busy : busy || pendingCount === 0}
-                  className={`${downloadPrimary ? secondaryCtaClass : primaryCtaClass} ${
-                    downloadPrimary ? 'order-2 sm:order-2' : 'order-1 sm:order-1'
-                  }`}
-                >
-                  <HugeiconsIcon
-                    icon={busy || allDone ? RefreshIcon : File01Icon}
-                    size={15}
-                    strokeWidth={2}
-                    className={clsx('shrink-0', busy && 'animate-spin')}
+                {config.allowMultiple ? (
+                  <StudioFabStack
+                    fileCount={files.length}
+                    maxFiles={effectiveBatchMax}
+                    busy={busy}
+                    onAdd={openFilePicker}
+                    onSort={files.length > 1 ? sortFilesAlphabetically : undefined}
+                    showSort
+                    primaryButtonClass={config.primaryButtonClass}
                   />
-                  {busy
-                    ? 'Processing…'
-                    : allDone
-                      ? 'Start again'
-                      : `${actionLabel} ${pendingCount} ${pendingCount === 1 ? 'file' : 'files'}`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleDownload()}
-                  disabled={!downloadReady}
-                  aria-busy={busy}
-                  className={`${
-                    downloadPrimary
-                      ? primaryCtaClass
-                      : downloadReady
-                        ? secondaryCtaClass
-                        : downloadIdleCtaClass
-                  } ${downloadPrimary ? 'order-1 sm:order-1' : 'order-2 sm:order-2'}`}
-                >
-                  {downloadReady ? (
-                    <HugeiconsIcon
-                      icon={isBulkDownload ? Archive01Icon : Download01Icon}
-                      size={15}
-                      strokeWidth={2}
-                      className="shrink-0"
-                    />
-                  ) : busy ? (
-                    <HugeiconsIcon
-                      icon={RefreshIcon}
-                      size={15}
-                      strokeWidth={2}
-                      className="shrink-0 animate-spin opacity-70"
-                    />
-                  ) : (
-                    <HugeiconsIcon
-                      icon={File01Icon}
-                      size={15}
-                      strokeWidth={2}
-                      className="shrink-0 opacity-60"
-                    />
+                ) : null}
+                <div
+                  className={clsx(
+                    'min-h-0 w-full min-w-0',
+                    !pageGridPanelVisible && 'flex flex-1 flex-col'
                   )}
-                  {busy
-                    ? 'Your output will appear here shortly'
-                    : hasOutputs
-                      ? isBulkDownload
-                        ? 'Download as ZIP'
-                        : 'Download result'
-                      : 'Almost there · hit ' + actionLabel}
-                </button>
+                >
+                  {/* eslint-disable-next-line react-hooks/refs -- false positive: surfaceApi is state snapshot; refs only used when callers invoke picker */}
+                  {studioSurface ? studioSurface(surfaceApi) : <DefaultBatchStudioSurface api={surfaceApi} />}
+                </div>
+                {renderPageGridPanel()}
               </div>
+              <aside
+                className={clsx(
+                  'flex min-w-0 flex-col gap-4 rounded-2xl border border-border/50 bg-white/65 p-4 shadow-sm backdrop-blur-md sm:p-5 lg:sticky lg:top-36',
+                  pageGridPanelVisible ? 'min-h-0' : 'h-full w-full min-h-0 overflow-x-hidden overflow-y-visible'
+                )}
+              >
+                {config.studioHint ? (
+                  <div className="shrink-0 flex gap-2.5 rounded-xl border border-sky-200/80 bg-sky-50/95 p-3 text-[11px] leading-relaxed text-sky-950">
+                    <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-sky-600" />
+                    <div className="min-w-0">{config.studioHint}</div>
+                  </div>
+                ) : null}
+                <div className="shrink-0 border-b border-border/30 pb-3">
+                  <h2 className="text-sm font-semibold tracking-tight text-foreground">{queuedTitle}</h2>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                    Queue: {files.length} of {effectiveBatchMax} files. Selected total:{' '}
+                    {formatBytes(totalBytes)}.
+                  </p>
+                </div>
+                <div className="shrink-0">{renderQueueToolbar()}</div>
+                <div className="min-h-0 w-full min-w-0 shrink-0">{renderQueueListScroll()}</div>
+                <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 overflow-visible">
+                  {/* eslint-disable-next-line react-hooks/refs -- false positive: surfaceApi snapshot; footer may read queue/grid only */}
+                  {typeof footer === 'function' ? footer(surfaceApi) : footer}
+                  {renderCtaRow()}
+                </div>
+              </aside>
             </div>
           </div>
         </motion.div>

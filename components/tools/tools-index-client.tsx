@@ -44,6 +44,17 @@ function matchesQuery(tool: ToolDefinition, query: string) {
   return false;
 }
 
+function capabilityChips(tool: ToolDefinition) {
+  const caps = tool.capabilities || {};
+  const chips: string[] = [];
+  if (caps.preview) chips.push('Preview');
+  if (caps.batch) chips.push('Batch');
+  if (caps.pageRange) chips.push('Page range');
+  if (caps.zipOutput) chips.push('ZIP output');
+  if (caps.qualityControls) chips.push('Quality');
+  return chips;
+}
+
 export function ToolsIndexClient() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('all');
@@ -158,6 +169,7 @@ export function ToolsIndexClient() {
           {filtered.map((tool) => {
             const fileType = getCategory(tool);
             const gradient = TONE_TEXT_GRADIENT[tool.tone];
+            const caps = capabilityChips(tool);
             return (
               <Link
                 key={tool.slug}
@@ -181,6 +193,18 @@ export function ToolsIndexClient() {
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed flex-1">
                   {tool.description}
                 </p>
+                {caps.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {caps.map((cap) => (
+                      <span
+                        key={cap}
+                        className="inline-flex items-center rounded-full border border-border/60 bg-white/70 px-2 py-1 text-[11px] font-medium text-muted-foreground"
+                      >
+                        {cap}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center justify-between gap-2 pt-1">
                   <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
                     <HugeiconsIcon icon={Shield01Icon} size={11} strokeWidth={2} className="text-emerald-500" />

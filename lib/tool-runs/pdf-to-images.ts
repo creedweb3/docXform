@@ -1,4 +1,4 @@
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf';
 
 export type ImageFormat = 'png' | 'jpeg';
 
@@ -6,22 +6,35 @@ export async function pdfToImages(
   file: File,
   format: ImageFormat,
   scale: number,
-  onProgress?: (percent: number) => void
+  onProgress?: (percent: number) => void,
+  /** 1-based page numbers to render, in order. Omit to render all pages. */
+  pages?: number[],
+  /** Used when format is JPEG (passed to canvas.toBlob). Defaults to 0.92. */
+  jpegQuality?: number
 ): Promise<Array<{ name: string; blob: Blob }>> {
   if (typeof window === 'undefined') {
     throw new Error('PDF rendering is only available in the browser.');
   }
 
-  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
+  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf');
   if (!GlobalWorkerOptions.workerSrc) {
-    GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+    GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
+      import.meta.url
+    ).toString();
   }
 
   const arrayBuffer = await file.arrayBuffer();
   const pdf: PDFDocumentProxy = await getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-  const pages: Array<{ name: string; blob: Blob }> = [];
+  const pageList =
+    pages && pages.length > 0
+      ? pages.filter((p) => Number.isInteger(p) && p >= 1 && p <= pdf.numPages)
+      : Array.from({ length: pdf.numPages }, (_, j) => j + 1);
+  const outPages: Array<{ name: string; blob: Blob }> = [];
 
-  for (let i = 1; i <= pdf.numPages; i += 1) {
+  let done = 0;
+  const total = pageList.length;
+  for (const i of pageList) {
     const page = await pdf.getPage(i);
     const viewport = page.getViewport({ scale });
     const canvas = document.createElement('canvas');
@@ -40,13 +53,14 @@ export async function pdfToImages(
           else resolve(b);
         },
         format === 'png' ? 'image/png' : 'image/jpeg',
-        format === 'jpeg' ? 0.92 : undefined
+        format === 'jpeg' ? (jpegQuality ?? 0.92) : undefined
       );
     });
 
-    pages.push({ name: `${file.name.replace(/\.pdf$/i, '')}-page-${String(i).padStart(3, '0')}.${format}`, blob });
-    onProgress?.(Math.round((i / pdf.numPages) * 100));
+    outPages.push({ name: `${file.name.replace(/\.pdf$/i, '')}-page-${String(i).padStart(3, '0')}.${format}`, blob });
+    done += 1;
+    onProgress?.(Math.round((done / total) * 100));
   }
 
-  return pages;
+  return outPages;
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import clsx from 'clsx';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   BookOpen01Icon,
@@ -78,7 +79,7 @@ export function ToolExperience({ tool, workspace }: ToolExperienceProps) {
   ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto pt-4">
+    <div className={clsx('w-full mx-auto pt-4', tool.experienceMaxWidthClass ?? 'max-w-4xl')}>
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 glass-subtle rounded-full px-4 py-1.5 mb-6 border border-white/5">
           <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className={tone.pillIcon} />

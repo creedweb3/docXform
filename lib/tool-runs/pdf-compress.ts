@@ -30,9 +30,12 @@ export async function compressPdf(file: File, preset: Preset, onProgress?: (perc
     throw new Error('PDF compression runs only in the browser.');
   }
 
-  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
+  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf');
   if (!GlobalWorkerOptions.workerSrc) {
-    GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+    GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
+      import.meta.url
+    ).toString();
   }
 
   const mimeQuality = preset === 'light' ? 0.55 : preset === 'balanced' ? 0.7 : 0.82;

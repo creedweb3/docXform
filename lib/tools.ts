@@ -41,6 +41,15 @@ export type ToolDefinition = {
   howToSteps: string[];
   faqs: { q: string; a: string }[];
   features: string[];
+  capabilities?: {
+    preview?: boolean;
+    batch?: boolean;
+    pageRange?: boolean;
+    zipOutput?: boolean;
+    qualityControls?: boolean;
+  };
+  /** Optional wider layout for tools with a two-column studio workspace. */
+  experienceMaxWidthClass?: string;
 };
 
 export const toolDefinitions: ToolDefinition[] = [
@@ -70,6 +79,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Will bookmarks be kept?', a: 'Basic structure is preserved when possible; complex outlines may vary.' },
     ],
     features: ['Local-only processing', 'Reorder before merge', 'No signup, no watermark'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'pdf-split',
@@ -96,6 +107,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Do links or bookmarks remain?', a: 'Basic links usually stay; complex outlines may change after split.' },
     ],
     features: ['Custom ranges', 'Even/odd options', 'Local processing'],
+    capabilities: { preview: true, batch: false, pageRange: true, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'pdf-compress',
@@ -122,6 +135,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Does this change appearance?', a: 'Images are recompressed; text and vector artwork are flattened to preserve layout while saving space.' },
     ],
     features: ['Quality presets', 'Image downsampling', 'Local-only compression'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: true },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'pdf-to-images',
@@ -148,6 +163,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Large PDFs?', a: 'Works locally; very large files may need lower DPI to fit memory.' },
     ],
     features: ['PNG or JPEG output', 'Resolution presets', 'On-device rendering'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: true },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'images-to-pdf',
@@ -174,6 +191,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'How are images fit?', a: 'Choose fit-to-page or maintain aspect with margins.' },
     ],
     features: ['Reorder images', 'Fit-to-page options', 'Local conversion'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: false, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'pptx-to-pdf',
@@ -200,6 +219,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Animations?', a: 'Static rendering; animations are not preserved in PDF.' },
     ],
     features: ['Local rendering', 'Slide range', 'Layout fidelity focus'],
+    capabilities: { preview: false, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'docx-to-pptx',
@@ -226,6 +247,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Images?', a: 'Inline images are placed on related slides when possible.' },
     ],
     features: ['Heading-to-slide mapping', 'Local-only processing', 'Inline images when possible'],
+    capabilities: { preview: false, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'docx-scrub',
@@ -252,6 +275,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Does layout change?', a: 'Content stays; tracked changes removal may accept changes—review before sharing.' },
     ],
     features: ['Remove comments/properties', 'Local privacy', 'Share-ready output'],
+    capabilities: { preview: false, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'pdf-rotate',
@@ -278,6 +303,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Are my files re-encoded?', a: 'No. Only the page rotation metadata is updated.' },
     ],
     features: ['Quick 90/180/270 rotation', 'Odd/even scope', 'Local-only processing'],
+    capabilities: { preview: true, batch: true, pageRange: true, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'pdf-organize',
@@ -304,6 +331,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Is my PDF uploaded?', a: 'No. Reordering uses pdf-lib in your browser only.' },
     ],
     features: ['Drag-friendly ranges', 'Delete by omission', 'Local-only processing'],
+    capabilities: { preview: true, batch: false, pageRange: true, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'pdf-watermark',
@@ -330,6 +359,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Is my PDF uploaded?', a: 'No. Watermarking happens in your browser with pdf-lib.' },
     ],
     features: ['Text watermark', 'Position presets', 'Opacity & color control'],
+    capabilities: { preview: true, batch: true, pageRange: true, zipOutput: true, qualityControls: true },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'pdf-unlock',
@@ -355,6 +386,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Is this legal?', a: 'Use only on documents you own or have permission to modify.' },
     ],
     features: ['Local-only processing', 'Restore print/copy/edit', 'No watermark added'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'pdf-to-text',
@@ -380,6 +413,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Can I keep per-page splits?', a: 'Yes. Per-page text and a combined transcript are both available.' },
     ],
     features: ['Local text extraction', 'Per-page output', 'No OCR needed for text PDFs'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'image-convert',
@@ -406,6 +441,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Are EXIF tags preserved?', a: 'No. Re-encoding strips EXIF metadata for privacy.' },
     ],
     features: ['Batch conversion', 'Quality slider', 'EXIF stripped automatically'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: true },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'image-compress',
@@ -432,6 +469,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Does it run on my device?', a: 'Yes. Canvas-based JPEG encoding stays in your browser.' },
     ],
     features: ['Resolution presets', 'Quality-aware JPEG', 'Local-only processing'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: true },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'docx-to-pdf',
@@ -457,6 +496,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'Can I batch convert?', a: 'Yes. Add multiple DOCX files and receive a zip of PDFs.' },
     ],
     features: ['WebAssembly engine', 'Batch-friendly', 'Local-only conversion'],
+    capabilities: { preview: false, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
   {
     slug: 'docx-to-text',
@@ -483,6 +524,8 @@ export const toolDefinitions: ToolDefinition[] = [
       { q: 'What about images?', a: 'Images are ignored; only text content is exported.' },
     ],
     features: ['Markdown headings', 'Bullet list detection', 'Local-only processing'],
+    capabilities: { preview: false, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
   },
 ];
 

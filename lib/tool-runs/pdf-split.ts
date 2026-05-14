@@ -57,3 +57,61 @@ export async function splitPdf(file: File, mode: SplitMode, onProgress?: (percen
 
   return results;
 }
+
+/** One PDF per selected page, preserving `orderedPages` order (1-based). */
+export async function splitPdfBySelectedPages(
+  file: File,
+  orderedPages: number[],
+  onProgress?: (percent: number) => void
+): Promise<SplitResult[]> {
+  if (!orderedPages.length) return [];
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const src = await PDFDocument.load(bytes);
+  const pageCount = src.getPageCount();
+  const results: SplitResult[] = [];
+  let idx = 0;
+  for (const p of orderedPages) {
+    if (!Number.isInteger(p) || p < 1 || p > pageCount) continue;
+    const out = await PDFDocument.create();
+    const pages = await out.copyPages(src, [p - 1]);
+    pages.forEach((page) => out.addPage(page));
+    const saved = await out.save();
+    results.push({
+      name: `${file.name.replace(/\.pdf$/i, '')}-page-${String(p).padStart(3, '0')}.pdf`,
+      blob: new Blob([new Uint8Array(saved)], { type: 'application/pdf' }),
+    });
+    idx += 1;
+    onProgress?.(Math.round((idx / orderedPages.length) * 100));
+  }
+  return results;
+}
+
+/** Single PDF containing copies of `orderedPages` (1-based) in order. */
+export async function splitPdfMergedFromPages(
+  file: File,
+  orderedPages: number[],
+  onProgress?: (percent: number) => void
+): Promise<SplitResult> {
+  if (!orderedPages.length) throw new Error('No pages to merge');
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const src = await PDFDocument.load(bytes);
+  const pageCount = src.getPageCount();
+  const out = await PDFDocument.create();
+  let done = 0;
+  const valid = orderedPages.filter((p) => Number.isInteger(p) && p >= 1 && p <= pageCount);
+  const total = valid.length;
+  for (const p of orderedPages) {
+    if (!Number.isInteger(p) || p < 1 || p > pageCount) continue;
+    const pages = await out.copyPages(src, [p - 1]);
+    pages.forEach((page) => out.addPage(page));
+    done += 1;
+    if (total > 0) onProgress?.(Math.round((done / total) * 100));
+  }
+  if (out.getPageCount() === 0) throw new Error('No valid pages to merge');
+  const saved = await out.save();
+  const base = file.name.replace(/\.pdf$/i, '');
+  return {
+    name: `${base}-merged.pdf`,
+    blob: new Blob([new Uint8Array(saved)], { type: 'application/pdf' }),
+  };
+}

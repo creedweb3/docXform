@@ -1,11 +1,19 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import {
+  ToolWorkspace,
+  type PdfPageGridProcessContext,
+  type WorkspaceConfig,
+  type WorkspaceFile,
+  type WorkspaceSurfaceApi,
+} from '@/components/tools/tool-workspace';
+import { PdfMergeStudioSurface } from '@/components/tools/studio/pdf-tool-studio-surfaces';
 import { mergePdfs } from '@/lib/tool-runs/pdf-merge';
 import { validatePdfFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
 import { getToolBySlug } from '@/lib/tools';
+import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-merge')!;
 
@@ -25,15 +33,29 @@ const config: WorkspaceConfig = {
   storageKey: tool.slug,
   queuedTitle: 'PDFs ready to merge',
   actionLabel: 'Merge',
+  pageGrid: { layout: 'perFile', allowReorder: true },
+  studioHint: (
+    <>
+      Drag PDFs on the stage to set merge order. Use the <strong>Pages</strong> panel below to omit or reorder pages
+      inside each file before merging.
+    </>
+  ),
 };
 
 export function PdfMergeTool() {
   const processFiles = useCallback(
-    async (files: WorkspaceFile[], setProgress: (id: string, percent: number, message?: string) => void) => {
+    async (
+      files: WorkspaceFile[],
+      setProgress: (id: string, percent: number, message?: string) => void,
+      pageGrid?: PdfPageGridProcessContext
+    ) => {
       if (!files.length) return files;
 
       const merged = await mergePdfs(
-        files.map((f) => f.file),
+        files.map((f) => ({
+          file: f.file,
+          pages: pageGrid?.active ? pageGrid.orderedPagesByFileId[f.id] : undefined,
+        })),
         (pct) => setProgress(files[0].id, pct, 'Merging...')
       );
 
@@ -54,5 +76,13 @@ export function PdfMergeTool() {
     []
   );
 
-  return <ToolWorkspace config={config} actions={{ processFiles, validateFiles }} />;
+  const studioSurface = useCallback((api: WorkspaceSurfaceApi) => <PdfMergeStudioSurface api={api} />, []);
+
+  return (
+    <ToolWorkspace
+      config={config}
+      actions={{ processFiles, validateFiles, generatePreview: generatePdfPreview }}
+      studioSurface={studioSurface}
+    />
+  );
 }
