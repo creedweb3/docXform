@@ -118,7 +118,6 @@ export function PdfSplitTool() {
   const [mode, setMode] = useState<SplitMode>({ kind: 'ranges', ranges: [[1]] });
   const [interval, setInterval] = useState(2);
   const pageCountRef = useRef(0);
-
   const addCustomRange = useCallback(() => {
     setMode((prev) => {
       if (prev.kind !== 'ranges') return { kind: 'ranges', ranges: [[1]] };
@@ -227,24 +226,24 @@ export function PdfSplitTool() {
                 <h3 className="shrink-0 text-xs font-semibold uppercase tracking-wide text-foreground">Range mode</h3>
                 <div className="shrink-0">
                   <StudioSegmentRow<RangeModeUi>
-                  options={[
-                    { id: 'custom', label: 'Custom' },
-                    { id: 'fixed', label: 'Fixed' },
-                    { id: 'smart', label: 'Smart', disabled: true },
-                  ]}
-                  value={rangeModeUi}
-                  onChange={(id) => {
-                    setRangeModeUi(id);
-                    if (id === 'custom') {
-                      setMode((prev) =>
-                        prev.kind === 'ranges' ? prev : { kind: 'ranges', ranges: [[1]] }
-                      );
-                    } else if (id === 'fixed') {
-                      setMode({ kind: 'every', interval: Math.max(1, interval) });
-                    }
-                  }}
-                  activeClassName="bg-amber-100/90 text-amber-950 dark:bg-amber-900/45 dark:text-amber-50"
-                />
+                    options={[
+                      { id: 'custom', label: 'Custom' },
+                      { id: 'fixed', label: 'Fixed' },
+                      { id: 'smart', label: 'Smart', disabled: true },
+                    ]}
+                    value={rangeModeUi}
+                    onChange={(id) => {
+                      setRangeModeUi(id);
+                      if (id === 'custom') {
+                        setMode((prev) =>
+                          prev.kind === 'ranges' ? prev : { kind: 'ranges', ranges: [[1]] }
+                        );
+                      } else if (id === 'fixed') {
+                        setMode({ kind: 'every', interval: Math.max(1, interval) });
+                      }
+                    }}
+                    activeClassName="bg-amber-100/90 text-amber-950 dark:bg-amber-900/45 dark:text-amber-50"
+                  />
                 </div>
                 {rangeModeUi === 'custom' ? (
                   <div className="flex min-w-0 flex-col gap-3">

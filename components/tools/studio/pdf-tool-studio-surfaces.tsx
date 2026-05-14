@@ -95,7 +95,7 @@ function PageThumbCard({
   highlight?: 'select' | 'none';
 }) {
   return (
-    <div className="flex w-[6.75rem] shrink-0 flex-col gap-1">
+    <div className="mx-auto flex w-full min-w-0 max-w-[6.75rem] flex-col gap-1">
       <div
         className={clsx(
           'relative flex h-40 w-full items-center justify-center overflow-hidden rounded-lg border border-border/50 bg-white shadow-sm',
@@ -150,8 +150,8 @@ export function PdfSplitStudioSurface({
       : undefined;
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3 basis-0 overflow-hidden">
+      <div className="flex shrink-0 items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {splitTab === 'range' ? 'Split preview' : splitTab === 'pages' ? 'Page previews' : 'By size'}
         </p>
@@ -162,7 +162,7 @@ export function PdfSplitStudioSurface({
         ) : null}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col justify-start">
+      <div className="flex min-h-0 flex-1 flex-col justify-start overflow-hidden">
       {splitTab === 'size' ? (
         <p className="rounded-xl border border-border/50 bg-muted/20 px-3 py-4 text-center text-sm text-muted-foreground">
           Splitting by target file size is not available in this version.
@@ -172,12 +172,12 @@ export function PdfSplitStudioSurface({
           Add a PDF to preview every page and how outputs group.
         </p>
       ) : splitTab === 'range' && groups.length > 0 ? (
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div
-            className="queue-list-scrollbar -mx-1 flex min-h-0 min-w-0 flex-1 flex-col justify-start overflow-y-auto overflow-x-clip overscroll-y-contain px-3 py-2 pr-2"
+            className="queue-list-scrollbar -mx-1 min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain px-3 py-2 pr-2"
             style={scrollThumbStyle}
           >
-            <div className="flex min-w-0 flex-wrap content-start gap-x-4 gap-y-3">
+            <div className="grid min-w-0 grid-cols-3 gap-x-2 gap-y-3 sm:gap-x-3">
               {groups.map((pages, gi) => {
                 const lo = Math.min(...pages);
                 const hi = Math.max(...pages);
@@ -185,10 +185,10 @@ export function PdfSplitStudioSurface({
                 return (
                   <div
                     key={`g-${gi}-${lo}-${hi}`}
-                    className="flex min-w-[11rem] shrink-0 flex-col gap-2 rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-3 pb-3 pt-2 shadow-sm dark:border-zinc-500/60 dark:bg-muted/20"
+                    className="flex min-w-0 flex-col gap-2 rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-2 pb-2 pt-2 shadow-sm sm:px-3 sm:pb-3 dark:border-zinc-500/60 dark:bg-muted/20"
                   >
                     <p className="text-center text-[11px] font-semibold text-foreground">Range {gi + 1}</p>
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex min-w-0 flex-wrap items-center justify-center gap-1 sm:gap-2">
                       <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo)} highlight="none" />
                       {pages.length === 2 ? (
                         lo === hi ? null : (
@@ -227,22 +227,23 @@ export function PdfSplitStudioSurface({
           </p>
         </div>
       ) : (
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div
-            className="queue-list-scrollbar -mx-1 flex min-h-0 min-w-0 flex-1 flex-col justify-start overflow-y-auto overflow-x-clip overscroll-y-contain px-3 py-2 pr-2"
+            className="queue-list-scrollbar -mx-1 min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain px-3 py-2 pr-2"
             style={scrollThumbStyle}
           >
-            <div className="flex min-w-0 flex-wrap content-start gap-x-3 gap-y-3">
+            <div className="grid min-w-0 grid-cols-3 justify-items-center gap-x-2 gap-y-3 sm:gap-x-3">
               {order.map((pageNum) => {
                 const thumb = thumbForPage(st, pageNum);
                 const showSelect = splitTab === 'pages' && extractMode === 'select' && selectedSet.has(pageNum);
                 return (
-                  <PageThumbCard
-                    key={pageNum}
-                    pageNum={pageNum}
-                    thumb={thumb}
-                    highlight={showSelect ? 'select' : 'none'}
-                  />
+                  <div key={pageNum} className="min-w-0">
+                    <PageThumbCard
+                      pageNum={pageNum}
+                      thumb={thumb}
+                      highlight={showSelect ? 'select' : 'none'}
+                    />
+                  </div>
                 );
               })}
             </div>

@@ -1657,19 +1657,12 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
           className="glass relative z-0 flex min-h-0 flex-col gap-3 overflow-x-clip rounded-3xl p-5 sm:p-6"
         >
           <div className="flex min-h-0 w-full flex-col gap-3 px-1">
-            <div
-              className={clsx(
-                'grid w-full gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)]',
-                pageGridPanelVisible
-                  ? 'lg:items-start'
-                  : 'lg:items-stretch lg:min-h-0'
-              )}
-            >
+            <div className="grid w-full items-stretch gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)] lg:min-h-0">
               <div
                 className={clsx(
                   'relative flex min-w-0 flex-col gap-4 rounded-2xl border border-border/40 bg-[#f4f5f7] p-4 sm:p-6 dark:bg-muted/25',
                   pageGridPanelVisible
-                    ? 'min-h-[min(52vh,28rem)] max-h-[calc(100dvh-9rem)] overflow-x-hidden overflow-y-hidden'
+                    ? 'min-h-[min(52vh,28rem)] max-h-[calc(100dvh-9rem)] overflow-x-hidden overflow-y-hidden lg:h-full'
                     : 'h-full min-h-0 min-w-0 overflow-x-clip'
                 )}
               >
@@ -1687,7 +1680,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                 <div
                   className={clsx(
                     'min-h-0 w-full min-w-0',
-                    !pageGridPanelVisible && 'flex flex-1 flex-col'
+                    !pageGridPanelVisible && 'flex min-h-0 flex-1 flex-col overflow-hidden basis-0'
                   )}
                 >
                   {/* eslint-disable-next-line react-hooks/refs -- false positive: surfaceApi is state snapshot; refs only used when callers invoke picker */}
