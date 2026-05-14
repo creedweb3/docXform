@@ -207,7 +207,7 @@ export function PdfSplitTool() {
       return (
         <div className="flex w-full min-w-0 flex-col gap-4 text-xs text-muted-foreground">
           <section
-            className="shrink-0 overflow-hidden rounded-2xl bg-white/95 p-4 pb-5 shadow-sm ring-1 ring-black/[0.04] sm:p-5 dark:bg-zinc-950/40 dark:ring-white/[0.06]"
+            className="shrink-0 overflow-x-clip rounded-2xl bg-white/95 p-4 pb-5 shadow-sm ring-1 ring-black/[0.04] sm:p-5 dark:bg-zinc-950/40 dark:ring-white/[0.06]"
             aria-label="PDF split options"
           >
             <div className="mb-1 shrink-0">

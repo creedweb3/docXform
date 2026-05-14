@@ -66,7 +66,7 @@ export function StudioSidebarTitle({ children }: { children: React.ReactNode }) 
 
 export function StudioInfoBanner({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex gap-2.5 overflow-hidden rounded-xl bg-sky-50/90 p-3 text-[11px] leading-relaxed text-sky-950 ring-1 ring-sky-200/50 dark:bg-sky-950/25 dark:text-sky-100 dark:ring-sky-500/25">
+    <div className="flex gap-2.5 overflow-x-clip rounded-xl bg-sky-50/90 p-3 text-[11px] leading-relaxed text-sky-950 ring-1 ring-sky-200/50 dark:bg-sky-950/25 dark:text-sky-100 dark:ring-sky-500/25">
       <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-sky-200/70 text-[10px] font-bold text-sky-900 dark:bg-sky-800/80 dark:text-sky-100">
         i
       </span>
@@ -85,7 +85,7 @@ export function StudioTabBar<T extends string>({
   onChange: (id: T) => void;
 }) {
   return (
-    <div className="flex w-full gap-0.5 rounded-lg bg-muted/45 p-0.5 ring-1 ring-inset ring-black/[0.04] dark:bg-muted/25 dark:ring-white/[0.06]">
+    <div className="flex w-full min-w-0 gap-0.5 rounded-lg bg-muted/45 p-0.5 ring-1 ring-inset ring-black/[0.04] dark:bg-muted/25 dark:ring-white/[0.06]">
       {tabs.map((t) => {
         const active = value === t.id;
         return (
@@ -95,15 +95,19 @@ export function StudioTabBar<T extends string>({
             disabled={t.disabled}
             onClick={() => !t.disabled && onChange(t.id)}
             className={clsx(
-              'relative flex min-h-10 flex-1 flex-col items-center justify-center rounded-md px-1.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide outline-none transition focus-visible:ring-2 focus-visible:ring-amber-400/35 focus-visible:ring-offset-1 sm:text-[11px]',
+              'relative flex min-h-10 min-w-0 flex-1 flex-col items-center justify-center rounded-md px-1 py-1 text-[10px] font-semibold uppercase tracking-wide outline-none transition focus-visible:ring-2 focus-visible:ring-amber-400/35 focus-visible:ring-offset-1 sm:px-1.5 sm:py-1.5 sm:text-[11px]',
               active
                 ? 'bg-white text-foreground shadow-sm dark:bg-zinc-900 dark:text-zinc-50'
                 : 'text-muted-foreground hover:bg-white/55 hover:text-foreground dark:hover:bg-white/10',
               t.disabled && 'cursor-not-allowed opacity-45'
             )}
           >
-            <span className="text-center leading-tight">{t.label}</span>
-            {t.badge ? <span className="mt-0.5 text-[8px] font-semibold text-amber-700">{t.badge}</span> : null}
+            <span className="min-w-0 text-center leading-tight">{t.label}</span>
+            {t.badge ? (
+              <span className="mt-0.5 max-w-full truncate text-center text-[8px] font-semibold text-amber-700">
+                {t.badge}
+              </span>
+            ) : null}
           </button>
         );
       })}
@@ -124,7 +128,7 @@ export function StudioSegmentRow<T extends string>({
   activeClassName?: string;
 }) {
   return (
-    <div className="flex w-full rounded-lg bg-muted/45 p-0.5 ring-1 ring-inset ring-black/[0.04] dark:bg-muted/25 dark:ring-white/[0.06]">
+    <div className="flex w-full min-w-0 rounded-lg bg-muted/45 p-0.5 ring-1 ring-inset ring-black/[0.04] dark:bg-muted/25 dark:ring-white/[0.06]">
       {options.map((o) => {
         const active = value === o.id;
         return (
@@ -134,7 +138,7 @@ export function StudioSegmentRow<T extends string>({
             disabled={o.disabled}
             onClick={() => !o.disabled && onChange(o.id)}
             className={clsx(
-              'flex-1 rounded-md px-2 py-2 text-center text-[11px] font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-amber-400/35 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-45',
+              'min-w-0 flex-1 rounded-md px-1.5 py-2 text-center text-[10px] font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-amber-400/35 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-45 sm:px-2 sm:text-[11px]',
               active
                 ? activeClassName ??
                   'bg-white text-foreground shadow-sm dark:bg-zinc-900 dark:text-zinc-50'

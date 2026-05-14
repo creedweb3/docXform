@@ -1654,15 +1654,15 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={spring}
-          className="glass relative z-0 flex min-h-0 flex-col gap-3 overflow-hidden rounded-3xl p-5 sm:p-6"
+          className="glass relative z-0 flex min-h-0 flex-col gap-3 overflow-x-clip rounded-3xl p-5 sm:p-6"
         >
           <div className="flex min-h-0 w-full flex-col gap-3 px-1">
             <div
               className={clsx(
-                'grid w-full gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,400px)]',
+                'grid w-full gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)]',
                 pageGridPanelVisible
                   ? 'lg:items-start'
-                  : 'lg:items-stretch lg:min-h-0 lg:max-h-[calc(100dvh-8rem)] lg:grid-rows-[minmax(0,1fr)] overflow-hidden'
+                  : 'lg:items-stretch lg:min-h-0'
               )}
             >
               <div
@@ -1670,7 +1670,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                   'relative flex min-w-0 flex-col gap-4 rounded-2xl border border-border/40 bg-[#f4f5f7] p-4 sm:p-6 dark:bg-muted/25',
                   pageGridPanelVisible
                     ? 'min-h-[min(52vh,28rem)] max-h-[calc(100dvh-9rem)] overflow-x-hidden overflow-y-hidden'
-                    : 'h-full min-h-0 min-w-0 overflow-hidden'
+                    : 'h-full min-h-0 min-w-0 overflow-x-clip'
                 )}
               >
                 {config.allowMultiple ? (
@@ -1704,7 +1704,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                 )}
               >
                 {config.studioHint ? (
-                  <div className="flex shrink-0 gap-2.5 overflow-hidden rounded-xl bg-sky-50/90 p-3 text-[11px] leading-relaxed text-sky-950 ring-1 ring-sky-200/50 dark:bg-sky-950/25 dark:text-sky-100 dark:ring-sky-500/25">
+                  <div className="flex shrink-0 gap-2.5 overflow-x-clip rounded-xl bg-sky-50/90 p-3 text-[11px] leading-relaxed text-sky-950 ring-1 ring-sky-200/50 dark:bg-sky-950/25 dark:text-sky-100 dark:ring-sky-500/25">
                     <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-sky-600 dark:text-sky-400" />
                     <div className="min-w-0">{config.studioHint}</div>
                   </div>
