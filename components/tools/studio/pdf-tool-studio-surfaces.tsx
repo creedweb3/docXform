@@ -174,10 +174,10 @@ export function PdfSplitStudioSurface({
       ) : splitTab === 'range' && groups.length > 0 ? (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
           <div
-            className="queue-list-scrollbar -mx-1 flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-2 pr-2"
+            className="queue-list-scrollbar -mx-1 flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-clip overscroll-y-contain px-3 py-2 pr-2 [scrollbar-gutter:stable]"
             style={scrollThumbStyle}
           >
-            <div className="flex flex-wrap content-start gap-x-4 gap-y-3">
+            <div className="flex min-w-0 flex-wrap content-start gap-x-4 gap-y-3">
               {groups.map((pages, gi) => {
                 const lo = Math.min(...pages);
                 const hi = Math.max(...pages);
@@ -229,10 +229,10 @@ export function PdfSplitStudioSurface({
       ) : (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
           <div
-            className="queue-list-scrollbar -mx-1 flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-2 pr-2"
+            className="queue-list-scrollbar -mx-1 flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-clip overscroll-y-contain px-3 py-2 pr-2 [scrollbar-gutter:stable]"
             style={scrollThumbStyle}
           >
-            <div className="flex flex-wrap content-start gap-x-3 gap-y-3">
+            <div className="flex min-w-0 flex-wrap content-start gap-x-3 gap-y-3">
               {order.map((pageNum) => {
                 const thumb = thumbForPage(st, pageNum);
                 const showSelect = splitTab === 'pages' && extractMode === 'select' && selectedSet.has(pageNum);

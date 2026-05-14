@@ -24,10 +24,10 @@ import { TONE_STYLES } from '@/components/tools/tone-styles';
 
 const tool = getToolBySlug('pdf-split')!;
 
-const PDF_SPLIT_RANGE_SCROLL_STYLE: CSSProperties = {
+const PDF_SPLIT_RANGE_SCROLL_STYLE = {
   '--queue-scrollbar-thumb': TONE_STYLES[tool.tone].scrollbarThumb,
   '--queue-scrollbar-thumb-hover': TONE_STYLES[tool.tone].scrollbarThumbHover,
-};
+} as CSSProperties;
 
 /** Themed scrollbar + max-height only when there are more ranges than this count. */
 const RANGE_LIST_SCROLL_AFTER_COUNT = 5;

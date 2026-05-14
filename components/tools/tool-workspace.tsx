@@ -1662,7 +1662,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                 'grid w-full gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,400px)]',
                 pageGridPanelVisible
                   ? 'lg:items-start'
-                  : 'lg:items-stretch lg:min-h-[calc(100dvh-8rem)]'
+                  : 'lg:items-stretch lg:h-[calc(100dvh-8rem)] lg:max-h-[calc(100dvh-8rem)] lg:min-h-0'
               )}
             >
               <div
