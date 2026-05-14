@@ -7,7 +7,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -193,8 +192,9 @@ type DuplicatePrompt = { files: File[]; message: string };
 
 const TRANSIENT_NOTICE_DURATION = 1100;
 const DEFAULT_NOTICE_DURATION = 3500;
-/** Only enable list scrolling (and scrollbar width sync) after this many files. */
-const QUEUE_SCROLL_AFTER_FILE_COUNT = 6;
+
+/** File list gets its own scroll region (and themed scrollbar) after this many files. */
+const QUEUE_SCROLL_AFTER_FILE_COUNT = 4;
 
 const CTA_FLEX_LAYOUT =
   'inline-flex min-h-12 min-w-0 flex-1 basis-0 select-none items-center justify-center gap-2 self-stretch rounded-xl box-border px-4 py-3 text-center text-xs font-semibold leading-snug';
@@ -300,8 +300,6 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
 
   const toneStyle = config.tone ? TONE_STYLES[config.tone] : undefined;
   const chipClass = toneStyle?.chip ?? 'border-border/40 bg-white/65';
-  const scrollbarThumb = toneStyle?.scrollbarThumb;
-  const scrollbarThumbHover = toneStyle?.scrollbarThumbHover;
   const pageGridToneClass = toneStyle?.pageGridSelected ?? 'border-border/60 bg-muted/40 text-foreground';
   const actionLabel = config.actionLabel ?? 'Process';
   const queuedTitle = config.queuedTitle ?? 'Files ready';
@@ -343,8 +341,6 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
     (f) => f.status !== 'done' && f.status !== 'processing'
   ).length;
   const queueListUsesScrollRegion = files.length > QUEUE_SCROLL_AFTER_FILE_COUNT;
-
-  // ----- Notice & UI state derivation -----
   const inlineTransientSuccess = Boolean(
     notice?.transient && notice.kind === 'success' && hasFiles && notice.message
   );
@@ -1190,29 +1186,10 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
     );
   };
 
-  const renderQueueListScroll = () => {
-    const useToneScrollbar = queueListUsesScrollRegion && Boolean(scrollbarThumb && scrollbarThumbHover);
-
-    return (
+  const renderQueueListScroll = () => (
+    <div className="w-full min-w-0 shrink-0 overflow-x-clip">
       <div
-        ref={queueListScrollRef}
-        className={clsx(
-          'min-h-0 w-full min-w-0 overflow-x-hidden',
-          queueListUsesScrollRegion
-            ? 'queue-list-scrollbar max-h-72 overflow-y-auto overscroll-contain pr-0.5'
-            : 'max-h-none overflow-y-visible'
-        )}
-        style={
-          useToneScrollbar
-            ? ({
-                '--queue-scrollbar-thumb': scrollbarThumb,
-                '--queue-scrollbar-thumb-hover': scrollbarThumbHover,
-              } as CSSProperties)
-            : undefined
-        }
-      >
-      <div
-        className="flex w-full min-w-0 flex-col gap-2 py-0.5 pr-4"
+        className="flex w-full min-w-0 flex-col gap-2 py-0.5 pr-1"
         role="list"
         aria-label="Selected files"
       >
@@ -1231,7 +1208,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
               onDrop={() => isReorderable && handleReorder(item.id)}
               onDragEnd={() => setDraggedFileId(null)}
               className={clsx(
-                'min-h-12 rounded-xl border border-border/45 bg-white/60 px-2.5 py-2 box-border transition focus-within:ring-2 focus-within:ring-ring',
+                'min-h-12 min-w-0 overflow-hidden rounded-xl border border-border/45 bg-white/60 px-2.5 py-2 box-border transition focus-within:ring-2 focus-within:ring-ring',
                 draggedFileId === item.id && 'opacity-50',
                 isReorderable && 'cursor-grab active:cursor-grabbing'
               )}
@@ -1373,8 +1350,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
         })}
       </div>
     </div>
-    );
-  };
+  );
 
   const renderQueueToolbar = () => (
     <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 sm:justify-start">
@@ -1686,7 +1662,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                 'grid w-full gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,400px)]',
                 pageGridPanelVisible
                   ? 'lg:items-start'
-                  : 'lg:items-stretch lg:min-h-[calc(100dvh-9rem)]'
+                  : 'lg:items-stretch lg:min-h-[calc(100dvh-8rem)]'
               )}
             >
               <div
@@ -1694,7 +1670,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                   'relative flex min-w-0 flex-col gap-4 rounded-2xl border border-border/40 bg-[#f4f5f7] p-4 sm:p-6 dark:bg-muted/25',
                   pageGridPanelVisible
                     ? 'min-h-[min(52vh,28rem)] max-h-[calc(100dvh-9rem)] overflow-x-hidden overflow-y-hidden'
-                    : 'h-full min-h-[calc(100dvh-9rem)] min-w-0 overflow-x-hidden'
+                    : 'h-full min-h-0 min-w-0 overflow-hidden'
                 )}
               >
                 {config.allowMultiple ? (
@@ -1722,12 +1698,14 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
               <aside
                 className={clsx(
                   'flex min-w-0 flex-col gap-4 rounded-2xl border border-border/50 bg-white/65 p-4 shadow-sm backdrop-blur-md sm:p-5 lg:sticky lg:top-36',
-                  pageGridPanelVisible ? 'min-h-0' : 'h-full w-full min-h-0 overflow-x-hidden overflow-y-visible'
+                  pageGridPanelVisible
+                    ? 'min-h-0'
+                    : 'h-full w-full min-h-0 overflow-x-clip overflow-y-visible'
                 )}
               >
                 {config.studioHint ? (
-                  <div className="shrink-0 flex gap-2.5 rounded-xl border border-sky-200/80 bg-sky-50/95 p-3 text-[11px] leading-relaxed text-sky-950">
-                    <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-sky-600" />
+                  <div className="flex shrink-0 gap-2.5 overflow-hidden rounded-xl bg-sky-50/90 p-3 text-[11px] leading-relaxed text-sky-950 ring-1 ring-sky-200/50 dark:bg-sky-950/25 dark:text-sky-100 dark:ring-sky-500/25">
+                    <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-sky-600 dark:text-sky-400" />
                     <div className="min-w-0">{config.studioHint}</div>
                   </div>
                 ) : null}
@@ -1739,11 +1717,36 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                   </p>
                 </div>
                 <div className="shrink-0">{renderQueueToolbar()}</div>
-                <div className="min-h-0 w-full min-w-0 shrink-0">{renderQueueListScroll()}</div>
-                <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 overflow-visible">
-                  {/* eslint-disable-next-line react-hooks/refs -- false positive: surfaceApi snapshot; footer may read queue/grid only */}
-                  {typeof footer === 'function' ? footer(surfaceApi) : footer}
-                  {renderCtaRow()}
+                <div
+                  className={clsx(
+                    'flex min-h-0 flex-col gap-4 overflow-x-clip',
+                    !pageGridPanelVisible && 'min-h-0 flex-1'
+                  )}
+                >
+                  <div
+                    ref={queueListScrollRef}
+                    className={clsx(
+                      'w-full min-w-0 overflow-x-clip',
+                      queueListUsesScrollRegion
+                        ? clsx(
+                            'min-h-0 shrink-0 overflow-y-auto overscroll-y-contain pr-1 [scrollbar-gutter:stable]',
+                            pageGridPanelVisible ? 'max-h-[min(50vh,24rem)]' : 'max-h-72'
+                          )
+                        : 'shrink-0'
+                    )}
+                  >
+                    {renderQueueListScroll()}
+                  </div>
+                  <div
+                    className={clsx(
+                      'flex w-full min-w-0 flex-col gap-3 pb-0.5',
+                      !pageGridPanelVisible && 'shrink-0 overflow-x-clip'
+                    )}
+                  >
+                    {/* eslint-disable-next-line react-hooks/refs -- false positive: surfaceApi snapshot; footer may read queue/grid only */}
+                    {typeof footer === 'function' ? footer(surfaceApi) : footer}
+                    {renderCtaRow()}
+                  </div>
                 </div>
               </aside>
             </div>

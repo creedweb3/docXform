@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type CSSProperties } from 'react';
 import {
   ToolWorkspace,
   type PdfPageGridProcessContext,
@@ -20,8 +20,17 @@ import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/li
 import { getToolBySlug } from '@/lib/tools';
 import { generatePdfPreview } from '@/lib/client-previews';
 import { StudioInfoBanner, StudioSegmentRow, StudioTabBar } from '@/components/tools/studio/studio-ui';
+import { TONE_STYLES } from '@/components/tools/tone-styles';
 
 const tool = getToolBySlug('pdf-split')!;
+
+const PDF_SPLIT_RANGE_SCROLL_STYLE: CSSProperties = {
+  '--queue-scrollbar-thumb': TONE_STYLES[tool.tone].scrollbarThumb,
+  '--queue-scrollbar-thumb-hover': TONE_STYLES[tool.tone].scrollbarThumbHover,
+};
+
+/** Themed scrollbar + max-height only when there are more ranges than this count. */
+const RANGE_LIST_SCROLL_AFTER_COUNT = 5;
 
 type SplitSidebarTab = 'range' | 'pages' | 'size';
 type RangeModeUi = 'custom' | 'fixed' | 'smart';
@@ -196,12 +205,12 @@ export function PdfSplitTool() {
                   : `Selected pages export as separate files. ${outputPdfCount} PDF${outputPdfCount === 1 ? '' : 's'} will be created.`;
 
       return (
-        <div className="space-y-5 text-xs text-muted-foreground">
+        <div className="flex w-full min-w-0 flex-col gap-4 text-xs text-muted-foreground">
           <section
-            className="rounded-xl border border-border/45 bg-white/85 p-4 shadow-sm sm:p-5"
+            className="shrink-0 overflow-hidden rounded-2xl bg-white/95 p-4 pb-5 shadow-sm ring-1 ring-black/[0.04] sm:p-5 dark:bg-zinc-950/40 dark:ring-white/[0.06]"
             aria-label="PDF split options"
           >
-            <div className="mb-1">
+            <div className="mb-1 shrink-0">
               <StudioTabBar<SplitSidebarTab>
                 tabs={[
                   { id: 'range', label: 'Range' },
@@ -214,9 +223,10 @@ export function PdfSplitTool() {
             </div>
 
             {splitTab === 'range' ? (
-              <div className="mt-4 space-y-4 border-t border-border/35 pt-4">
-                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-foreground">Range mode</h3>
-                <StudioSegmentRow<RangeModeUi>
+              <div className="mt-4 flex min-w-0 flex-col gap-4 border-t border-border/15 pt-4">
+                <h3 className="shrink-0 text-xs font-semibold uppercase tracking-wide text-foreground">Range mode</h3>
+                <div className="shrink-0">
+                  <StudioSegmentRow<RangeModeUi>
                   options={[
                     { id: 'custom', label: 'Custom' },
                     { id: 'fixed', label: 'Fixed' },
@@ -233,12 +243,25 @@ export function PdfSplitTool() {
                       setMode({ kind: 'every', interval: Math.max(1, interval) });
                     }
                   }}
-                  activeClassName="bg-white text-amber-800 shadow-sm ring-2 ring-amber-500/80"
+                  activeClassName="bg-amber-100/90 text-amber-950 dark:bg-amber-900/45 dark:text-amber-50"
                 />
+                </div>
                 {rangeModeUi === 'custom' ? (
-                  <div className="space-y-3">
+                  <div className="flex min-w-0 flex-col gap-3">
                     {mode.kind === 'ranges' ? (
-                      <div className="flex flex-col gap-1.5">
+                      <div
+                        className={
+                          mode.ranges.length > RANGE_LIST_SCROLL_AFTER_COUNT
+                            ? 'queue-list-scrollbar flex max-h-[min(14rem,40vh)] flex-col gap-1.5 overflow-y-auto overscroll-y-contain pr-1 [-webkit-overflow-scrolling:touch] [scrollbar-gutter:stable]'
+                            : 'flex flex-col gap-1.5'
+                        }
+                        style={
+                          mode.ranges.length > RANGE_LIST_SCROLL_AFTER_COUNT
+                            ? PDF_SPLIT_RANGE_SCROLL_STYLE
+                            : undefined
+                        }
+                        aria-label="Custom page ranges"
+                      >
                         {mode.ranges.map((pages, idx) => {
                           const from = Math.min(...pages);
                           const to = Math.max(...pages);
@@ -246,10 +269,10 @@ export function PdfSplitTool() {
                             <div
                               key={`range-${idx}-${from}-${to}`}
                               aria-label={`Range ${idx + 1}`}
-                              className="flex min-h-[1.75rem] flex-nowrap items-center gap-2 rounded-lg border border-border/40 bg-white/95 px-2 py-1 shadow-sm dark:bg-white/[0.07]"
+                              className="flex min-h-[1.75rem] flex-nowrap items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 dark:bg-white/[0.06]"
                             >
                               <div
-                                className="flex h-7 w-7 shrink-0 flex-none items-center justify-center rounded-md border border-amber-600/20 bg-amber-100 text-[11px] font-bold tabular-nums leading-none text-amber-950 dark:border-amber-400/30 dark:bg-amber-950/55 dark:text-amber-50"
+                                className="flex h-7 w-7 shrink-0 flex-none items-center justify-center rounded-lg bg-amber-100/90 text-[11px] font-bold tabular-nums leading-none text-amber-950 dark:bg-amber-900/50 dark:text-amber-50"
                                 aria-hidden
                               >
                                 {idx + 1}
@@ -264,7 +287,7 @@ export function PdfSplitTool() {
                                     type="number"
                                     min={1}
                                     max={n > 0 ? n : undefined}
-                                    className="box-border h-7 w-11 shrink-0 rounded-md border border-border/55 bg-white px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground dark:bg-muted/40"
+                                    className="box-border h-7 w-11 shrink-0 rounded-lg border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
                                     value={from}
                                     onChange={(e) =>
                                       patchCustomRange(idx, 'from', Math.max(1, Number(e.target.value) || 1))
@@ -279,7 +302,7 @@ export function PdfSplitTool() {
                                     type="number"
                                     min={1}
                                     max={n > 0 ? n : undefined}
-                                    className="box-border h-7 w-11 shrink-0 rounded-md border border-border/55 bg-white px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground dark:bg-muted/40"
+                                    className="box-border h-7 w-11 shrink-0 rounded-lg border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
                                     value={to}
                                     onChange={(e) =>
                                       patchCustomRange(idx, 'to', Math.max(1, Number(e.target.value) || 1))
@@ -291,7 +314,7 @@ export function PdfSplitTool() {
                               {mode.ranges.length > 1 ? (
                                 <button
                                   type="button"
-                                  className="box-border flex h-7 shrink-0 items-center rounded-md border border-border/50 bg-white/80 px-2 text-[9px] font-medium leading-none text-muted-foreground transition hover:border-amber-300/60 hover:bg-amber-50/90 hover:text-amber-950 dark:bg-transparent dark:hover:bg-amber-950/30 dark:hover:text-amber-100"
+                                  className="box-border flex h-7 shrink-0 items-center rounded-lg px-2 text-[9px] font-medium leading-none text-muted-foreground transition hover:bg-muted/60 hover:text-foreground dark:hover:bg-white/10"
                                   onClick={() => removeCustomRange(idx)}
                                 >
                                   Remove
@@ -305,11 +328,11 @@ export function PdfSplitTool() {
                     <button
                       type="button"
                       onClick={addCustomRange}
-                      className="w-full rounded-lg border border-amber-600/70 bg-white py-2 text-[11px] font-semibold text-amber-900 transition hover:bg-amber-50/90"
+                      className="w-full shrink-0 rounded-lg bg-amber-500/14 py-2 text-[11px] font-semibold text-amber-950 ring-1 ring-inset ring-amber-600/20 transition hover:bg-amber-500/22 dark:bg-amber-500/12 dark:text-amber-50 dark:ring-amber-400/25"
                     >
                       + Add range
                     </button>
-                    <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border/45 bg-white/70 px-2.5 py-2">
+                    <label className="flex shrink-0 cursor-pointer items-start gap-2.5 rounded-lg bg-muted/40 px-3 py-2.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
                       <input
                         type="checkbox"
                         className="mt-0.5"
@@ -322,11 +345,11 @@ export function PdfSplitTool() {
                     </label>
                   </div>
                 ) : rangeModeUi === 'fixed' ? (
-                  <div className="mt-1 space-y-2">
+                  <div className="mt-1 shrink-0 space-y-2">
                     <label className="block space-y-1.5">
                       <span className="text-[11px] font-semibold text-foreground">Split into page ranges of</span>
                       <input
-                        className="w-full rounded-lg border border-border/50 bg-white px-3 py-2.5 text-sm text-foreground"
+                        className="w-full rounded-lg border-0 bg-white/90 px-3 py-2.5 text-sm text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
                         type="number"
                         min={1}
                         value={interval}
@@ -339,14 +362,14 @@ export function PdfSplitTool() {
                     </label>
                   </div>
                 ) : (
-                  <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-3 py-3 text-[11px]">
+                  <p className="shrink-0 rounded-lg bg-muted/35 px-3 py-3 text-[11px] ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
                     Smart split is not available yet.
                   </p>
                 )}
               </div>
             ) : splitTab === 'pages' ? (
-              <div className="mt-4 space-y-4 border-t border-border/35 pt-4">
-                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-foreground">Extract mode</h3>
+              <div className="mt-4 shrink-0 space-y-4 border-t border-border/15 pt-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-foreground">Extract mode</h3>
                 <StudioSegmentRow<ExtractMode>
                   options={[
                     { id: 'all', label: 'Extract all pages' },
@@ -357,9 +380,9 @@ export function PdfSplitTool() {
                     setExtractMode(id);
                     if (id === 'all' && file) api.selectAllPagesForFile(file.id);
                   }}
-                  activeClassName="bg-white text-amber-800 shadow-sm ring-2 ring-amber-500/80"
+                  activeClassName="bg-amber-100/90 text-amber-950 dark:bg-amber-900/45 dark:text-amber-50"
                 />
-                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/45 bg-white/70 px-3 py-3">
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg bg-muted/40 px-3 py-2.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
                   <input
                     type="checkbox"
                     className="mt-0.5"
@@ -378,13 +401,15 @@ export function PdfSplitTool() {
                 ) : null}
               </div>
             ) : (
-              <p className="mt-4 border-t border-border/35 pt-4 text-[11px] leading-relaxed text-muted-foreground">
+              <p className="mt-4 shrink-0 border-t border-border/15 pt-4 text-[11px] leading-relaxed text-muted-foreground">
                 Size-based splitting is not available in this version. Use Range or Pages instead.
               </p>
             )}
           </section>
 
-          <StudioInfoBanner>{bannerText}</StudioInfoBanner>
+          <div className="shrink-0">
+            <StudioInfoBanner>{bannerText}</StudioInfoBanner>
+          </div>
         </div>
       );
     },
