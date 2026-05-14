@@ -174,7 +174,7 @@ export function PdfSplitStudioSurface({
       ) : splitTab === 'range' && groups.length > 0 ? (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
           <div
-            className="queue-list-scrollbar -mx-1 flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-clip overscroll-y-contain px-3 py-2 pr-2"
+            className="queue-list-scrollbar -mx-1 flex min-h-0 max-h-[min(68vh,38rem)] min-w-0 flex-1 flex-col justify-start overflow-y-auto overflow-x-clip overscroll-y-contain px-3 py-2 pr-2"
             style={scrollThumbStyle}
           >
             <div className="flex min-w-0 flex-wrap content-start gap-x-4 gap-y-3">
@@ -229,7 +229,7 @@ export function PdfSplitStudioSurface({
       ) : (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
           <div
-            className="queue-list-scrollbar -mx-1 flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-clip overscroll-y-contain px-3 py-2 pr-2"
+            className="queue-list-scrollbar -mx-1 flex min-h-0 max-h-[min(68vh,38rem)] min-w-0 flex-1 flex-col justify-start overflow-y-auto overflow-x-clip overscroll-y-contain px-3 py-2 pr-2"
             style={scrollThumbStyle}
           >
             <div className="flex min-w-0 flex-wrap content-start gap-x-3 gap-y-3">

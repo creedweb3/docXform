@@ -1654,9 +1654,9 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={spring}
-          className="glass flex flex-col gap-3 rounded-3xl p-5 sm:p-6"
+          className="glass relative z-0 flex min-h-0 flex-col gap-3 overflow-hidden rounded-3xl p-5 sm:p-6"
         >
-          <div className="flex w-full flex-col gap-3 px-1">
+          <div className="flex min-h-0 w-full flex-col gap-3 px-1">
             <div
               className={clsx(
                 'grid w-full gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,400px)]',
@@ -1697,9 +1697,9 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
               </div>
               <aside
                 className={clsx(
-                  'flex min-w-0 flex-col gap-4 rounded-2xl border border-border/50 bg-white/65 p-4 shadow-sm backdrop-blur-md sm:p-5 lg:sticky lg:top-36',
+                  'flex min-w-0 flex-col gap-4 rounded-2xl border border-border/50 bg-white/65 p-4 shadow-sm backdrop-blur-md sm:p-5',
                   pageGridPanelVisible
-                    ? 'min-h-0'
+                    ? 'min-h-0 lg:sticky lg:top-36'
                     : 'h-full w-full min-h-0 overflow-x-clip overflow-y-visible'
                 )}
               >
