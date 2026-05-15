@@ -89,16 +89,38 @@ function PageThumbCard({
   pageNum,
   thumb,
   highlight,
+  size = 'default',
+  fillCellHeight = false,
+  inlineInGroup = false,
 }: {
   pageNum: number;
   thumb?: { status: 'ready' | 'loading' | 'error'; thumbUrl?: string; error?: string };
   highlight?: 'select' | 'none';
+  /** Smaller thumb for dense range preview (side‑by‑side in a grid cell). */
+  size?: 'default' | 'sm';
+  /** Grow the preview area to use vertical space inside a range card. */
+  fillCellHeight?: boolean;
+  /** Fixed width in a range row so thumbs stay grouped under `justify-center`. */
+  inlineInGroup?: boolean;
 }) {
+  const sm = size === 'sm';
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-[6.75rem] flex-col gap-1">
+    <div
+      className={clsx(
+        'flex min-w-0 flex-col gap-0.5',
+        inlineInGroup
+          ? clsx('shrink-0', sm ? 'w-[4.25rem]' : 'w-[6.75rem]')
+          : clsx(
+              'mx-auto flex',
+              sm ? 'w-[4.25rem] max-w-[4.25rem] shrink-0' : 'w-full min-w-0 max-w-[6.75rem]',
+              fillCellHeight && 'h-full min-h-0'
+            )
+      )}
+    >
       <div
         className={clsx(
-          'relative flex h-40 w-full items-center justify-center overflow-hidden rounded-lg border border-border/50 bg-white shadow-sm',
+          'relative flex w-full min-h-0 items-center justify-center overflow-hidden rounded-lg border border-border/50 bg-white shadow-sm',
+          fillCellHeight ? 'min-h-[4.5rem] flex-1' : sm ? 'h-28' : 'h-40',
           highlight === 'select' && 'outline outline-2 outline-offset-2 outline-amber-500'
         )}
       >
@@ -111,7 +133,14 @@ function PageThumbCard({
           <span className="px-1 text-center text-[9px] text-rose-600">{thumb.error ?? 'Preview failed'}</span>
         )}
       </div>
-      <p className="text-center text-[11px] font-medium text-foreground">Page {pageNum}</p>
+      <p
+        className={clsx(
+          'shrink-0 text-center font-medium text-foreground',
+          sm ? 'text-[10px] leading-tight' : 'text-[11px]'
+        )}
+      >
+        Page {pageNum}
+      </p>
     </div>
   );
 }
@@ -128,7 +157,12 @@ export function PdfSplitStudioSurface({
   extractMode: 'all' | 'select';
 }) {
   const file = api.files[0];
-  const pageCount = file?.preview?.pageCount ?? 0;
+  const preview = file?.preview;
+  const pageCount = preview?.pageCount ?? 0;
+  /** Queue has a file but PDF.js preview has not returned page count yet (or is in flight). */
+  const previewPending =
+    !!file && pageCount <= 0 && preview?.status !== 'error' && preview?.status !== 'ready';
+  const previewFailed = preview?.status === 'error';
   const st = file ? api.gridByFileId[file.id] : undefined;
   const order =
     st && st.order.length === pageCount && st.order.every((p) => p >= 1 && p <= pageCount)
@@ -150,8 +184,8 @@ export function PdfSplitStudioSurface({
       : undefined;
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3 basis-0 overflow-hidden">
-      <div className="flex shrink-0 items-center justify-between gap-2">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-2 basis-0 overflow-hidden">
+      <div className="flex min-w-0 shrink-0 items-center justify-between gap-2 px-3 pr-2">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {splitTab === 'range' ? 'Split preview' : splitTab === 'pages' ? 'Page previews' : 'By size'}
         </p>
@@ -159,6 +193,8 @@ export function PdfSplitStudioSurface({
           <span className="text-[11px] text-muted-foreground">
             {pageCount} page{pageCount === 1 ? '' : 's'}
           </span>
+        ) : previewPending ? (
+          <span className="text-[11px] text-muted-foreground animate-pulse">Loading…</span>
         ) : null}
       </div>
 
@@ -167,34 +203,52 @@ export function PdfSplitStudioSurface({
         <p className="rounded-xl border border-border/50 bg-muted/20 px-3 py-4 text-center text-sm text-muted-foreground">
           Splitting by target file size is not available in this version.
         </p>
-      ) : pageCount === 0 ? (
+      ) : !file ? (
         <p className="rounded-xl border border-dashed border-border/50 bg-white/50 px-3 py-10 text-center text-sm text-muted-foreground">
           Add a PDF to preview every page and how outputs group.
+        </p>
+      ) : previewFailed ? (
+        <p className="rounded-xl border border-dashed border-rose-200/80 bg-rose-50/80 px-3 py-10 text-center text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200">
+          {preview?.error ?? 'Could not load a preview of this PDF.'}
+        </p>
+      ) : previewPending ? (
+        <p className="rounded-xl border border-dashed border-border/50 bg-white/50 px-3 py-10 text-center text-sm text-muted-foreground animate-pulse">
+          Loading PDF preview…
+        </p>
+      ) : pageCount <= 0 ? (
+        <p className="rounded-xl border border-dashed border-border/50 bg-white/50 px-3 py-10 text-center text-sm text-muted-foreground">
+          This PDF has no readable pages, or the preview did not finish loading.
         </p>
       ) : splitTab === 'range' && groups.length > 0 ? (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div
-            className="queue-list-scrollbar -mx-1 min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain px-3 py-2 pr-2"
+            className="queue-list-scrollbar min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain px-3 py-1.5 pr-2"
             style={scrollThumbStyle}
           >
-            <div className="grid min-w-0 grid-cols-3 gap-x-2 gap-y-3 sm:gap-x-3">
+            <div className="grid min-w-0 grid-cols-3 items-start gap-x-3 gap-y-3 sm:gap-x-4">
               {groups.map((pages, gi) => {
                 const lo = Math.min(...pages);
                 const hi = Math.max(...pages);
-                const showEllipsis = pages.length > 2;
+                const isMultiPageRange = pages.length > 1;
+                const nextGroup = groups[gi + 1];
+                const multiSharesRowWithFollowingSingle =
+                  isMultiPageRange && nextGroup != null && nextGroup.length === 1;
                 return (
                   <div
                     key={`g-${gi}-${lo}-${hi}`}
-                    className="flex min-w-0 flex-col gap-2 rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-2 pb-2 pt-2 shadow-sm sm:px-3 sm:pb-3 dark:border-zinc-500/60 dark:bg-muted/20"
+                    className={clsx(
+                      'flex flex-col gap-2 rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-3 pb-2 pt-2 shadow-sm dark:border-zinc-500/60 dark:bg-muted/20',
+                      isMultiPageRange
+                        ? multiSharesRowWithFollowingSingle
+                          ? 'col-span-2 min-w-0 w-full'
+                          : 'col-span-3 min-w-0 w-full'
+                        : 'min-w-0'
+                    )}
                   >
                     <p className="text-center text-[11px] font-semibold text-foreground">Range {gi + 1}</p>
-                    <div className="flex min-w-0 flex-wrap items-center justify-center gap-1 sm:gap-2">
-                      <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo)} highlight="none" />
-                      {pages.length === 2 ? (
-                        lo === hi ? null : (
-                          <PageThumbCard pageNum={hi} thumb={thumbForPage(st, hi)} highlight="none" />
-                        )
-                      ) : showEllipsis ? (
+                    <div className="flex w-full items-center justify-center gap-2">
+                      <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo)} highlight="none" inlineInGroup />
+                      {isMultiPageRange ? (
                         <>
                           <span
                             aria-hidden
@@ -202,37 +256,26 @@ export function PdfSplitStudioSurface({
                           >
                             …
                           </span>
-                          <PageThumbCard pageNum={hi} thumb={thumbForPage(st, hi)} highlight="none" />
+                          <PageThumbCard pageNum={hi} thumb={thumbForPage(st, hi)} highlight="none" inlineInGroup />
                         </>
                       ) : null}
                     </div>
-                    <p className="text-center text-[10px] text-muted-foreground">
-                      {pages.length === 1 ? (
-                        `Page ${lo}`
-                      ) : (
-                        <>
-                          Pages {lo}
-                          <span className="mx-1 font-normal">–</span>
-                          {hi}
-                        </>
-                      )}
-                    </p>
                   </div>
                 );
               })}
             </div>
           </div>
-          <p className="shrink-0 border-t border-border/20 px-2 pb-2 pt-3 text-center text-[11px] leading-snug text-muted-foreground">
+          <p className="shrink-0 border-t border-border/20 px-3 pb-2 pt-2.5 text-center text-[11px] leading-snug text-muted-foreground">
             Dashed boxes are output groups · {groups.length} PDF{groups.length === 1 ? '' : 's'} will be created
           </p>
         </div>
       ) : (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div
-            className="queue-list-scrollbar -mx-1 min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain px-3 py-2 pr-2"
+            className="queue-list-scrollbar min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain px-3 py-1.5 pr-2"
             style={scrollThumbStyle}
           >
-            <div className="grid min-w-0 grid-cols-3 justify-items-center gap-x-2 gap-y-3 sm:gap-x-3">
+            <div className="grid min-w-0 grid-cols-3 items-start justify-items-center gap-x-2 gap-y-3 sm:gap-x-3">
               {order.map((pageNum) => {
                 const thumb = thumbForPage(st, pageNum);
                 const showSelect = splitTab === 'pages' && extractMode === 'select' && selectedSet.has(pageNum);
@@ -249,7 +292,7 @@ export function PdfSplitStudioSurface({
             </div>
           </div>
           {splitTab === 'pages' ? (
-            <p className="shrink-0 border-t border-border/20 px-2 pb-2 pt-3 text-center text-[11px] leading-snug text-muted-foreground">
+            <p className="shrink-0 border-t border-border/20 px-3 pb-2 pt-2.5 text-center text-[11px] leading-snug text-muted-foreground">
               {extractMode === 'select'
                 ? 'Outlined pages are included in the export. Use the Pages panel to toggle or reorder.'
                 : 'All pages are included. Choose “Select pages” to pick a subset.'}

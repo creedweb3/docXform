@@ -1,5 +1,7 @@
 import { PDFDocument } from 'pdf-lib';
 
+import { PDFJS_WORKER_PUBLIC_PATH } from '@/lib/pdfjs-load';
+
 export type Preset = 'light' | 'balanced' | 'max';
 
 async function renderPageToBlob(page: any, scale: number, quality: number): Promise<Blob> {
@@ -31,12 +33,7 @@ export async function compressPdf(file: File, preset: Preset, onProgress?: (perc
   }
 
   const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf');
-  if (!GlobalWorkerOptions.workerSrc) {
-    GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
-      import.meta.url
-    ).toString();
-  }
+  GlobalWorkerOptions.workerSrc = PDFJS_WORKER_PUBLIC_PATH;
 
   const mimeQuality = preset === 'light' ? 0.55 : preset === 'balanced' ? 0.7 : 0.82;
   const renderScale = preset === 'light' ? 1 : preset === 'balanced' ? 1.2 : 1.4;

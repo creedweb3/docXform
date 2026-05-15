@@ -1,5 +1,7 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf';
 
+import { PDFJS_WORKER_PUBLIC_PATH } from '@/lib/pdfjs-load';
+
 export type ImageFormat = 'png' | 'jpeg';
 
 export async function pdfToImages(
@@ -17,12 +19,7 @@ export async function pdfToImages(
   }
 
   const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf');
-  if (!GlobalWorkerOptions.workerSrc) {
-    GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
-      import.meta.url
-    ).toString();
-  }
+  GlobalWorkerOptions.workerSrc = PDFJS_WORKER_PUBLIC_PATH;
 
   const arrayBuffer = await file.arrayBuffer();
   const pdf: PDFDocumentProxy = await getDocument({ data: new Uint8Array(arrayBuffer) }).promise;

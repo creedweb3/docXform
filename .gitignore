@@ -24,6 +24,9 @@ public/soffice.data
 public/wasm/soffice.wasm
 public/wasm/soffice.data
 
+# pdf.js worker (copied by postinstall from pdfjs-dist; do not commit)
+public/pdf.worker.min.mjs
+
 # misc
 .DS_Store
 *.pem

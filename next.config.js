@@ -128,6 +128,19 @@ const nextConfig = {
         ],
       },
       {
+        source: '/pdf.worker.min.mjs',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+        ],
+      },
+      {
         source: '/:path*',
         headers: [
           ...securityHeaders,

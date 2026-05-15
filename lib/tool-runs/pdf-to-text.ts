@@ -1,3 +1,5 @@
+import { PDFJS_WORKER_PUBLIC_PATH } from '@/lib/pdfjs-load';
+
 /**
  * Extract text content from each page of a PDF using pdfjs-dist. Falls back to
  * an empty string per page if the PDF is image-only (we don't OCR on-device).
@@ -16,12 +18,7 @@ export async function pdfToText(
   }
 
   const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf');
-  if (!GlobalWorkerOptions.workerSrc) {
-    GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
-      import.meta.url
-    ).toString();
-  }
+  GlobalWorkerOptions.workerSrc = PDFJS_WORKER_PUBLIC_PATH;
 
   const pdf = await getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
   const total = pdf.numPages;

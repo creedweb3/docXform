@@ -2,6 +2,22 @@
 
 import type { PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf';
 
+import { loadPdfJs } from '@/lib/pdfjs-load';
+
+const PDF_PREVIEW_TIMEOUT_MS = 90_000;
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 /**
  * Render the first page of a PDF as a small thumbnail. Keeps work light by
  * scaling to a max width of ~220px. Returns an object URL and page count.
@@ -14,14 +30,15 @@ export async function generatePdfPreview(file: File): Promise<{
   if (typeof window === 'undefined') {
     return { label: 'PDF' };
   }
+  return withTimeout(generatePdfPreviewInner(file), 50_000, 'PDF preview');
+}
 
-  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf');
-  if (!GlobalWorkerOptions.workerSrc) {
-    GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
-      import.meta.url
-    ).toString();
-  }
+async function generatePdfPreviewInner(file: File): Promise<{
+  thumbUrl?: string;
+  pageCount?: number;
+  label?: string;
+}> {
+  const { getDocument } = await loadPdfJs();
 
   const arrayBuffer = await file.arrayBuffer();
   const pdf: PDFDocumentProxy = await getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
@@ -70,13 +87,7 @@ export async function renderPdfPageThumbnails(
     return { pageCount: 0, thumbs: [] };
   }
 
-  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf');
-  if (!GlobalWorkerOptions.workerSrc) {
-    GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
-      import.meta.url
-    ).toString();
-  }
+  const { getDocument } = await loadPdfJs();
 
   const maxWidth = options?.maxWidth ?? 160;
   const jpegQuality = options?.jpegQuality ?? 0.78;
@@ -85,7 +96,11 @@ export async function renderPdfPageThumbnails(
   const arrayBuffer = await file.arrayBuffer();
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
-  const pdf: PDFDocumentProxy = await getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+  const pdf: PDFDocumentProxy = await withTimeout(
+    getDocument({ data: new Uint8Array(arrayBuffer) }).promise,
+    PDF_PREVIEW_TIMEOUT_MS,
+    'PDF thumbnails'
+  );
   const thumbs: PdfPageThumb[] = [];
   const total = pdf.numPages;
 

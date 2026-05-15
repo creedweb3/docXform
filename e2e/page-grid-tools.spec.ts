@@ -32,11 +32,19 @@ test.beforeAll(async () => {
 test.describe.configure({ timeout: 90_000 });
 
 test.describe('PDF page grid UI', () => {
-  test('pdf-split: page grid is visible after upload', async ({ page }) => {
+  test('pdf-split: split preview loads after upload', async ({ page }) => {
     await page.goto('/tools/pdf-split', { waitUntil: 'load', timeout: 60_000 });
     await page.locator('input[type="file"]').setInputFiles(twoPagePdf);
 
-    await expect(page.getByText(/2 page\(s\)/).first()).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByText('Split preview', { exact: true })).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByText('2 pages', { exact: true }).first()).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByText('Range 1', { exact: true }).first()).toBeVisible({ timeout: 45_000 });
+  });
+
+  test('pdf.js worker is available at /pdf.worker.min.mjs', async ({ request }) => {
+    const res = await request.get('/pdf.worker.min.mjs');
+    expect(res.status(), 'Run: node scripts/copy-pdfjs-worker.mjs').toBe(200);
+    expect(res.headers()['content-type'] ?? '').toMatch(/javascript|ecmascript/i);
   });
 
   test('pdf-merge: page grid visible; Pages buttons switch active file', async ({ page }) => {

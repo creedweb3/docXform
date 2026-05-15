@@ -19,7 +19,7 @@
     "wasm:diagnose": "node scripts/diagnose-wasm-assets.mjs",
     "wasm:r2:upload": "node scripts/upload-wasm-r2.mjs",
     "wasm:sync-js": "node scripts/sync-wasm-js.mjs",
-    "postinstall": "node scripts/sync-wasm-js.mjs"
+    "postinstall": "node scripts/sync-wasm-js.mjs && node scripts/copy-pdfjs-worker.mjs"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.1.1",
