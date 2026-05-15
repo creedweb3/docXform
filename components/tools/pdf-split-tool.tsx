@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useRef, useState, type CSSProperties } from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Delete02Icon } from '@hugeicons/core-free-icons';
 import {
   ToolWorkspace,
   type PdfPageGridProcessContext,
@@ -204,9 +206,9 @@ export function PdfSplitTool() {
                   : `Selected pages export as separate files. ${outputPdfCount} PDF${outputPdfCount === 1 ? '' : 's'} will be created.`;
 
       return (
-        <div className="flex w-full min-w-0 flex-col gap-4 text-xs text-muted-foreground">
+        <div className="flex w-full min-w-0 flex-col gap-5 text-xs text-muted-foreground">
           <section
-            className="shrink-0 overflow-x-clip rounded-2xl bg-white/95 p-4 pb-5 shadow-sm ring-1 ring-black/[0.04] sm:p-5 dark:bg-zinc-950/40 dark:ring-white/[0.06]"
+            className="min-w-0 w-full shrink-0 overflow-x-visible rounded-2xl border border-border/30 bg-white/95 px-4 pb-5 pt-4 shadow-md ring-1 ring-black/[0.04] sm:px-5 sm:pb-6 dark:border-white/[0.08] dark:bg-zinc-950/50 dark:ring-white/[0.06]"
             aria-label="PDF split options"
           >
             <div className="mb-1 shrink-0">
@@ -251,8 +253,8 @@ export function PdfSplitTool() {
                       <div
                         className={
                           mode.ranges.length > RANGE_LIST_SCROLL_AFTER_COUNT
-                            ? 'queue-list-scrollbar flex max-h-[min(14rem,40vh)] flex-col gap-1.5 overflow-y-auto overscroll-y-contain pr-1 [-webkit-overflow-scrolling:touch] [scrollbar-gutter:stable]'
-                            : 'flex flex-col gap-1.5'
+                            ? 'queue-list-scrollbar flex max-h-[min(14rem,40vh)] flex-col gap-1.5 overflow-y-auto overscroll-y-contain pl-0.5 pr-3 [-webkit-overflow-scrolling:touch] [scrollbar-gutter:stable]'
+                            : 'flex flex-col gap-1.5 px-0.5'
                         }
                         style={
                           mode.ranges.length > RANGE_LIST_SCROLL_AFTER_COUNT
@@ -268,7 +270,7 @@ export function PdfSplitTool() {
                             <div
                               key={`range-${idx}-${from}-${to}`}
                               aria-label={`Range ${idx + 1}`}
-                              className="flex min-h-[1.75rem] flex-nowrap items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 dark:bg-white/[0.06]"
+                              className="flex min-h-[1.75rem] min-w-0 flex-nowrap items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 dark:bg-white/[0.06]"
                             >
                               <div
                                 className="flex h-7 w-7 shrink-0 flex-none items-center justify-center rounded-lg bg-amber-100/90 text-[11px] font-bold tabular-nums leading-none text-amber-950 dark:bg-amber-900/50 dark:text-amber-50"
@@ -277,7 +279,7 @@ export function PdfSplitTool() {
                                 {idx + 1}
                               </div>
 
-                              <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-2 sm:gap-x-3">
+                              <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-2 sm:gap-x-3">
                                 <label className="flex min-w-0 items-center justify-end gap-1.5">
                                   <span className="w-10 shrink-0 text-right text-xs font-semibold leading-tight text-foreground/85">
                                     From
@@ -313,10 +315,12 @@ export function PdfSplitTool() {
                               {mode.ranges.length > 1 ? (
                                 <button
                                   type="button"
-                                  className="box-border flex h-7 shrink-0 items-center rounded-lg px-2 text-[9px] font-medium leading-none text-muted-foreground transition hover:bg-muted/60 hover:text-foreground dark:hover:bg-white/10"
+                                  aria-label={`Remove range ${idx + 1}`}
+                                  title="Remove range"
+                                  className="box-border flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground dark:hover:bg-white/10"
                                   onClick={() => removeCustomRange(idx)}
                                 >
-                                  Remove
+                                  <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} aria-hidden />
                                 </button>
                               ) : null}
                             </div>

@@ -1129,9 +1129,6 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
           : `${formatBytes(afterBytes)}`
       );
     }
-    if (item.preview?.pageCount) {
-      chips.push(`${item.preview.pageCount} page${item.preview.pageCount === 1 ? '' : 's'}`);
-    }
     return chips;
   };
 
@@ -1187,15 +1184,20 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
   };
 
   const renderQueueListScroll = () => (
-    <div className="w-full min-w-0 shrink-0 overflow-x-clip">
+    <div className="w-full min-w-0 shrink-0">
       <div
-        className="flex w-full min-w-0 flex-col gap-2 py-0.5 pr-1"
+        className="flex w-full min-w-0 flex-col gap-2 py-0.5"
         role="list"
         aria-label="Selected files"
       >
         {files.map((item) => {
           const isReorderable = config.allowMultiple && files.length > 1 && !busy;
           const itemOutput = item.outputs?.[0];
+          const pageCountLabel =
+            item.preview?.pageCount && item.preview.pageCount > 0
+              ? `${item.preview.pageCount} page${item.preview.pageCount === 1 ? '' : 's'}`
+              : null;
+          const resultChips = renderResultChips(item);
           return (
             <div
               key={item.id}
@@ -1208,7 +1210,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
               onDrop={() => isReorderable && handleReorder(item.id)}
               onDragEnd={() => setDraggedFileId(null)}
               className={clsx(
-                'min-h-12 min-w-0 overflow-hidden rounded-xl border border-border/45 bg-white/60 px-2.5 py-2 box-border transition focus-within:ring-2 focus-within:ring-ring',
+                'box-border min-h-12 w-full min-w-0 overflow-hidden rounded-xl border border-border/45 bg-white/60 px-2.5 py-2 transition focus-within:ring-2 focus-within:ring-ring',
                 draggedFileId === item.id && 'opacity-50',
                 isReorderable && 'cursor-grab active:cursor-grabbing'
               )}
@@ -1296,6 +1298,11 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                             Pages
                           </button>
                         )}
+                      {pageCountLabel ? (
+                        <span className="inline-flex items-center rounded-full border border-border/40 bg-white/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          {pageCountLabel}
+                        </span>
+                      ) : null}
                       <button
                         type="button"
                         onClick={() => handleRemove(item.id)}
@@ -1307,10 +1314,10 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                       </button>
                     </div>
                   </div>
-                  {/* Result/preview chips */}
-                  {item.status === 'done' || item.preview?.pageCount ? (
+                  {/* Result chips (page count lives on the row beside delete) */}
+                  {resultChips.length > 0 || (item.preview?.status === 'error' && item.preview.error) ? (
                     <div className="mt-1 flex flex-wrap items-center gap-1">
-                      {renderResultChips(item).map((chip) => (
+                      {resultChips.map((chip) => (
                         <span
                           key={chip}
                           className="inline-flex items-center rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground border border-border/40"
@@ -1353,7 +1360,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
   );
 
   const renderQueueToolbar = () => (
-    <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 sm:justify-start">
+    <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-2">
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
@@ -1654,18 +1661,11 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={spring}
-          className="glass relative z-0 flex min-h-0 flex-col gap-3 overflow-x-clip rounded-3xl p-5 sm:p-6"
+          className="glass relative z-0 flex min-h-0 flex-col gap-3 overflow-x-visible rounded-3xl p-5 sm:p-6"
         >
-          <div className="flex min-h-0 w-full flex-col gap-3 px-1">
+          <div className="flex min-h-0 w-full flex-col gap-3 px-2 sm:px-3">
             <div className="grid w-full items-stretch gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)] lg:min-h-0">
-              <div
-                className={clsx(
-                  'relative flex min-w-0 flex-col gap-4 rounded-2xl border border-border/40 bg-[#f4f5f7] p-4 sm:p-6 dark:bg-muted/25',
-                  pageGridPanelVisible
-                    ? 'min-h-[min(52vh,28rem)] max-h-[calc(100dvh-9rem)] overflow-x-hidden overflow-y-hidden lg:h-full'
-                    : 'h-full min-h-0 min-w-0 overflow-x-clip'
-                )}
-              >
+              <div className="relative flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-x-clip rounded-2xl border border-border/40 bg-[#f4f5f7] p-4 sm:p-6 dark:bg-muted/25">
                 {config.allowMultiple ? (
                   <StudioFabStack
                     fileCount={files.length}
@@ -1677,52 +1677,49 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                     primaryButtonClass={config.primaryButtonClass}
                   />
                 ) : null}
-                <div
-                  className={clsx(
-                    'min-h-0 w-full min-w-0',
-                    !pageGridPanelVisible && 'flex min-h-0 flex-1 flex-col overflow-hidden basis-0'
-                  )}
-                >
+                <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden basis-0">
                   {/* eslint-disable-next-line react-hooks/refs -- false positive: surfaceApi is state snapshot; refs only used when callers invoke picker */}
                   {studioSurface ? studioSurface(surfaceApi) : <DefaultBatchStudioSurface api={surfaceApi} />}
                 </div>
-                {renderPageGridPanel()}
+                {pageGridPanelVisible ? (
+                  <div className="max-h-[min(48vh,24rem)] min-h-0 shrink-0 overflow-x-hidden overflow-y-auto">
+                    {renderPageGridPanel()}
+                  </div>
+                ) : (
+                  renderPageGridPanel()
+                )}
               </div>
               <aside
                 className={clsx(
-                  'flex min-w-0 flex-col gap-4 rounded-2xl border border-border/50 bg-white/65 p-4 shadow-sm backdrop-blur-md sm:p-5',
-                  pageGridPanelVisible
-                    ? 'min-h-0 lg:sticky lg:top-36'
-                    : 'h-full w-full min-h-0 overflow-x-clip overflow-y-visible'
+                  'flex h-full w-full min-h-0 min-w-0 flex-col overflow-visible rounded-2xl border border-border/50 bg-gradient-to-b from-white/75 to-white/60 px-4 py-4 shadow-sm backdrop-blur-md sm:px-5 sm:py-5 dark:from-zinc-950/50 dark:to-zinc-950/35',
+                  pageGridPanelVisible && 'lg:sticky lg:top-36'
                 )}
               >
+                <div className="mx-auto flex w-full min-w-0 max-w-sm flex-col gap-5">
                 {config.studioHint ? (
-                  <div className="flex shrink-0 gap-2.5 overflow-x-clip rounded-xl bg-sky-50/90 p-3 text-[11px] leading-relaxed text-sky-950 ring-1 ring-sky-200/50 dark:bg-sky-950/25 dark:text-sky-100 dark:ring-sky-500/25">
+                  <div className="flex min-w-0 shrink-0 gap-3 rounded-2xl bg-sky-50/90 p-4 text-[11px] leading-relaxed text-sky-950 shadow-sm ring-1 ring-sky-200/45 dark:bg-sky-950/30 dark:text-sky-100 dark:ring-sky-500/30">
                     <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-sky-600 dark:text-sky-400" />
                     <div className="min-w-0">{config.studioHint}</div>
                   </div>
                 ) : null}
-                <div className="shrink-0 border-b border-border/30 pb-3">
-                  <h2 className="text-sm font-semibold tracking-tight text-foreground">{queuedTitle}</h2>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                <div className="shrink-0 border-b border-border/25 pb-3">
+                  <h2 className="text-center text-sm font-semibold tracking-tight text-foreground sm:text-left">
+                    {queuedTitle}
+                  </h2>
+                  <p className="mt-1.5 text-center text-[11px] leading-relaxed text-muted-foreground sm:text-left">
                     Queue: {files.length} of {effectiveBatchMax} files. Selected total:{' '}
                     {formatBytes(totalBytes)}.
                   </p>
                 </div>
                 <div className="shrink-0">{renderQueueToolbar()}</div>
-                <div
-                  className={clsx(
-                    'flex min-h-0 flex-col gap-4 overflow-x-clip',
-                    !pageGridPanelVisible && 'min-h-0 flex-1'
-                  )}
-                >
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-5">
                   <div
                     ref={queueListScrollRef}
                     className={clsx(
-                      'w-full min-w-0 overflow-x-clip',
+                      'w-full min-w-0',
                       queueListUsesScrollRegion
                         ? clsx(
-                            'min-h-0 shrink-0 overflow-y-auto overscroll-y-contain pr-1 [scrollbar-gutter:stable]',
+                            'min-h-0 shrink-0 overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable]',
                             pageGridPanelVisible ? 'max-h-[min(50vh,24rem)]' : 'max-h-72'
                           )
                         : 'shrink-0'
@@ -1730,16 +1727,12 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                   >
                     {renderQueueListScroll()}
                   </div>
-                  <div
-                    className={clsx(
-                      'flex w-full min-w-0 flex-col gap-3 pb-0.5',
-                      !pageGridPanelVisible && 'shrink-0 overflow-x-clip'
-                    )}
-                  >
+                  <div className="flex w-full min-w-0 shrink-0 flex-col gap-4 pb-0.5">
                     {/* eslint-disable-next-line react-hooks/refs -- false positive: surfaceApi snapshot; footer may read queue/grid only */}
                     {typeof footer === 'function' ? footer(surfaceApi) : footer}
                     {renderCtaRow()}
                   </div>
+                </div>
                 </div>
               </aside>
             </div>

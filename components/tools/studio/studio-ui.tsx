@@ -66,7 +66,7 @@ export function StudioSidebarTitle({ children }: { children: React.ReactNode }) 
 
 export function StudioInfoBanner({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex gap-2.5 overflow-x-clip rounded-xl bg-sky-50/90 p-3 text-[11px] leading-relaxed text-sky-950 ring-1 ring-sky-200/50 dark:bg-sky-950/25 dark:text-sky-100 dark:ring-sky-500/25">
+    <div className="flex min-w-0 gap-3 rounded-2xl bg-sky-50/90 p-4 text-[11px] leading-relaxed text-sky-950 shadow-sm ring-1 ring-sky-200/45 dark:bg-sky-950/30 dark:text-sky-100 dark:ring-sky-500/30">
       <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-sky-200/70 text-[10px] font-bold text-sky-900 dark:bg-sky-800/80 dark:text-sky-100">
         i
       </span>
