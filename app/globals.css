@@ -652,12 +652,17 @@
   }
   .queue-list-scrollbar::-webkit-scrollbar-thumb {
     border-radius: 9999px;
+    /* Inset thumb from track edges so rounded ends are not clipped by the gutter. */
+    border: 2px solid transparent;
+    background-clip: padding-box;
     background-color: var(
       --queue-scrollbar-thumb,
       hsl(var(--muted-foreground) / 0.45)
     );
   }
   .queue-list-scrollbar::-webkit-scrollbar-thumb:hover {
+    border: 2px solid transparent;
+    background-clip: padding-box;
     background-color: var(
       --queue-scrollbar-thumb-hover,
       hsl(var(--muted-foreground) / 0.65)

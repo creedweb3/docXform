@@ -3,6 +3,7 @@
 import clsx from 'clsx';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Add01Icon } from '@hugeicons/core-free-icons';
+import { TONE_STYLES, type ToneKey } from '@/components/tools/tone-styles';
 
 export function StudioFabStack({
   fileCount,
@@ -64,10 +65,21 @@ export function StudioSidebarTitle({ children }: { children: React.ReactNode }) 
   return <h2 className="border-b border-border/40 pb-3 text-center text-lg font-bold tracking-tight text-foreground sm:text-left">{children}</h2>;
 }
 
-export function StudioInfoBanner({ children }: { children: React.ReactNode }) {
+export function StudioInfoBanner({ tone, children }: { tone: ToneKey; children: React.ReactNode }) {
+  const toneStyle = TONE_STYLES[tone];
   return (
-    <div className="flex min-w-0 gap-3 rounded-2xl bg-sky-50/90 p-4 text-[11px] leading-relaxed text-sky-950 shadow-sm ring-1 ring-sky-200/45 dark:bg-sky-950/30 dark:text-sky-100 dark:ring-sky-500/30">
-      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-sky-200/70 text-[10px] font-bold text-sky-900 dark:bg-sky-800/80 dark:text-sky-100">
+    <div
+      className={clsx(
+        'flex min-w-0 gap-3 rounded-2xl p-4 text-[11px] leading-relaxed',
+        toneStyle.studioInfoPill
+      )}
+    >
+      <span
+        className={clsx(
+          'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-bold',
+          toneStyle.studioInfoBannerMark
+        )}
+      >
         i
       </span>
       <div className="min-w-0">{children}</div>

@@ -246,7 +246,8 @@ function resolveOrderedPagesForFile(state: PerFileGridState | undefined, pageCou
   if (pageCount <= 0) return [];
   const order = state?.order?.length === pageCount ? state.order : defaultPageOrder(pageCount);
   const selected =
-    state?.selected?.length && state.selected.every((p) => p >= 1 && p <= pageCount)
+    state?.selected != null &&
+    (state.selected.length === 0 || state.selected.every((p) => p >= 1 && p <= pageCount))
       ? state.selected
       : defaultPageOrder(pageCount);
   const sel = new Set(selected);
@@ -300,6 +301,8 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
 
   const toneStyle = config.tone ? TONE_STYLES[config.tone] : undefined;
   const chipClass = toneStyle?.chip ?? 'border-border/40 bg-white/65';
+  const studioInfoPillClass =
+    toneStyle?.studioInfoPill ?? 'border-border/50 bg-muted/30 text-foreground ring-1 ring-border/40';
   const pageGridToneClass = toneStyle?.pageGridSelected ?? 'border-border/60 bg-muted/40 text-foreground';
   const actionLabel = config.actionLabel ?? 'Process';
   const queuedTitle = config.queuedTitle ?? 'Files ready';
@@ -428,7 +431,8 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
             ? cur.order
             : defaultPageOrder(pageCount);
         const selected =
-          cur && cur.selected.length && cur.selected.every((p) => p >= 1 && p <= pageCount)
+          cur &&
+          (cur.selected.length === 0 || cur.selected.every((p) => p >= 1 && p <= pageCount))
             ? cur.selected.filter((p) => p <= pageCount)
             : defaultPageOrder(pageCount);
         const alreadyReady =
@@ -441,7 +445,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
           ...prev,
           [activePageGridFileId]: {
             order,
-            selected: selected.length ? selected : [...order],
+            selected,
             thumbs: placeholderThumbs(order),
             thumbsLoad: 'loading',
             thumbsError: undefined,
@@ -1299,7 +1303,12 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                           </button>
                         )}
                       {pageCountLabel ? (
-                        <span className="inline-flex items-center rounded-full border border-border/40 bg-white/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        <span
+                          className={clsx(
+                            'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium shadow-sm',
+                            studioInfoPillClass
+                          )}
+                        >
                           {pageCountLabel}
                         </span>
                       ) : null}
@@ -1320,7 +1329,10 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                       {resultChips.map((chip) => (
                         <span
                           key={chip}
-                          className="inline-flex items-center rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground border border-border/40"
+                          className={clsx(
+                            'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium shadow-sm',
+                            studioInfoPillClass
+                          )}
                         >
                           {chip}
                         </span>
@@ -1665,7 +1677,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
         >
           <div className="flex min-h-0 w-full flex-col gap-3 px-2 sm:px-3">
             <div className="grid w-full items-stretch gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)] lg:min-h-0">
-              <div className="relative flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-x-clip rounded-2xl border border-border/40 bg-[#f4f5f7] p-4 sm:p-6 dark:bg-muted/25">
+              <div className="relative flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-x-visible rounded-2xl border border-border/40 bg-[#f4f5f7] p-4 sm:p-6 dark:bg-muted/25">
                 {config.allowMultiple ? (
                   <StudioFabStack
                     fileCount={files.length}
@@ -1677,7 +1689,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                     primaryButtonClass={config.primaryButtonClass}
                   />
                 ) : null}
-                <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden basis-0">
+                <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden basis-0 px-px pt-px">
                   {/* eslint-disable-next-line react-hooks/refs -- false positive: surfaceApi is state snapshot; refs only used when callers invoke picker */}
                   {studioSurface ? studioSurface(surfaceApi) : <DefaultBatchStudioSurface api={surfaceApi} />}
                 </div>
@@ -1697,8 +1709,18 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
               >
                 <div className="mx-auto flex w-full min-w-0 max-w-sm flex-col gap-5">
                 {config.studioHint ? (
-                  <div className="flex min-w-0 shrink-0 gap-3 rounded-2xl bg-sky-50/90 p-4 text-[11px] leading-relaxed text-sky-950 shadow-sm ring-1 ring-sky-200/45 dark:bg-sky-950/30 dark:text-sky-100 dark:ring-sky-500/30">
-                    <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-sky-600 dark:text-sky-400" />
+                  <div
+                    className={clsx(
+                      'flex min-w-0 shrink-0 gap-3 rounded-2xl p-4 text-[11px] leading-relaxed shadow-sm',
+                      studioInfoPillClass
+                    )}
+                  >
+                    <HugeiconsIcon
+                      icon={Shield01Icon}
+                      size={14}
+                      strokeWidth={2}
+                      className={clsx('mt-0.5 shrink-0', toneStyle?.iconText ?? 'text-muted-foreground')}
+                    />
                     <div className="min-w-0">{config.studioHint}</div>
                   </div>
                 ) : null}

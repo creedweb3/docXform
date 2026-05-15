@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Delete02Icon } from '@hugeicons/core-free-icons';
 import {
@@ -31,8 +31,42 @@ const PDF_SPLIT_RANGE_SCROLL_STYLE = {
   '--queue-scrollbar-thumb-hover': TONE_STYLES[tool.tone].scrollbarThumbHover,
 } as CSSProperties;
 
-/** Themed scrollbar + max-height only when there are more ranges than this count. */
-const RANGE_LIST_SCROLL_AFTER_COUNT = 5;
+/**
+ * Up to this many ranges: list grows naturally. Beyond: rows scroll inside a fixed-height viewport.
+ */
+const RANGE_LIST_NATURAL_MAX_COUNT = 5;
+
+/** Fixed outer height (rem) — ~5 rows + gaps; does not grow when more ranges are added. */
+const RANGE_LIST_SCROLL_VIEWPORT_REM = 15.75;
+
+function CustomPageRangeListViewport({
+  scroll,
+  scrollStyle,
+  children,
+}: {
+  scroll: boolean;
+  scrollStyle?: CSSProperties;
+  children: ReactNode;
+}) {
+  if (!scroll) {
+    return (
+      <div className="flex shrink-0 flex-col gap-1.5 overflow-x-clip px-1" aria-label="Custom page ranges">
+        {children}
+      </div>
+    );
+  }
+  return (
+    <div className="w-full min-w-0 shrink-0" style={{ height: `${RANGE_LIST_SCROLL_VIEWPORT_REM}rem` }}>
+      <div
+        className="queue-list-scrollbar box-border h-full min-h-0 overflow-y-auto overscroll-y-contain px-1 py-1.5 [-webkit-overflow-scrolling:touch]"
+        style={scrollStyle}
+        aria-label="Custom page ranges"
+      >
+        <div className="flex flex-col gap-1.5">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 type SplitSidebarTab = 'range' | 'pages' | 'size';
 type RangeModeUi = 'custom' | 'fixed' | 'smart';
@@ -48,7 +82,8 @@ function orderedPagesFromGrid(
       ? st.order
       : Array.from({ length: pageCount }, (_, i) => i + 1);
   const selected =
-    st && st.selected.length && st.selected.every((p) => p >= 1 && p <= pageCount)
+    st &&
+    (st.selected.length === 0 || st.selected.every((p) => p >= 1 && p <= pageCount))
       ? st.selected
       : Array.from({ length: pageCount }, (_, i) => i + 1);
   const sel = new Set(selected);
@@ -106,7 +141,8 @@ const config: WorkspaceConfig = {
   studioHint: (
     <>
       Use <strong>Range</strong> for classic splits (custom ranges or every N pages). Use <strong>Pages</strong> to export
-      specific pages — when <strong>Select pages</strong> is on, use the Pages panel beside the preview.
+      specific pages — with <strong>Select pages</strong>, click thumbnails to include or exclude, and use the drag row
+      to reorder.
     </>
   ),
 };
@@ -202,7 +238,7 @@ export function PdfSplitTool() {
               : extractMode === 'all'
                 ? `Each page becomes its own PDF unless merge is enabled. ${outputPdfCount} PDF${outputPdfCount === 1 ? '' : 's'} will be created.`
                 : ordered.length === 0
-                  ? 'Select at least one page in the Pages panel next to the preview.'
+                  ? 'Select at least one page in the preview area above.'
                   : `Selected pages export as separate files. ${outputPdfCount} PDF${outputPdfCount === 1 ? '' : 's'} will be created.`;
 
       return (
@@ -250,18 +286,13 @@ export function PdfSplitTool() {
                 {rangeModeUi === 'custom' ? (
                   <div className="flex min-w-0 flex-col gap-3">
                     {mode.kind === 'ranges' ? (
-                      <div
-                        className={
-                          mode.ranges.length > RANGE_LIST_SCROLL_AFTER_COUNT
-                            ? 'queue-list-scrollbar flex max-h-[min(14rem,40vh)] flex-col gap-1.5 overflow-y-auto overscroll-y-contain pl-0.5 pr-3 [-webkit-overflow-scrolling:touch] [scrollbar-gutter:stable]'
-                            : 'flex flex-col gap-1.5 px-0.5'
-                        }
-                        style={
-                          mode.ranges.length > RANGE_LIST_SCROLL_AFTER_COUNT
+                      <CustomPageRangeListViewport
+                        scroll={mode.ranges.length > RANGE_LIST_NATURAL_MAX_COUNT}
+                        scrollStyle={
+                          mode.ranges.length > RANGE_LIST_NATURAL_MAX_COUNT
                             ? PDF_SPLIT_RANGE_SCROLL_STYLE
                             : undefined
                         }
-                        aria-label="Custom page ranges"
                       >
                         {mode.ranges.map((pages, idx) => {
                           const from = Math.min(...pages);
@@ -270,7 +301,7 @@ export function PdfSplitTool() {
                             <div
                               key={`range-${idx}-${from}-${to}`}
                               aria-label={`Range ${idx + 1}`}
-                              className="flex min-h-[1.75rem] min-w-0 flex-nowrap items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 dark:bg-white/[0.06]"
+                              className="flex shrink-0 min-h-[1.75rem] min-w-0 flex-nowrap items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 dark:bg-white/[0.06]"
                             >
                               <div
                                 className="flex h-7 w-7 shrink-0 flex-none items-center justify-center rounded-lg bg-amber-100/90 text-[11px] font-bold tabular-nums leading-none text-amber-950 dark:bg-amber-900/50 dark:text-amber-50"
@@ -326,7 +357,7 @@ export function PdfSplitTool() {
                             </div>
                           );
                         })}
-                      </div>
+                      </CustomPageRangeListViewport>
                     ) : null}
                     <button
                       type="button"
@@ -411,7 +442,7 @@ export function PdfSplitTool() {
           </section>
 
           <div className="shrink-0">
-            <StudioInfoBanner>{bannerText}</StudioInfoBanner>
+            <StudioInfoBanner tone={tool.tone}>{bannerText}</StudioInfoBanner>
           </div>
         </div>
       );
@@ -520,9 +551,15 @@ export function PdfSplitTool() {
 
   const studioSurface = useCallback(
     (api: WorkspaceSurfaceApi) => (
-      <PdfSplitStudioSurface api={api} mode={mode} splitTab={splitTab} extractMode={extractMode} />
+      <PdfSplitStudioSurface
+        api={api}
+        mode={mode}
+        splitTab={splitTab}
+        extractMode={extractMode}
+        mergeRangeOutputs={mergeRangeOutputs}
+      />
     ),
-    [mode, splitTab, extractMode]
+    [mode, splitTab, extractMode, mergeRangeOutputs]
   );
 
   return (
@@ -536,9 +573,7 @@ export function PdfSplitTool() {
       }}
       footer={footer}
       studioSurface={studioSurface}
-      showPageGridPanel={(surface) =>
-        splitTab === 'pages' && extractMode === 'select' && !!(surface.files[0]?.preview?.pageCount)
-      }
+      showPageGridPanel={() => false}
       onPageGridStateChange={handlePageGridStateChange}
     />
   );
