@@ -5,7 +5,7 @@ import { ADMIN_SESSION_COOKIE, type AdminSessionUser } from '@/lib/admin-auth';
 import { isAllowedAdminEmail } from '@/lib/admin-config';
 import { getUserByAccessToken } from '@/lib/supabase-rest';
 
-export async function getAdminUserFromToken(token: string | null | undefined) {
+async function getAdminUserFromToken(token: string | null | undefined) {
   if (!token) return null;
 
   const user = await getUserByAccessToken(token);

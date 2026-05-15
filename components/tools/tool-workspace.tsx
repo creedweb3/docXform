@@ -62,9 +62,9 @@ export type WorkspaceFile = {
   };
 };
 
-export type PdfPageGridLayout = 'perFile' | 'single';
+type PdfPageGridLayout = 'perFile' | 'single';
 
-export type WorkspacePageGridConfig = {
+type WorkspacePageGridConfig = {
   layout: PdfPageGridLayout;
   /** Drag thumbnails to reorder output within each PDF (merge, organize, split). */
   allowReorder: boolean;
@@ -119,7 +119,7 @@ export type WorkspaceConfig = {
   studioStageTitle?: string;
 };
 
-export type WorkspaceActions = {
+type WorkspaceActions = {
   /**
    * Optional batch validator. Used at both add time (per file) and at process time
    * (full batch). Tools can keep returning the existing helper signature.

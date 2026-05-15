@@ -61,10 +61,6 @@ export function StudioFabStack({
   );
 }
 
-export function StudioSidebarTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="border-b border-border/40 pb-3 text-center text-lg font-bold tracking-tight text-foreground sm:text-left">{children}</h2>;
-}
-
 export function StudioInfoBanner({ tone, children }: { tone: ToneKey; children: React.ReactNode }) {
   const toneStyle = TONE_STYLES[tone];
   return (

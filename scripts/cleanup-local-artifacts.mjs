@@ -7,7 +7,15 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
-const targets = ['.next', 'playwright-report', 'test-results', 'tmp-conversion-tests', 'coverage'];
+const targets = [
+  '.next',
+  'out',
+  'playwright-report',
+  'test-results',
+  'tmp-conversion-tests',
+  'coverage',
+  'tsconfig.tsbuildinfo',
+];
 
 let removed = 0;
 for (const rel of targets) {

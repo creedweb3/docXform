@@ -5,7 +5,7 @@ type SupabaseUser = {
   email?: string | null;
 };
 
-export type RestError = {
+type RestError = {
   message: string;
   status: number;
 };

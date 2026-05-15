@@ -21,7 +21,7 @@ import {
 } from '@/lib/wasm-client-cache';
 import { getVersionedWasmBinPathPrefix } from '@/lib/wasm-revision';
 
-export interface ClientConversionProgress {
+interface ClientConversionProgress {
   percent: number;
   message: string;
 }

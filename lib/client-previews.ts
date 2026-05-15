@@ -143,19 +143,3 @@ export function revokePdfThumbUrls(thumbs: Pick<PdfPageThumb, 'thumbUrl'>[]) {
     }
   }
 }
-
-/**
- * Simple image preview: just create an object URL and surface its type label.
- */
-export async function generateImagePreview(file: File): Promise<{
-  thumbUrl?: string;
-  label?: string;
-}> {
-  if (typeof window === 'undefined') {
-    return { label: file.type || 'Image' };
-  }
-  return {
-    thumbUrl: URL.createObjectURL(file),
-    label: file.type || 'Image',
-  };
-}

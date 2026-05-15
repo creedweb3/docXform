@@ -243,7 +243,3 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
 export const TONE_TEXT_GRADIENT: Record<ToneKey, string> = Object.fromEntries(
   (Object.entries(TONE_STYLES) as [ToneKey, ToneStyle][]).map(([k, v]) => [k, v.gradientText])
 ) as Record<ToneKey, string>;
-
-export const TONE_CHIP_CLASS: Record<ToneKey, string> = Object.fromEntries(
-  (Object.entries(TONE_STYLES) as [ToneKey, ToneStyle][]).map(([k, v]) => [k, v.chip])
-) as Record<ToneKey, string>;
