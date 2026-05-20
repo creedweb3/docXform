@@ -23,6 +23,10 @@ test.describe('docXform smoke', () => {
       page.getByRole('heading', { level: 1, name: /^Word to PDF converter$/i })
     ).toBeVisible();
     await expect(page.getByText(/Drop your Word files here/i)).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Tools', exact: true })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
   });
 
   test('PDF to Word tool page loads', async ({ page }) => {

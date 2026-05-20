@@ -11,8 +11,18 @@ const navLinks = [
   { href: '/articles', label: 'Articles' },
 ];
 
+/** Flagship converters live outside /tools but belong in the Tools nav section. */
+const FLAGSHIP_CONVERTER_PATHS = ['/word-to-pdf', '/pdf-to-word'] as const;
+
 function linkIsActive(pathname: string, href: string) {
   if (href === '/') return pathname === '/';
+  if (href === '/tools') {
+    return (
+      pathname === '/tools' ||
+      pathname.startsWith('/tools/') ||
+      FLAGSHIP_CONVERTER_PATHS.some((path) => pathname === path)
+    );
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

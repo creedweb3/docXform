@@ -1,21 +1,5 @@
-import { DocxToPdfTool } from '@/components/tools/docx-to-pdf-tool';
-import { ToolPage } from '@/components/tools/tool-page';
-import { getToolBySlug } from '@/lib/tools';
-import { createPageMetadata } from '@/lib/seo';
+import { permanentRedirect } from 'next/navigation';
 
-const slug = 'docx-to-pdf';
-const tool = getToolBySlug(slug);
-
-export const metadata =
-  tool &&
-  createPageMetadata({
-    title: tool.metaTitle,
-    description: tool.metaDescription,
-    path: `/tools/${slug}`,
-    keywords: tool.keywords,
-  });
-
-export default function DocxToPdfPage() {
-  if (!tool) return null;
-  return <ToolPage tool={tool} workspace={<DocxToPdfTool />} />;
+export default function DocxToPdfToolRedirectPage() {
+  permanentRedirect('/word-to-pdf');
 }

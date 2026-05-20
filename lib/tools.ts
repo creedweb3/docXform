@@ -22,8 +22,34 @@ import {
   TaskEdit01Icon,
 } from '@hugeicons/core-free-icons';
 
+export type ToolFormat = 'pdf' | 'docx' | 'pptx' | 'image';
+
+export type ToolIntent = 'edit' | 'convert' | 'optimize' | 'extract' | 'privacy';
+
+/** Primary file family + job intents (used for tools index filters). */
+export const TOOL_TAXONOMY: Record<string, { format: ToolFormat; intents: ToolIntent[] }> = {
+  'pdf-merge': { format: 'pdf', intents: ['edit'] },
+  'pdf-split': { format: 'pdf', intents: ['edit'] },
+  'pdf-compress': { format: 'pdf', intents: ['optimize'] },
+  'pdf-to-images': { format: 'pdf', intents: ['convert'] },
+  'images-to-pdf': { format: 'image', intents: ['convert'] },
+  'pptx-to-pdf': { format: 'pptx', intents: ['convert'] },
+  'docx-to-pptx': { format: 'docx', intents: ['convert'] },
+  'docx-scrub': { format: 'docx', intents: ['privacy'] },
+  'pdf-rotate': { format: 'pdf', intents: ['edit'] },
+  'pdf-organize': { format: 'pdf', intents: ['edit'] },
+  'pdf-watermark': { format: 'pdf', intents: ['edit'] },
+  'pdf-unlock': { format: 'pdf', intents: ['edit'] },
+  'pdf-to-text': { format: 'pdf', intents: ['extract'] },
+  'image-convert': { format: 'image', intents: ['convert'] },
+  'image-compress': { format: 'image', intents: ['optimize'] },
+  'docx-to-text': { format: 'docx', intents: ['extract'] },
+};
+
 export type ToolDefinition = {
   slug: string;
+  format: ToolFormat;
+  intents: ToolIntent[];
   name: string;
   description: string;
   accentClass: string;
@@ -52,7 +78,7 @@ export type ToolDefinition = {
   experienceMaxWidthClass?: string;
 };
 
-export const toolDefinitions: ToolDefinition[] = [
+const rawToolDefinitions = [
   {
     slug: 'pdf-merge',
     name: 'PDF Merge',
@@ -473,33 +499,6 @@ export const toolDefinitions: ToolDefinition[] = [
     experienceMaxWidthClass: 'max-w-6xl',
   },
   {
-    slug: 'docx-to-pdf',
-    name: 'DOCX to PDF',
-    description: 'Convert Word documents to PDF using the local WASM engine.',
-    accentClass: 'bg-indigo-50 text-indigo-700 border-indigo-100',
-    badgeClass: 'text-indigo-700 bg-indigo-100',
-    buttonClass: 'from-indigo-600 to-indigo-500',
-    icon: Doc01Icon,
-    iconPair: { back: Doc01Icon, front: Pdf01Icon },
-    tone: 'indigo',
-    keywords: ['docx to pdf', 'word to pdf', 'doc to pdf'],
-    metaTitle: 'DOCX to PDF – convert Word locally | docXform',
-    metaDescription: 'Convert DOCX files to PDF in your browser using the local LibreOffice WASM engine. No uploads.',
-    howToSteps: [
-      'Open DOCX to PDF and add your Word file',
-      'Click Process locally to run the LibreOffice WASM engine',
-      'Download the rendered PDF',
-    ],
-    faqs: [
-      { q: 'Is my document uploaded?', a: 'No. Conversion runs entirely in your browser via WebAssembly.' },
-      { q: 'Will fonts match exactly?', a: 'Common fonts render closely; embed fonts in the DOCX for best fidelity.' },
-      { q: 'Can I batch convert?', a: 'Yes. Add multiple DOCX files and receive a zip of PDFs.' },
-    ],
-    features: ['WebAssembly engine', 'Batch-friendly', 'Local-only conversion'],
-    capabilities: { preview: false, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
-    experienceMaxWidthClass: 'max-w-6xl',
-  },
-  {
     slug: 'docx-to-text',
     name: 'DOCX to TXT / Markdown',
     description: 'Extract plain text or Markdown from Word documents.',
@@ -528,6 +527,22 @@ export const toolDefinitions: ToolDefinition[] = [
     experienceMaxWidthClass: 'max-w-6xl',
   },
 ];
+
+export const toolDefinitions: ToolDefinition[] = rawToolDefinitions.map((tool) => {
+  const taxonomy = TOOL_TAXONOMY[tool.slug];
+  if (!taxonomy) {
+    throw new Error(`Missing TOOL_TAXONOMY for slug: ${tool.slug}`);
+  }
+  return { ...tool, ...taxonomy } as ToolDefinition;
+});
+
+export function getToolFormat(tool: ToolDefinition): ToolFormat {
+  return tool.format;
+}
+
+export function toolHasIntent(tool: ToolDefinition, intent: ToolIntent): boolean {
+  return tool.intents.includes(intent);
+}
 
 export function getToolBySlug(slug: string): ToolDefinition | undefined {
   return toolDefinitions.find((t) => t.slug === slug);
