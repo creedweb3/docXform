@@ -11,10 +11,10 @@ import {
 } from '@/lib/perf-profile';
 import { getWasmAssetRevision } from '@/lib/wasm-revision';
 
-export const CONVERTER_READINESS_BUDGET_SEC = 8;
+const CONVERTER_READINESS_BUDGET_SEC = 8;
 
 /** Combined soffice.wasm + soffice.data (override via env for accurate ETA). */
-export function getCombinedWasmBytes(): number {
+function getCombinedWasmBytes(): number {
   const raw = process.env.NEXT_PUBLIC_WASM_BUNDLE_BYTES;
   if (typeof raw === 'string' && /^\d+$/.test(raw.trim())) {
     return Math.max(1, parseInt(raw.trim(), 10));

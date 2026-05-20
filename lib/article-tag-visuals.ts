@@ -7,7 +7,7 @@ import {
 import type { ArticleTag } from '@/lib/site-articles';
 
 /** Hero icon, frame, and CTA link colors - one set per article tag (matches flagship article pages). */
-export const ARTICLE_TAG_VISUALS: Record<
+const ARTICLE_TAG_VISUALS: Record<
   ArticleTag,
   {
     Icon: typeof Shield01Icon;

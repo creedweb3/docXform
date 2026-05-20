@@ -8,7 +8,7 @@ import { getWasmAssetRevision } from '@/lib/wasm-revision';
  */
 const STORAGE_KEY = 'docxform_wasm_cached_asset_revision';
 
-export function getClientStoredWasmRevision(): string | null {
+function getClientStoredWasmRevision(): string | null {
   if (typeof window === 'undefined') return null;
   try {
     const v = localStorage.getItem(STORAGE_KEY);
@@ -25,7 +25,7 @@ export function isCurrentWasmRevisionMarkedCached(): boolean {
 }
 
 /** Drop the client hint (e.g. after detecting HTTP cache no longer holds the WASM pair). */
-export function clearWasmRevisionCacheMark(): void {
+function clearWasmRevisionCacheMark(): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.removeItem(STORAGE_KEY);

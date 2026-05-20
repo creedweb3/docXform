@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminUserFromCookies } from '@/lib/admin-api-auth';
-import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { restDelete, restPatch, restSelect } from '@/lib/supabase-rest';
 
 export const runtime = 'edge';
 
@@ -18,27 +18,18 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 
   try {
     const { id } = await params;
-    const client = createSupabaseServiceClient();
-    const { data, error } = await client
-      .from('contact_submissions')
-      .select(
-        'id,created_at,name,email,message,status,source_page,archived_at,replied_at,user_agent'
-      )
-      .eq('id', id)
-      .maybeSingle();
+    const query = new URLSearchParams({
+      select: 'id,created_at,name,email,message,status,source_page,archived_at,replied_at,user_agent',
+      id: `eq.${id}`,
+      limit: '1',
+    });
+    const { data } = await restSelect('contact_submissions', query);
 
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to load submission.' },
-        { status: 500 }
-      );
-    }
-
-    if (!data) {
+    if (!data[0]) {
       return NextResponse.json({ error: 'Not found.' }, { status: 404 });
     }
 
-    return NextResponse.json({ item: data });
+    return NextResponse.json({ item: data[0] });
   } catch {
     return NextResponse.json(
       { error: 'Inbox service is not configured yet.' },
@@ -85,26 +76,17 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
   try {
     const { id } = await params;
-    const client = createSupabaseServiceClient();
-    const { data, error } = await client
-      .from('contact_submissions')
-      .update(updates)
-      .eq('id', id)
-      .select('id,status,archived_at,replied_at')
-      .maybeSingle();
+    const query = new URLSearchParams({
+      id: `eq.${id}`,
+      select: 'id,status,archived_at,replied_at',
+    });
+    const data = await restPatch('contact_submissions', query, updates);
 
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to update submission.' },
-        { status: 500 }
-      );
-    }
-
-    if (!data) {
+    if (!data[0]) {
       return NextResponse.json({ error: 'Not found.' }, { status: 404 });
     }
 
-    return NextResponse.json({ item: data });
+    return NextResponse.json({ item: data[0] });
   } catch {
     return NextResponse.json(
       { error: 'Inbox service is not configured yet.' },
@@ -124,18 +106,8 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const client = createSupabaseServiceClient();
-    const { error } = await client
-      .from('contact_submissions')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to delete submission.' },
-        { status: 500 }
-      );
-    }
+    const query = new URLSearchParams({ id: `eq.${id}` });
+    await restDelete('contact_submissions', query);
 
     return NextResponse.json({ ok: true });
   } catch {

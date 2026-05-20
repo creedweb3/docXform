@@ -1,0 +1,505 @@
+import {
+  Files01Icon,
+  SplitIcon,
+  Image01Icon,
+  ImageDownloadIcon,
+  Presentation02Icon,
+  Presentation01Icon,
+  Shield01Icon,
+  Pdf01Icon,
+  Doc01Icon,
+  Ppt01Icon,
+  FileImageIcon,
+  GitMergeIcon,
+  Minimize01Icon,
+  FileSecurityIcon,
+  RotateClockwiseIcon,
+  HierarchyFilesIcon,
+  DropletIcon,
+  FileUnlockedIcon,
+  TextIcon,
+  Image02Icon,
+  TaskEdit01Icon,
+} from '@hugeicons/core-free-icons';
+import { formatCatalogTokens, getFormatTone, type ToolFormat } from '@/lib/format-tone';
+
+export type { ToolFormat } from '@/lib/format-tone';
+
+export type ToolIntent = 'edit' | 'convert' | 'optimize' | 'extract' | 'privacy';
+
+/** Primary file family + job intents (used for tools index filters). */
+export const TOOL_TAXONOMY: Record<string, { format: ToolFormat; intents: ToolIntent[] }> = {
+  'pdf-merge': { format: 'pdf', intents: ['edit'] },
+  'pdf-split': { format: 'pdf', intents: ['edit'] },
+  'pdf-compress': { format: 'pdf', intents: ['optimize'] },
+  'pdf-to-images': { format: 'pdf', intents: ['convert'] },
+  'images-to-pdf': { format: 'image', intents: ['convert'] },
+  'pptx-to-pdf': { format: 'pptx', intents: ['convert'] },
+  'docx-to-pptx': { format: 'docx', intents: ['convert'] },
+  'docx-scrub': { format: 'docx', intents: ['privacy'] },
+  'pdf-rotate': { format: 'pdf', intents: ['edit'] },
+  'pdf-organize': { format: 'pdf', intents: ['edit'] },
+  'pdf-watermark': { format: 'pdf', intents: ['edit'] },
+  'pdf-unlock': { format: 'pdf', intents: ['edit'] },
+  'pdf-to-text': { format: 'pdf', intents: ['extract'] },
+  'image-convert': { format: 'image', intents: ['convert'] },
+  'image-compress': { format: 'image', intents: ['optimize'] },
+  'docx-to-text': { format: 'docx', intents: ['extract'] },
+};
+
+export type ToolDefinition = {
+  slug: string;
+  format: ToolFormat;
+  intents: ToolIntent[];
+  name: string;
+  description: string;
+  accentClass: string;
+  badgeClass: string;
+  buttonClass: string;
+  icon: typeof Files01Icon;
+  iconPair: {
+    back: typeof Files01Icon;
+    front: typeof Files01Icon;
+  };
+  /** Derived from {@link FORMAT_TONE} by file type. */
+  tone: import('@/components/tools/tone-styles').FormatTone;
+  keywords: string[];
+  metaTitle: string;
+  metaDescription: string;
+  howToSteps: string[];
+  faqs: { q: string; a: string }[];
+  features: string[];
+  capabilities?: {
+    preview?: boolean;
+    batch?: boolean;
+    pageRange?: boolean;
+    zipOutput?: boolean;
+    qualityControls?: boolean;
+  };
+  /** Optional wider layout for tools with a two-column studio workspace. */
+  experienceMaxWidthClass?: string;
+};
+
+type RawToolSeed = Omit<ToolDefinition, 'format' | 'intents' | 'tone' | 'accentClass' | 'badgeClass' | 'buttonClass'>;
+
+const rawToolDefinitions: RawToolSeed[] = [
+  {
+    slug: 'pdf-merge',
+    name: 'PDF Merge',
+    description: 'Combine multiple PDFs in-browser; no upload, keep order.',
+    icon: Files01Icon,
+    iconPair: { back: Pdf01Icon, front: GitMergeIcon },
+    keywords: ['merge pdf', 'combine pdf', 'offline pdf merge'],
+    metaTitle: 'PDF Merge – combine PDFs in your browser | docXform',
+    metaDescription: 'Merge PDFs locally with no uploads. Keep page order, privacy-first, WebAssembly fast.',
+    howToSteps: [
+      'Open the PDF Merge tool and add your PDF files',
+      'Arrange files in the order you want',
+      'Click Process locally to merge without uploading',
+      'Download your combined PDF',
+    ],
+    faqs: [
+      { q: 'Do you upload my PDFs?', a: 'No. Merging runs in your browser via WebAssembly; files stay on your device.' },
+      { q: 'Can I reorder files?', a: 'Yes. Add files, then arrange before processing.' },
+      { q: 'Is there a size limit?', a: 'Large PDFs work, but memory is limited by your browser; start with fewer/lighter files if constrained.' },
+      { q: 'Will bookmarks be kept?', a: 'Basic structure is preserved when possible; complex outlines may vary.' },
+    ],
+    features: ['Local-only processing', 'Reorder before merge', 'No signup, no watermark'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'pdf-split',
+    name: 'PDF Split',
+    description: 'Extract or split PDF ranges locally with page selection.',
+    icon: SplitIcon,
+    iconPair: { back: Pdf01Icon, front: SplitIcon },
+    keywords: ['split pdf', 'extract pdf pages', 'split pdf offline'],
+    metaTitle: 'Split PDF – extract pages locally | docXform',
+    metaDescription: 'Split PDF pages without uploads. Choose ranges, extract in-browser, privacy-first.',
+    howToSteps: [
+      'Open the PDF Split tool and add your PDF',
+      'Enter page ranges or choose split-by ranges',
+      'Click Process locally to split without uploading',
+      'Download your split PDFs',
+    ],
+    faqs: [
+      { q: 'Is my PDF uploaded?', a: 'No. Splitting runs in your browser; files remain on your device.' },
+      { q: 'Can I pick exact pages?', a: 'Yes. Use ranges like 1-3,5,8 or even/odd patterns.' },
+      { q: 'Do links or bookmarks remain?', a: 'Basic links usually stay; complex outlines may change after split.' },
+    ],
+    features: ['Custom ranges', 'Even/odd options', 'Local processing'],
+    capabilities: { preview: true, batch: false, pageRange: true, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'pdf-compress',
+    name: 'PDF Compress',
+    description: 'Shrink PDFs with on-device quality presets and image downsampling.',
+    icon: Files01Icon,
+    iconPair: { back: Pdf01Icon, front: Minimize01Icon },
+    keywords: ['compress pdf', 'reduce pdf size', 'shrink pdf offline'],
+    metaTitle: 'Compress PDF – reduce size locally | docXform',
+    metaDescription: 'Compress PDFs on-device with quality presets and image downsampling. No uploads.',
+    howToSteps: [
+      'Open the PDF Compress tool and add your PDF',
+      'Choose a quality preset (smaller vs higher quality)',
+      'Click Process locally to compress without uploading',
+      'Download the compressed PDF',
+    ],
+    faqs: [
+      { q: 'Are my PDFs uploaded?', a: 'No. Compression runs locally in your browser; nothing leaves your device.' },
+      { q: 'What presets exist?', a: 'Light, Balanced, and Max reduce image resolution progressively for smaller files.' },
+      { q: 'Does this change appearance?', a: 'Images are recompressed; text and vector artwork are flattened to preserve layout while saving space.' },
+    ],
+    features: ['Quality presets', 'Image downsampling', 'Local-only compression'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: true },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'pdf-to-images',
+    name: 'PDF to Images',
+    description: 'Export PDF pages to PNG/JPEG without uploads.',
+    icon: Image01Icon,
+    iconPair: { back: Pdf01Icon, front: FileImageIcon },
+    keywords: ['pdf to png', 'pdf to jpg', 'export pdf pages'],
+    metaTitle: 'PDF to Images – export pages locally | docXform',
+    metaDescription: 'Convert PDF pages to PNG or JPEG on-device. No uploads, privacy-first, quick exports.',
+    howToSteps: [
+      'Open PDF to Images and add your PDF',
+      'Choose PNG or JPEG and desired resolution',
+      'Click Process locally to render pages in-browser',
+      'Download the exported images',
+    ],
+    faqs: [
+      { q: 'Do you upload my PDF?', a: 'No. Rendering happens in your browser; files stay local.' },
+      { q: 'Can I choose format and DPI?', a: 'Yes. Pick PNG/JPEG and a resolution preset to balance size and clarity.' },
+      { q: 'Large PDFs?', a: 'Works locally; very large files may need lower DPI to fit memory.' },
+    ],
+    features: ['PNG or JPEG output', 'Resolution presets', 'On-device rendering'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: true },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'images-to-pdf',
+    name: 'Images to PDF',
+    description: 'Batch images into a single PDF, all in your browser.',
+    icon: ImageDownloadIcon,
+    iconPair: { back: FileImageIcon, front: Pdf01Icon },
+    keywords: ['jpg to pdf', 'png to pdf', 'images to pdf'],
+    metaTitle: 'Images to PDF – batch convert locally | docXform',
+    metaDescription: 'Combine JPG/PNG into one PDF on-device. No uploads, privacy-safe, order control.',
+    howToSteps: [
+      'Open Images to PDF and add your images',
+      'Reorder if needed and choose page fit',
+      'Click Process locally to build the PDF',
+      'Download your merged PDF',
+    ],
+    faqs: [
+      { q: 'Are images uploaded?', a: 'No. Conversion happens locally; nothing leaves your device.' },
+      { q: 'Can I reorder?', a: 'Yes. Arrange images before processing.' },
+      { q: 'How are images fit?', a: 'Choose fit-to-page or maintain aspect with margins.' },
+    ],
+    features: ['Reorder images', 'Fit-to-page options', 'Local conversion'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: false, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'pptx-to-pdf',
+    name: 'PPTX to PDF',
+    description: 'Convert PowerPoint to PDF locally with slides intact.',
+    icon: Presentation02Icon,
+    iconPair: { back: Ppt01Icon, front: Pdf01Icon },
+    keywords: ['ppt to pdf', 'pptx to pdf', 'slides to pdf'],
+    metaTitle: 'PPTX to PDF – convert slides locally | docXform',
+    metaDescription: 'Convert PPTX to PDF on-device. No uploads, keep layout and fonts where possible.',
+    howToSteps: [
+      'Open PPTX to PDF and add your presentation',
+      'Confirm slide range and layout fidelity',
+      'Click Process locally to render to PDF in-browser',
+      'Download the PDF slides',
+    ],
+    faqs: [
+      { q: 'Is my deck uploaded?', a: 'No. Rendering stays in your browser; files remain local.' },
+      { q: 'Will fonts match?', a: 'System-available fonts render best; embedded fonts help. Results stay close, but check complex decks.' },
+      { q: 'Animations?', a: 'Static rendering; animations are not preserved in PDF.' },
+    ],
+    features: ['Local rendering', 'Slide range', 'Layout fidelity focus'],
+    capabilities: { preview: false, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'docx-to-pptx',
+    name: 'DOCX to PPTX',
+    description: 'Turn Word docs into slides quickly, on-device.',
+    icon: Presentation01Icon,
+    iconPair: { back: Doc01Icon, front: Ppt01Icon },
+    keywords: ['word to ppt', 'docx to pptx', 'doc to ppt'],
+    metaTitle: 'DOCX to PPTX – create slides locally | docXform',
+    metaDescription: 'Generate PPTX slides from Word on-device. No uploads, privacy-first, fast outline-to-slides.',
+    howToSteps: [
+      'Open DOCX to PPTX and add your document',
+      'Pick an outline style (headings to slides)',
+      'Click Process locally to build slides in-browser',
+      'Download the PPTX',
+    ],
+    faqs: [
+      { q: 'Is my doc uploaded?', a: 'No. Conversion runs locally; content stays on your device.' },
+      { q: 'How are slides formed?', a: 'Headings become slides; body text becomes bullets. Review complex formatting after export.' },
+      { q: 'Images?', a: 'Inline images are placed on related slides when possible.' },
+    ],
+    features: ['Heading-to-slide mapping', 'Local-only processing', 'Inline images when possible'],
+    capabilities: { preview: false, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'docx-scrub',
+    name: 'DOCX Metadata Scrub',
+    description: 'Strip comments and properties for clean shareable docs.',
+    icon: Shield01Icon,
+    iconPair: { back: Doc01Icon, front: FileSecurityIcon },
+    keywords: ['remove metadata', 'clean docx', 'strip comments'],
+    metaTitle: 'DOCX Metadata Scrub – clean docs locally | docXform',
+    metaDescription: 'Remove comments and metadata from DOCX on-device. Keep privacy, ship clean files.',
+    howToSteps: [
+      'Open DOCX Scrub and add your DOCX',
+      'Choose what to remove (comments, properties)',
+      'Click Process locally to scrub in-browser',
+      'Download the cleaned DOCX',
+    ],
+    faqs: [
+      { q: 'Is my DOCX uploaded?', a: 'No. Scrubbing runs locally; nothing leaves your device.' },
+      { q: 'What is removed?', a: 'Comments, document properties, and revision marks when present.' },
+      { q: 'Does layout change?', a: 'Content stays; tracked changes removal may accept changes—review before sharing.' },
+    ],
+    features: ['Remove comments/properties', 'Local privacy', 'Share-ready output'],
+    capabilities: { preview: false, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'pdf-rotate',
+    name: 'PDF Rotate',
+    description: 'Rotate all or selected PDF pages in your browser.',
+    icon: RotateClockwiseIcon,
+    iconPair: { back: Pdf01Icon, front: RotateClockwiseIcon },
+    keywords: ['rotate pdf', 'pdf orientation', 'rotate pages offline'],
+    metaTitle: 'PDF Rotate – flip pages locally | docXform',
+    metaDescription: 'Rotate every page or just odd/even pages of a PDF in your browser. No uploads, free, privacy-first.',
+    howToSteps: [
+      'Open PDF Rotate and add your PDF',
+      'Pick an angle and whether to rotate all, odd, or even pages',
+      'Click Process locally to rotate without uploads',
+      'Download the rotated PDF',
+    ],
+    faqs: [
+      { q: 'Do you upload my PDF?', a: 'No. Rotation is performed in your browser with pdf-lib.' },
+      { q: 'Can I rotate selected pages?', a: 'Yes. Choose all, only odd, or only even pages.' },
+      { q: 'Are my files re-encoded?', a: 'No. Only the page rotation metadata is updated.' },
+    ],
+    features: ['Quick 90/180/270 rotation', 'Odd/even scope', 'Local-only processing'],
+    capabilities: { preview: true, batch: true, pageRange: true, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'pdf-organize',
+    name: 'PDF Organize',
+    description: 'Reorder or delete PDF pages without uploads.',
+    icon: HierarchyFilesIcon,
+    iconPair: { back: Pdf01Icon, front: HierarchyFilesIcon },
+    keywords: ['reorder pdf', 'delete pdf pages', 'arrange pdf'],
+    metaTitle: 'Reorder & Delete PDF Pages – locally | docXform',
+    metaDescription: 'Rearrange and remove PDF pages in your browser. No uploads, free, privacy-first.',
+    howToSteps: [
+      'Open PDF Organize and add your PDF',
+      'Enter the page order you want, e.g. 1,3,5-7',
+      'Click Process locally to rebuild the PDF',
+      'Download the reorganized PDF',
+    ],
+    faqs: [
+      { q: 'How do I delete pages?', a: 'Omit them from the order list. Anything not listed is dropped.' },
+      { q: 'Do you support page ranges?', a: 'Yes. Use ranges like 1-3 mixed with single pages.' },
+      { q: 'Is my PDF uploaded?', a: 'No. Reordering uses pdf-lib in your browser only.' },
+    ],
+    features: ['Drag-friendly ranges', 'Delete by omission', 'Local-only processing'],
+    capabilities: { preview: true, batch: false, pageRange: true, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'pdf-watermark',
+    name: 'PDF Watermark',
+    description: 'Add a custom text watermark to every page.',
+    icon: DropletIcon,
+    iconPair: { back: Pdf01Icon, front: DropletIcon },
+    keywords: ['watermark pdf', 'stamp pdf', 'confidential watermark'],
+    metaTitle: 'PDF Watermark – stamp pages locally | docXform',
+    metaDescription: 'Add a custom text watermark to PDF pages in your browser. No uploads, free, privacy-first.',
+    howToSteps: [
+      'Open PDF Watermark and add your PDF',
+      'Type the watermark text and pick a position',
+      'Adjust opacity, size, and color',
+      'Click Process locally and download the stamped PDF',
+    ],
+    faqs: [
+      { q: 'Is the watermark removable?', a: 'It is rendered into each page. Removal would require redoing layout.' },
+      { q: 'Can I tile across the page?', a: 'Yes. Choose Tile for repeated diagonal watermarks.' },
+      { q: 'Is my PDF uploaded?', a: 'No. Watermarking happens in your browser with pdf-lib.' },
+    ],
+    features: ['Text watermark', 'Position presets', 'Opacity & color control'],
+    capabilities: { preview: true, batch: true, pageRange: true, zipOutput: true, qualityControls: true },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'pdf-unlock',
+    name: 'PDF Unlock',
+    description: 'Remove owner restrictions on permission-locked PDFs.',
+    icon: FileUnlockedIcon,
+    iconPair: { back: Pdf01Icon, front: FileUnlockedIcon },
+    keywords: ['unlock pdf', 'remove pdf permissions', 'enable print copy'],
+    metaTitle: 'PDF Unlock – clear owner restrictions | docXform',
+    metaDescription: 'Remove print/copy/edit restrictions from PDFs you own. Local-only, no uploads.',
+    howToSteps: [
+      'Open PDF Unlock and add the restricted PDF',
+      'Click Process locally to strip owner restrictions',
+      'Download the unrestricted PDF',
+    ],
+    faqs: [
+      { q: 'Does this crack open-passwords?', a: 'No. Only owner restrictions on files you can already open are removed.' },
+      { q: 'Is my PDF uploaded?', a: 'No. Everything runs in your browser via pdf-lib.' },
+      { q: 'Is this legal?', a: 'Use only on documents you own or have permission to modify.' },
+    ],
+    features: ['Local-only processing', 'Restore print/copy/edit', 'No watermark added'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'pdf-to-text',
+    name: 'PDF to Text',
+    description: 'Extract clean text from PDFs without uploading.',
+    icon: TextIcon,
+    iconPair: { back: Pdf01Icon, front: TextIcon },
+    keywords: ['pdf to text', 'pdf to txt', 'extract pdf text'],
+    metaTitle: 'PDF to Text – extract content locally | docXform',
+    metaDescription: 'Pull plain text out of any text-based PDF in your browser. No uploads, free, privacy-first.',
+    howToSteps: [
+      'Open PDF to Text and add your PDF',
+      'Click Process locally to extract text in the browser',
+      'Download the .txt file or per-page snippets',
+    ],
+    faqs: [
+      { q: 'Does this OCR scanned PDFs?', a: 'No. Image-only PDFs return empty strings; use a dedicated OCR tool first.' },
+      { q: 'Is my PDF uploaded?', a: 'No. Extraction runs on-device using pdfjs.' },
+      { q: 'Can I keep per-page splits?', a: 'Yes. Per-page text and a combined transcript are both available.' },
+    ],
+    features: ['Local text extraction', 'Per-page output', 'No OCR needed for text PDFs'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'image-convert',
+    name: 'Image Convert',
+    description: 'Convert PNG, JPEG, and WebP images right in the browser.',
+    icon: FileImageIcon,
+    iconPair: { back: FileImageIcon, front: Image02Icon },
+    keywords: ['png to jpg', 'jpg to webp', 'image convert'],
+    metaTitle: 'Image Convert – swap formats locally | docXform',
+    metaDescription: 'Convert PNG, JPEG, and WebP images on-device with quality control. No uploads, free, privacy-first.',
+    howToSteps: [
+      'Open Image Convert and add your images',
+      'Pick the target format and quality',
+      'Click Process locally to encode every file in the browser',
+      'Download the converted images individually or as a zip',
+    ],
+    faqs: [
+      { q: 'Is my image uploaded?', a: 'No. Conversion uses the browser canvas API only.' },
+      { q: 'Does it support transparency?', a: 'PNG and WebP keep transparency. JPEG is auto-flattened on a white background.' },
+      { q: 'Are EXIF tags preserved?', a: 'No. Re-encoding strips EXIF metadata for privacy.' },
+    ],
+    features: ['Batch conversion', 'Quality slider', 'EXIF stripped automatically'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: true },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'image-compress',
+    name: 'Image Compress',
+    description: 'Shrink JPEG/PNG/WebP images for web or storage.',
+    icon: Minimize01Icon,
+    iconPair: { back: FileImageIcon, front: Minimize01Icon },
+    keywords: ['compress image', 'shrink jpg', 'optimize png'],
+    metaTitle: 'Image Compress – shrink locally | docXform',
+    metaDescription: 'Resize and compress images with presets in your browser. No uploads, free, privacy-first.',
+    howToSteps: [
+      'Open Image Compress and add your images',
+      'Pick a preset (Web, Balanced, or Archive)',
+      'Click Process locally to encode optimized JPEGs',
+      'Download the compressed images individually or as a zip',
+    ],
+    faqs: [
+      { q: 'How much does it shrink?', a: 'Typical web-preset savings are 50-80%, depending on the original image.' },
+      { q: 'Will it crop my image?', a: 'No. Only the longest dimension is scaled down to match the preset.' },
+      { q: 'Does it run on my device?', a: 'Yes. Canvas-based JPEG encoding stays in your browser.' },
+    ],
+    features: ['Resolution presets', 'Quality-aware JPEG', 'Local-only processing'],
+    capabilities: { preview: true, batch: true, pageRange: false, zipOutput: true, qualityControls: true },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+  {
+    slug: 'docx-to-text',
+    name: 'DOCX to TXT / Markdown',
+    description: 'Extract plain text or Markdown from Word documents.',
+    icon: TaskEdit01Icon,
+    iconPair: { back: Doc01Icon, front: TaskEdit01Icon },
+    keywords: ['docx to txt', 'docx to markdown', 'word to text'],
+    metaTitle: 'DOCX to Text & Markdown – extract locally | docXform',
+    metaDescription: 'Pull text or Markdown out of DOCX files in your browser. Headings become #, lists become -.',
+    howToSteps: [
+      'Open DOCX to TXT / Markdown and add your Word file',
+      'Choose plain text or Markdown output',
+      'Click Process locally to parse the file in-browser',
+      'Download the extracted text',
+    ],
+    faqs: [
+      { q: 'Is my DOCX uploaded?', a: 'No. JSZip and the DOM parser process the file locally.' },
+      { q: 'Does it preserve formatting?', a: 'Markdown mode preserves headings and bullet lists; plain text is line-only.' },
+      { q: 'What about images?', a: 'Images are ignored; only text content is exported.' },
+    ],
+    features: ['Markdown headings', 'Bullet list detection', 'Local-only processing'],
+    capabilities: { preview: false, batch: true, pageRange: false, zipOutput: true, qualityControls: false },
+    experienceMaxWidthClass: 'max-w-6xl',
+  },
+];
+
+export const toolDefinitions: ToolDefinition[] = rawToolDefinitions.map((tool) => {
+  const taxonomy = TOOL_TAXONOMY[tool.slug];
+  if (!taxonomy) {
+    throw new Error(`Missing TOOL_TAXONOMY for slug: ${tool.slug}`);
+  }
+  const tone = getFormatTone(taxonomy.format);
+  const tokens = formatCatalogTokens(tone);
+  return {
+    ...tool,
+    ...taxonomy,
+    tone,
+    accentClass: tokens.accentClass,
+    badgeClass: tokens.badgeClass,
+    buttonClass: tokens.buttonClass,
+  } as ToolDefinition;
+});
+
+export function getToolFormat(tool: ToolDefinition): ToolFormat {
+  return tool.format;
+}
+
+export function toolHasIntent(tool: ToolDefinition, intent: ToolIntent): boolean {
+  return tool.intents.includes(intent);
+}
+
+export function getToolBySlug(slug: string): ToolDefinition | undefined {
+  return toolDefinitions.find((t) => t.slug === slug);
+}
+
+export function toolFaqsForJsonLd(tool: ToolDefinition) {
+  return tool.faqs.map((faq) => ({
+    question: faq.q,
+    answer: faq.a,
+  }));
+}

@@ -5,7 +5,7 @@ const WX_QUERY_KEY = '_wx';
 /**
  * Cache-bust query for HTTPS WASM bases when paths are not fully versioned on CDN.
  */
-export function appendWasmRevisionQuery(url: string): string {
+function appendWasmRevisionQuery(url: string): string {
   const v = encodeURIComponent(getWasmAssetRevision());
   return `${url}${url.includes('?') ? '&' : '?'}${WX_QUERY_KEY}=${v}`;
 }

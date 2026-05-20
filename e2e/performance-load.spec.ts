@@ -76,7 +76,6 @@ test.describe('Performance: cold cache, warm repeat, converter settle', () => {
         noiseFilteredErrors: errors.filter((m) => !m.includes('favicon') && !m.includes('ads')),
       };
 
-      // eslint-disable-next-line no-console -- perf report in CI / local logs
       console.log('\n[perf]', JSON.stringify(summary, null, 2));
 
       await test.info().attach(`perf-${path === '/' ? 'home' : path.slice(1).replace(/\//g, '-')}.json`, {
@@ -118,7 +117,6 @@ test.describe('Performance: cold cache, warm repeat, converter settle', () => {
       metricsAfterSettle: await collectPaintAndNav(page),
     };
 
-    // eslint-disable-next-line no-console -- perf report
     console.log('\n[perf-converter]', JSON.stringify(summary, null, 2));
 
     await test.info().attach('perf-converter-settle.json', {
@@ -153,7 +151,6 @@ test.describe('Performance: cold cache, warm repeat, converter settle', () => {
     await expect(page.getByText('Converter ready').first()).toBeVisible({ timeout: 20_000 });
     const readyAfterNavMs = Date.now() - t0;
 
-    // eslint-disable-next-line no-console -- perf report
     console.log('\n[perf-spa-second-tool]', JSON.stringify({ readyAfterNavMs }, null, 2));
 
     await test.info().attach('perf-spa-second-tool.json', {

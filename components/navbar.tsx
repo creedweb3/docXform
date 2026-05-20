@@ -6,14 +6,23 @@ import { usePathname } from 'next/navigation';
 
 const navLinks = [
   { href: '/', label: 'Home' },
-  { href: '/word-to-pdf', label: 'Word to PDF' },
-  { href: '/pdf-to-word', label: 'PDF to Word' },
+  { href: '/tools', label: 'Tools' },
   { href: '/faq', label: 'FAQ' },
   { href: '/articles', label: 'Articles' },
 ];
 
+/** Flagship converters live outside /tools but belong in the Tools nav section. */
+const FLAGSHIP_CONVERTER_PATHS = ['/word-to-pdf', '/pdf-to-word'] as const;
+
 function linkIsActive(pathname: string, href: string) {
   if (href === '/') return pathname === '/';
+  if (href === '/tools') {
+    return (
+      pathname === '/tools' ||
+      pathname.startsWith('/tools/') ||
+      FLAGSHIP_CONVERTER_PATHS.some((path) => pathname === path)
+    );
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

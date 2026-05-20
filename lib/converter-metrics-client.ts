@@ -1,6 +1,6 @@
 'use client';
 
-export type ConverterMetricEvent =
+type ConverterMetricEvent =
   | 'warm_ready'
   | 'warm_deferred'
   | 'warm_failed'

@@ -55,7 +55,7 @@ export function formatBytes(bytes: number) {
   return `${bytes} B`;
 }
 
-export function getDynamicBatchLimitBytes(fileCount: number) {
+function getDynamicBatchLimitBytes(fileCount: number) {
   return fileCount * MAX_CONVERSION_FILE_SIZE_BYTES;
 }
 

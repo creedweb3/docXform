@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { ADMIN_SESSION_COOKIE } from '@/lib/admin-auth';
 import { getPublicAdminPath, isAllowedAdminEmail } from '@/lib/admin-config';
-import { createSupabaseAuthClient } from '@/lib/supabase-server';
+import { signInWithPassword } from '@/lib/supabase-rest';
 
 export const runtime = 'edge';
 
@@ -33,13 +33,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const authClient = createSupabaseAuthClient();
-    const { data, error } = await authClient.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const data = await signInWithPassword(email, password);
 
-    if (error || !data.session?.access_token || !data.user?.email) {
+    if (!data.access_token || !data.user?.email) {
       return NextResponse.json(
         { error: 'Invalid credentials.' },
         { status: 401 }
@@ -54,13 +50,13 @@ export async function POST(request: NextRequest) {
     }
 
     const nowInSeconds = Math.floor(Date.now() / 1000);
-    const expiresAt = data.session.expires_at ?? nowInSeconds + 3600;
+    const expiresAt = data.expires_at ?? nowInSeconds + (data.expires_in ?? 3600);
     const maxAge = Math.max(60, expiresAt - nowInSeconds);
 
     const cookieStore = await cookies();
     cookieStore.set({
       name: ADMIN_SESSION_COOKIE,
-      value: data.session.access_token,
+      value: data.access_token,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

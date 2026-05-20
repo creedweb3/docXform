@@ -47,20 +47,25 @@ test.describe('Site quality: WASM reachability, cache headers, persistent cache'
     }
   });
 
-  test('second visit with same Chromium profile is faster than cold (HTTP cache)', async () => {
+  test('second visit with same Chromium profile is faster than cold (HTTP cache)', async ({ baseURL }) => {
     test.setTimeout(600_000);
     test.skip(!!process.env.CI, 'Downloads large WASM; run locally to validate disk cache across sessions.');
+    test.skip(
+      process.env.RUN_PERSISTENT_CACHE_TEST !== '1',
+      'Set RUN_PERSISTENT_CACHE_TEST=1 to run the slow persistent-profile WASM cache check.'
+    );
 
     const userDataDir = mkdtempSync(join(tmpdir(), 'docxform-pw-profile-'));
+    const base = (baseURL ?? process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 
     const persistent1 = await chromium.launchPersistentContext(userDataDir, {
       headless: true,
     });
     const page1 = await persistent1.newPage();
     const t0 = Date.now();
-    await page1.goto('/word-to-pdf', { waitUntil: 'load', timeout: 90_000 });
+    await page1.goto(`${base}/word-to-pdf`, { waitUntil: 'load', timeout: 90_000 });
     await expect(
-      page1.getByText(/Converter ready|Loads when you convert|Service unavailable/)
+      page1.getByText(/Converter ready|Loads when you convert|Ready on demand|Service unavailable/)
     ).toBeVisible({ timeout: 240_000 });
     const firstReadyMs = Date.now() - t0;
     await persistent1.close();
@@ -70,9 +75,9 @@ test.describe('Site quality: WASM reachability, cache headers, persistent cache'
     });
     const page2 = await persistent2.newPage();
     const t1 = Date.now();
-    await page2.goto('/word-to-pdf', { waitUntil: 'load', timeout: 90_000 });
+    await page2.goto(`${base}/word-to-pdf`, { waitUntil: 'load', timeout: 90_000 });
     await expect(
-      page2.getByText(/Converter ready|Loads when you convert|Service unavailable/)
+      page2.getByText(/Converter ready|Loads when you convert|Ready on demand|Service unavailable/)
     ).toBeVisible({ timeout: 240_000 });
     const secondReadyMs = Date.now() - t1;
     await persistent2.close();
