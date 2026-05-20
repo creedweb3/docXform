@@ -1,19 +1,12 @@
 import { DocxScrubTool } from '@/components/tools/docx-scrub-tool';
 import { ToolPage } from '@/components/tools/tool-page';
 import { getToolBySlug } from '@/lib/tools';
-import { createPageMetadata } from '@/lib/seo';
+import { createToolPageMetadata } from '@/lib/seo';
 
 const slug = 'docx-scrub';
 const tool = getToolBySlug(slug);
 
-export const metadata =
-  tool &&
-  createPageMetadata({
-    title: tool.metaTitle,
-    description: tool.metaDescription,
-    path: `/tools/${slug}`,
-    keywords: tool.keywords,
-  });
+export const metadata = tool && createToolPageMetadata(tool, slug);
 
 export default function DocxScrubPage() {
   if (!tool) return null;

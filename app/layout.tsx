@@ -1,7 +1,8 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import { Inter } from 'next/font/google';
-import { AdsenseLoader } from '@/components/adsense-loader';
+import { ADSENSE_CLIENT_ID, ADSENSE_SCRIPT_SRC } from '@/lib/adsense';
 import { ConverterQueueProvider } from '@/components/converter-queue-provider';
 import { PostLcpWasmPrime } from '@/components/post-lcp-wasm-prime';
 import { WasmCacheServiceWorker } from '@/components/wasm-cache-service-worker';
@@ -63,7 +64,7 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
   },
   other: {
-    'google-adsense-account': 'ca-pub-7154775313079570',
+    'google-adsense-account': ADSENSE_CLIENT_ID,
   },
   robots: {
     index: true,
@@ -83,7 +84,13 @@ export default function RootLayout({
           id="site-schema"
           data={schemaGraph([organizationJsonLd(), websiteJsonLd()])}
         />
-        <AdsenseLoader />
+        <Script
+          id="google-adsense"
+          async
+          src={ADSENSE_SCRIPT_SRC}
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <WasmCdnResourceHints />
         <WasmCacheServiceWorker />
         <PostLcpWasmPrime />

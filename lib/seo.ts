@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import type { SiteArticle } from '@/lib/site-articles';
 import type { SiteFaq } from '@/lib/site-faqs';
+import { isToolPageAvailable } from '@/lib/tool-availability';
+import type { ToolDefinition } from '@/lib/tools';
 
 export const SITE_NAME = 'docXform';
 export const SITE_URL = 'https://www.docxform.com';
@@ -28,11 +30,13 @@ const TOOL_ROUTES = (() => {
     // Lazy import to avoid circular deps when seo utilities are used outside Next
     // contexts that already load icons. This stays synchronous for server usage.
     const { toolDefinitions }: typeof import('./tools') = require('./tools');
-    return toolDefinitions.map((tool) => ({
-      path: `/tools/${tool.slug}`,
-      priority: 0.64 as const,
-      changeFrequency: 'monthly' as const,
-    }));
+    return toolDefinitions
+      .filter((tool) => isToolPageAvailable(tool.slug))
+      .map((tool) => ({
+        path: `/tools/${tool.slug}`,
+        priority: 0.64 as const,
+        changeFrequency: 'monthly' as const,
+      }));
   } catch {
     return [];
   }
@@ -106,6 +110,18 @@ export function absoluteUrl(path = '/') {
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return normalizedPath === '/' ? SITE_URL : `${SITE_URL}${normalizedPath}`;
+}
+
+/** Per-tool metadata; noindex when the tool page is still "coming soon". */
+export function createToolPageMetadata(tool: ToolDefinition, slug: string): Metadata {
+  const available = isToolPageAvailable(slug);
+  return createPageMetadata({
+    title: tool.metaTitle,
+    description: tool.metaDescription,
+    path: `/tools/${slug}`,
+    keywords: tool.keywords,
+    robots: available ? { index: true, follow: true } : { index: false, follow: true },
+  });
 }
 
 export function createPageMetadata({

@@ -119,5 +119,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   // Exclude pdf.js worker: applying COEP `require-corp` to the worker script response
   // breaks same-origin module workers and leaves PDF preview stuck on "Loading…".
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|wasm-cache-sw.js|pdf\\.worker\\.min\\.mjs).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|ads\\.txt|wasm-cache-sw.js|pdf\\.worker\\.min\\.mjs).*)',
+  ],
 };
