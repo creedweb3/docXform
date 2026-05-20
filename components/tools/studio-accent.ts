@@ -61,6 +61,6 @@ const BY_TONE: Partial<Record<ToneKey, StudioAccent>> = {
   orange,
 };
 
-export function getStudioAccent(tone: ToneKey): StudioAccent {
-  return BY_TONE[tone] ?? rose;
+export function getStudioAccent(tone: ToneKey | undefined): StudioAccent {
+  return (tone && BY_TONE[tone]) ?? rose;
 }
