@@ -4,10 +4,10 @@ import { useCallback } from 'react';
 import {
   ToolWorkspace,
   type PdfPageGridProcessContext,
-  type WorkspaceConfig,
   type WorkspaceFile,
   type WorkspaceSurfaceApi,
 } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { PdfMergeStudioSurface } from '@/components/tools/studio/pdf-tool-studio-surfaces';
 import { mergePdfs } from '@/lib/tool-runs/pdf-merge';
 import { validatePdfFiles } from '@/lib/tool-validations';
@@ -17,20 +17,11 @@ import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-merge')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop PDFs to merge',
   hint: 'or click to browse - .pdf - reorder before processing',
   accept: '.pdf',
   allowMultiple: true,
-  cardClass: 'converter-main-card-emerald',
-  iconBoxClass: 'icon-box-emerald',
-  iconClass: 'text-emerald-600',
-  dragClass: 'ring-2 ring-emerald-300/50 bg-emerald-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-emerald-600 to-emerald-500',
-  progressClass: 'from-emerald-400 to-lime-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'PDFs ready to merge',
   actionLabel: 'Merge',
   pageGrid: { layout: 'perFile', allowReorder: true },
@@ -40,7 +31,7 @@ const config: WorkspaceConfig = {
       inside each file before merging.
     </>
   ),
-};
+});
 
 export function PdfMergeTool() {
   const processFiles = useCallback(

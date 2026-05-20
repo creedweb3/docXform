@@ -42,6 +42,7 @@ import {
 } from '@/lib/converter-eligibility';
 import { getCachedPerfProfile, getMotionBudget, getWarmScheduling } from '@/lib/perf-profile';
 import { reportConverterMetric } from '@/lib/converter-metrics-client';
+import { flagshipConverterTheme } from '@/components/tools/tool-theme';
 
 interface DocumentConverterProps {
   mode: ConversionMode;
@@ -92,17 +93,7 @@ const converterConfig = {
     outputFormat: 'pdf' as const,
     outputLabel: 'PDF',
     zipName: 'converted-pdfs.zip',
-    cardClass: 'converter-main-card-blue',
-    iconBoxClass: 'icon-box-blue',
-    iconClass: 'text-blue-500',
-    dragClass: 'ring-2 ring-blue-300/50 bg-blue-50/60 scale-[1.01]',
-    primaryButtonClass: 'from-blue-600 to-blue-500',
-    progressClass: 'from-blue-400 to-cyan-400',
-    linkClass: 'text-blue-600 hover:text-blue-700',
-    chipClass: 'border-blue-200/70 bg-white/65',
-    /* Match drop-zone card wash / border (converter-main-card-blue), not CTA blue */
-    queueScrollbarThumb: 'rgba(147, 197, 253, 0.78)',
-    queueScrollbarThumbHover: 'rgba(125, 211, 252, 0.88)',
+    ...flagshipConverterTheme('word-to-pdf'),
   },
   'pdf-to-word': {
     accept: '.pdf',
@@ -112,17 +103,7 @@ const converterConfig = {
     outputFormat: 'docx' as const,
     outputLabel: 'DOCX',
     zipName: 'converted-documents.zip',
-    cardClass: 'converter-main-card-rose',
-    iconBoxClass: 'icon-box-rose',
-    iconClass: 'text-rose-400',
-    dragClass: 'ring-2 ring-rose-300/50 bg-rose-50/60 scale-[1.01]',
-    primaryButtonClass: 'from-rose-600 to-rose-500',
-    progressClass: 'from-rose-400 to-pink-400',
-    linkClass: 'text-rose-600 hover:text-rose-700',
-    chipClass: 'border-rose-200/70 bg-white/65',
-    /* Match drop-zone card wash / border (converter-main-card-rose) */
-    queueScrollbarThumb: 'rgba(251, 182, 206, 0.78)',
-    queueScrollbarThumbHover: 'rgba(253, 164, 175, 0.88)',
+    ...flagshipConverterTheme('pdf-to-word'),
   },
 } satisfies Record<ConversionMode, Record<string, string> & {
   outputFormat: 'pdf' | 'docx';

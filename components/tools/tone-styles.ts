@@ -1,8 +1,31 @@
-import type { ToolDefinition } from '@/lib/tools';
+/** File-type brand colors (see {@link FORMAT_TONE} in lib/format-tone.ts). */
+export type FormatTone = 'rose' | 'blue' | 'purple' | 'orange';
 
-export type ToneKey = ToolDefinition['tone'];
+/** All pastel palette keys (format tones + legacy studio hues). */
+export type ToneKey =
+  | FormatTone
+  | 'emerald'
+  | 'amber'
+  | 'teal'
+  | 'cyan'
+  | 'indigo'
+  | 'slate'
+  | 'sky'
+  | 'violet'
+  | 'lime'
+  | 'fuchsia';
 
 export type ToneStyle = {
+  /** Drop zone / main workspace card (`converter-main-card-*`). */
+  mainCard: string;
+  drag: string;
+  /** Softer CTA gradient (`from-*-500 to-*-400`). */
+  primaryButton: string;
+  progress: string;
+  /** Home hero card wash where applicable (`converter-card-*`). */
+  indexCard: string;
+  /** Home hero CTA pill (`converter-cta-*`). */
+  converterCta: string;
   /** Selected card tint for PageGrid (border + background). */
   pageGridSelected: string;
   /** Tailwind class fragment for `bg-gradient-to-br` (from/to). */
@@ -21,7 +44,7 @@ export type ToneStyle = {
   chip: string;
   /** Info / hint pills in the studio (selection, drag affordance, tips). */
   studioInfoPill: string;
-  /** Small “i” mark inside {@link StudioInfoBanner} (separate from pill so contrast stays crisp). */
+  /** Small “i” mark inside {@link StudioInfoBanner}. */
   studioInfoBannerMark: string;
   /** Scrollbar thumb color (matches the tone's card wash, rgba). */
   scrollbarThumb: string;
@@ -30,7 +53,34 @@ export type ToneStyle = {
 };
 
 export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
+  blue: {
+    mainCard: 'converter-main-card-blue',
+    drag: 'ring-2 ring-blue-300/50 bg-blue-50/60 scale-[1.01]',
+    primaryButton: 'from-blue-500 to-blue-400',
+    progress: 'from-blue-400 to-cyan-400',
+    indexCard: 'converter-card-blue',
+    converterCta: 'converter-cta-blue',
+    pageGridSelected: 'border-blue-300/80 bg-blue-50/75 text-blue-900',
+    gradientText: 'from-blue-500 to-sky-400',
+    pillIcon: 'text-blue-500',
+    iconBox: 'icon-box-blue',
+    iconText: 'text-blue-500',
+    iconTextSubtle: 'text-blue-400',
+    linkText: 'text-blue-600 hover:text-blue-700',
+    chip: 'border-blue-200/70 bg-white/65',
+    studioInfoPill:
+      'border-blue-300/70 bg-blue-50/95 text-blue-950 shadow-sm ring-1 ring-blue-500/10',
+    studioInfoBannerMark: 'bg-blue-200/70 text-blue-900',
+    scrollbarThumb: 'rgba(147, 197, 253, 0.78)',
+    scrollbarThumbHover: 'rgba(125, 211, 252, 0.88)',
+  },
   emerald: {
+    mainCard: 'converter-main-card-emerald',
+    drag: 'ring-2 ring-emerald-300/50 bg-emerald-50/60 scale-[1.01]',
+    primaryButton: 'from-emerald-500 to-emerald-400',
+    progress: 'from-emerald-400 to-teal-400',
+    indexCard: 'converter-main-card-emerald',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-emerald-300/80 bg-emerald-50/75 text-emerald-900',
     gradientText: 'from-emerald-500 to-teal-400',
     pillIcon: 'text-emerald-500',
@@ -47,6 +97,12 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(52, 211, 153, 0.88)',
   },
   amber: {
+    mainCard: 'converter-main-card-amber',
+    drag: 'ring-2 ring-amber-300/50 bg-amber-50/60 scale-[1.01]',
+    primaryButton: 'from-amber-500 to-amber-400',
+    progress: 'from-amber-400 to-yellow-400',
+    indexCard: 'converter-main-card-amber',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-amber-300/80 bg-amber-50/75 text-amber-900',
     gradientText: 'from-amber-500 to-yellow-400',
     pillIcon: 'text-amber-500',
@@ -63,6 +119,12 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(245, 158, 11, 0.88)',
   },
   teal: {
+    mainCard: 'converter-main-card-teal',
+    drag: 'ring-2 ring-teal-300/50 bg-teal-50/60 scale-[1.01]',
+    primaryButton: 'from-teal-500 to-teal-400',
+    progress: 'from-teal-400 to-cyan-400',
+    indexCard: 'converter-main-card-teal',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-teal-300/80 bg-teal-50/75 text-teal-900',
     gradientText: 'from-teal-500 to-cyan-400',
     pillIcon: 'text-teal-500',
@@ -79,6 +141,12 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(45, 212, 191, 0.88)',
   },
   purple: {
+    mainCard: 'converter-main-card-purple',
+    drag: 'ring-2 ring-purple-300/50 bg-purple-50/60 scale-[1.01]',
+    primaryButton: 'from-purple-500 to-purple-400',
+    progress: 'from-purple-400 to-violet-400',
+    indexCard: 'converter-main-card-purple',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-purple-300/80 bg-purple-50/75 text-purple-900',
     gradientText: 'from-purple-500 to-violet-400',
     pillIcon: 'text-purple-500',
@@ -95,6 +163,12 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(192, 132, 252, 0.88)',
   },
   cyan: {
+    mainCard: 'converter-main-card-cyan',
+    drag: 'ring-2 ring-cyan-300/50 bg-cyan-50/60 scale-[1.01]',
+    primaryButton: 'from-cyan-500 to-cyan-400',
+    progress: 'from-cyan-400 to-sky-400',
+    indexCard: 'converter-main-card-cyan',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-cyan-300/80 bg-cyan-50/75 text-cyan-900',
     gradientText: 'from-cyan-500 to-sky-400',
     pillIcon: 'text-cyan-500',
@@ -111,6 +185,12 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(34, 211, 238, 0.88)',
   },
   orange: {
+    mainCard: 'converter-main-card-orange',
+    drag: 'ring-2 ring-orange-300/50 bg-orange-50/60 scale-[1.01]',
+    primaryButton: 'from-orange-500 to-orange-400',
+    progress: 'from-orange-400 to-amber-400',
+    indexCard: 'converter-main-card-orange',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-orange-300/80 bg-orange-50/75 text-orange-900',
     gradientText: 'from-orange-500 to-amber-400',
     pillIcon: 'text-orange-500',
@@ -127,6 +207,12 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(251, 146, 60, 0.88)',
   },
   indigo: {
+    mainCard: 'converter-main-card-indigo',
+    drag: 'ring-2 ring-indigo-300/50 bg-indigo-50/60 scale-[1.01]',
+    primaryButton: 'from-indigo-500 to-indigo-400',
+    progress: 'from-indigo-400 to-blue-400',
+    indexCard: 'converter-main-card-indigo',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-indigo-300/80 bg-indigo-50/75 text-indigo-900',
     gradientText: 'from-indigo-500 to-blue-400',
     pillIcon: 'text-indigo-500',
@@ -143,6 +229,12 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(129, 140, 248, 0.88)',
   },
   slate: {
+    mainCard: 'converter-main-card-slate',
+    drag: 'ring-2 ring-slate-300/50 bg-slate-50/60 scale-[1.01]',
+    primaryButton: 'from-slate-600 to-slate-500',
+    progress: 'from-slate-400 to-gray-400',
+    indexCard: 'converter-main-card-slate',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-slate-300/80 bg-slate-50/75 text-slate-900',
     gradientText: 'from-slate-600 to-gray-400',
     pillIcon: 'text-slate-500',
@@ -159,11 +251,17 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(148, 163, 184, 0.88)',
   },
   rose: {
+    mainCard: 'converter-main-card-rose',
+    drag: 'ring-2 ring-rose-300/50 bg-rose-50/60 scale-[1.01]',
+    primaryButton: 'from-rose-500 to-rose-400',
+    progress: 'from-rose-400 to-pink-400',
+    indexCard: 'converter-card-rose',
+    converterCta: 'converter-cta-rose',
     pageGridSelected: 'border-rose-300/80 bg-rose-50/75 text-rose-900',
     gradientText: 'from-rose-400 to-pink-400',
     pillIcon: 'text-rose-500',
     iconBox: 'icon-box-rose',
-    iconText: 'text-rose-500',
+    iconText: 'text-rose-400',
     iconTextSubtle: 'text-rose-400',
     linkText: 'text-rose-600 hover:text-rose-700',
     chip: 'border-rose-200/70 bg-white/65',
@@ -175,6 +273,12 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(253, 164, 175, 0.88)',
   },
   sky: {
+    mainCard: 'converter-main-card-sky',
+    drag: 'ring-2 ring-sky-300/50 bg-sky-50/60 scale-[1.01]',
+    primaryButton: 'from-sky-500 to-sky-400',
+    progress: 'from-sky-400 to-cyan-400',
+    indexCard: 'converter-main-card-sky',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-sky-300/80 bg-sky-50/75 text-sky-900',
     gradientText: 'from-sky-500 to-cyan-400',
     pillIcon: 'text-sky-500',
@@ -191,6 +295,12 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(56, 189, 248, 0.88)',
   },
   violet: {
+    mainCard: 'converter-main-card-violet',
+    drag: 'ring-2 ring-violet-300/50 bg-violet-50/60 scale-[1.01]',
+    primaryButton: 'from-violet-500 to-violet-400',
+    progress: 'from-violet-400 to-purple-400',
+    indexCard: 'converter-main-card-violet',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-violet-300/80 bg-violet-50/75 text-violet-900',
     gradientText: 'from-violet-500 to-purple-400',
     pillIcon: 'text-violet-500',
@@ -207,6 +317,12 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(167, 139, 250, 0.88)',
   },
   lime: {
+    mainCard: 'converter-main-card-lime',
+    drag: 'ring-2 ring-lime-300/50 bg-lime-50/60 scale-[1.01]',
+    primaryButton: 'from-lime-500 to-lime-400',
+    progress: 'from-lime-400 to-green-400',
+    indexCard: 'converter-main-card-lime',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-lime-300/80 bg-lime-50/75 text-lime-900',
     gradientText: 'from-lime-500 to-green-400',
     pillIcon: 'text-lime-500',
@@ -223,6 +339,12 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(163, 230, 53, 0.88)',
   },
   fuchsia: {
+    mainCard: 'converter-main-card-fuchsia',
+    drag: 'ring-2 ring-fuchsia-300/50 bg-fuchsia-50/60 scale-[1.01]',
+    primaryButton: 'from-fuchsia-500 to-fuchsia-400',
+    progress: 'from-fuchsia-400 to-pink-400',
+    indexCard: 'converter-main-card-fuchsia',
+    converterCta: 'converter-cta-blue',
     pageGridSelected: 'border-fuchsia-300/80 bg-fuchsia-50/75 text-fuchsia-900',
     gradientText: 'from-fuchsia-500 to-pink-400',
     pillIcon: 'text-fuchsia-500',

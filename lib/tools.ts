@@ -21,8 +21,9 @@ import {
   Image02Icon,
   TaskEdit01Icon,
 } from '@hugeicons/core-free-icons';
+import { formatCatalogTokens, getFormatTone, type ToolFormat } from '@/lib/format-tone';
 
-export type ToolFormat = 'pdf' | 'docx' | 'pptx' | 'image';
+export type { ToolFormat } from '@/lib/format-tone';
 
 export type ToolIntent = 'edit' | 'convert' | 'optimize' | 'extract' | 'privacy';
 
@@ -60,7 +61,8 @@ export type ToolDefinition = {
     back: typeof Files01Icon;
     front: typeof Files01Icon;
   };
-  tone: 'emerald' | 'amber' | 'teal' | 'purple' | 'cyan' | 'orange' | 'indigo' | 'slate' | 'rose' | 'sky' | 'violet' | 'lime' | 'fuchsia';
+  /** Derived from {@link FORMAT_TONE} by file type. */
+  tone: import('@/components/tools/tone-styles').FormatTone;
   keywords: string[];
   metaTitle: string;
   metaDescription: string;
@@ -78,17 +80,15 @@ export type ToolDefinition = {
   experienceMaxWidthClass?: string;
 };
 
-const rawToolDefinitions = [
+type RawToolSeed = Omit<ToolDefinition, 'format' | 'intents' | 'tone' | 'accentClass' | 'badgeClass' | 'buttonClass'>;
+
+const rawToolDefinitions: RawToolSeed[] = [
   {
     slug: 'pdf-merge',
     name: 'PDF Merge',
     description: 'Combine multiple PDFs in-browser; no upload, keep order.',
-    accentClass: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-    badgeClass: 'text-emerald-700 bg-emerald-100',
-    buttonClass: 'from-emerald-600 to-emerald-500',
     icon: Files01Icon,
     iconPair: { back: Pdf01Icon, front: GitMergeIcon },
-    tone: 'emerald',
     keywords: ['merge pdf', 'combine pdf', 'offline pdf merge'],
     metaTitle: 'PDF Merge – combine PDFs in your browser | docXform',
     metaDescription: 'Merge PDFs locally with no uploads. Keep page order, privacy-first, WebAssembly fast.',
@@ -112,12 +112,8 @@ const rawToolDefinitions = [
     slug: 'pdf-split',
     name: 'PDF Split',
     description: 'Extract or split PDF ranges locally with page selection.',
-    accentClass: 'bg-amber-50 text-amber-700 border-amber-100',
-    badgeClass: 'text-amber-700 bg-amber-100',
-    buttonClass: 'from-amber-500 to-amber-400',
     icon: SplitIcon,
     iconPair: { back: Pdf01Icon, front: SplitIcon },
-    tone: 'amber',
     keywords: ['split pdf', 'extract pdf pages', 'split pdf offline'],
     metaTitle: 'Split PDF – extract pages locally | docXform',
     metaDescription: 'Split PDF pages without uploads. Choose ranges, extract in-browser, privacy-first.',
@@ -140,12 +136,8 @@ const rawToolDefinitions = [
     slug: 'pdf-compress',
     name: 'PDF Compress',
     description: 'Shrink PDFs with on-device quality presets and image downsampling.',
-    accentClass: 'bg-teal-50 text-teal-700 border-teal-100',
-    badgeClass: 'text-teal-700 bg-teal-100',
-    buttonClass: 'from-teal-600 to-teal-500',
     icon: Files01Icon,
     iconPair: { back: Pdf01Icon, front: Minimize01Icon },
-    tone: 'teal',
     keywords: ['compress pdf', 'reduce pdf size', 'shrink pdf offline'],
     metaTitle: 'Compress PDF – reduce size locally | docXform',
     metaDescription: 'Compress PDFs on-device with quality presets and image downsampling. No uploads.',
@@ -168,12 +160,8 @@ const rawToolDefinitions = [
     slug: 'pdf-to-images',
     name: 'PDF to Images',
     description: 'Export PDF pages to PNG/JPEG without uploads.',
-    accentClass: 'bg-purple-50 text-purple-700 border-purple-100',
-    badgeClass: 'text-purple-700 bg-purple-100',
-    buttonClass: 'from-purple-600 to-purple-500',
     icon: Image01Icon,
     iconPair: { back: Pdf01Icon, front: FileImageIcon },
-    tone: 'purple',
     keywords: ['pdf to png', 'pdf to jpg', 'export pdf pages'],
     metaTitle: 'PDF to Images – export pages locally | docXform',
     metaDescription: 'Convert PDF pages to PNG or JPEG on-device. No uploads, privacy-first, quick exports.',
@@ -196,12 +184,8 @@ const rawToolDefinitions = [
     slug: 'images-to-pdf',
     name: 'Images to PDF',
     description: 'Batch images into a single PDF, all in your browser.',
-    accentClass: 'bg-cyan-50 text-cyan-700 border-cyan-100',
-    badgeClass: 'text-cyan-700 bg-cyan-100',
-    buttonClass: 'from-cyan-600 to-cyan-500',
     icon: ImageDownloadIcon,
     iconPair: { back: FileImageIcon, front: Pdf01Icon },
-    tone: 'cyan',
     keywords: ['jpg to pdf', 'png to pdf', 'images to pdf'],
     metaTitle: 'Images to PDF – batch convert locally | docXform',
     metaDescription: 'Combine JPG/PNG into one PDF on-device. No uploads, privacy-safe, order control.',
@@ -224,12 +208,8 @@ const rawToolDefinitions = [
     slug: 'pptx-to-pdf',
     name: 'PPTX to PDF',
     description: 'Convert PowerPoint to PDF locally with slides intact.',
-    accentClass: 'bg-orange-50 text-orange-700 border-orange-100',
-    badgeClass: 'text-orange-700 bg-orange-100',
-    buttonClass: 'from-orange-600 to-orange-500',
     icon: Presentation02Icon,
     iconPair: { back: Ppt01Icon, front: Pdf01Icon },
-    tone: 'orange',
     keywords: ['ppt to pdf', 'pptx to pdf', 'slides to pdf'],
     metaTitle: 'PPTX to PDF – convert slides locally | docXform',
     metaDescription: 'Convert PPTX to PDF on-device. No uploads, keep layout and fonts where possible.',
@@ -252,12 +232,8 @@ const rawToolDefinitions = [
     slug: 'docx-to-pptx',
     name: 'DOCX to PPTX',
     description: 'Turn Word docs into slides quickly, on-device.',
-    accentClass: 'bg-indigo-50 text-indigo-700 border-indigo-100',
-    badgeClass: 'text-indigo-700 bg-indigo-100',
-    buttonClass: 'from-indigo-600 to-indigo-500',
     icon: Presentation01Icon,
     iconPair: { back: Doc01Icon, front: Ppt01Icon },
-    tone: 'indigo',
     keywords: ['word to ppt', 'docx to pptx', 'doc to ppt'],
     metaTitle: 'DOCX to PPTX – create slides locally | docXform',
     metaDescription: 'Generate PPTX slides from Word on-device. No uploads, privacy-first, fast outline-to-slides.',
@@ -280,12 +256,8 @@ const rawToolDefinitions = [
     slug: 'docx-scrub',
     name: 'DOCX Metadata Scrub',
     description: 'Strip comments and properties for clean shareable docs.',
-    accentClass: 'bg-slate-50 text-slate-700 border-slate-200',
-    badgeClass: 'text-slate-700 bg-slate-200',
-    buttonClass: 'from-slate-700 to-slate-600',
     icon: Shield01Icon,
     iconPair: { back: Doc01Icon, front: FileSecurityIcon },
-    tone: 'slate',
     keywords: ['remove metadata', 'clean docx', 'strip comments'],
     metaTitle: 'DOCX Metadata Scrub – clean docs locally | docXform',
     metaDescription: 'Remove comments and metadata from DOCX on-device. Keep privacy, ship clean files.',
@@ -308,12 +280,8 @@ const rawToolDefinitions = [
     slug: 'pdf-rotate',
     name: 'PDF Rotate',
     description: 'Rotate all or selected PDF pages in your browser.',
-    accentClass: 'bg-sky-50 text-sky-700 border-sky-100',
-    badgeClass: 'text-sky-700 bg-sky-100',
-    buttonClass: 'from-sky-600 to-sky-500',
     icon: RotateClockwiseIcon,
     iconPair: { back: Pdf01Icon, front: RotateClockwiseIcon },
-    tone: 'sky',
     keywords: ['rotate pdf', 'pdf orientation', 'rotate pages offline'],
     metaTitle: 'PDF Rotate – flip pages locally | docXform',
     metaDescription: 'Rotate every page or just odd/even pages of a PDF in your browser. No uploads, free, privacy-first.',
@@ -336,12 +304,8 @@ const rawToolDefinitions = [
     slug: 'pdf-organize',
     name: 'PDF Organize',
     description: 'Reorder or delete PDF pages without uploads.',
-    accentClass: 'bg-violet-50 text-violet-700 border-violet-100',
-    badgeClass: 'text-violet-700 bg-violet-100',
-    buttonClass: 'from-violet-600 to-violet-500',
     icon: HierarchyFilesIcon,
     iconPair: { back: Pdf01Icon, front: HierarchyFilesIcon },
-    tone: 'violet',
     keywords: ['reorder pdf', 'delete pdf pages', 'arrange pdf'],
     metaTitle: 'Reorder & Delete PDF Pages – locally | docXform',
     metaDescription: 'Rearrange and remove PDF pages in your browser. No uploads, free, privacy-first.',
@@ -364,12 +328,8 @@ const rawToolDefinitions = [
     slug: 'pdf-watermark',
     name: 'PDF Watermark',
     description: 'Add a custom text watermark to every page.',
-    accentClass: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100',
-    badgeClass: 'text-fuchsia-700 bg-fuchsia-100',
-    buttonClass: 'from-fuchsia-600 to-fuchsia-500',
     icon: DropletIcon,
     iconPair: { back: Pdf01Icon, front: DropletIcon },
-    tone: 'fuchsia',
     keywords: ['watermark pdf', 'stamp pdf', 'confidential watermark'],
     metaTitle: 'PDF Watermark – stamp pages locally | docXform',
     metaDescription: 'Add a custom text watermark to PDF pages in your browser. No uploads, free, privacy-first.',
@@ -392,12 +352,8 @@ const rawToolDefinitions = [
     slug: 'pdf-unlock',
     name: 'PDF Unlock',
     description: 'Remove owner restrictions on permission-locked PDFs.',
-    accentClass: 'bg-rose-50 text-rose-700 border-rose-100',
-    badgeClass: 'text-rose-700 bg-rose-100',
-    buttonClass: 'from-rose-600 to-rose-500',
     icon: FileUnlockedIcon,
     iconPair: { back: Pdf01Icon, front: FileUnlockedIcon },
-    tone: 'rose',
     keywords: ['unlock pdf', 'remove pdf permissions', 'enable print copy'],
     metaTitle: 'PDF Unlock – clear owner restrictions | docXform',
     metaDescription: 'Remove print/copy/edit restrictions from PDFs you own. Local-only, no uploads.',
@@ -419,12 +375,8 @@ const rawToolDefinitions = [
     slug: 'pdf-to-text',
     name: 'PDF to Text',
     description: 'Extract clean text from PDFs without uploading.',
-    accentClass: 'bg-lime-50 text-lime-700 border-lime-100',
-    badgeClass: 'text-lime-700 bg-lime-100',
-    buttonClass: 'from-lime-600 to-lime-500',
     icon: TextIcon,
     iconPair: { back: Pdf01Icon, front: TextIcon },
-    tone: 'lime',
     keywords: ['pdf to text', 'pdf to txt', 'extract pdf text'],
     metaTitle: 'PDF to Text – extract content locally | docXform',
     metaDescription: 'Pull plain text out of any text-based PDF in your browser. No uploads, free, privacy-first.',
@@ -446,12 +398,8 @@ const rawToolDefinitions = [
     slug: 'image-convert',
     name: 'Image Convert',
     description: 'Convert PNG, JPEG, and WebP images right in the browser.',
-    accentClass: 'bg-cyan-50 text-cyan-700 border-cyan-100',
-    badgeClass: 'text-cyan-700 bg-cyan-100',
-    buttonClass: 'from-cyan-600 to-cyan-500',
     icon: FileImageIcon,
     iconPair: { back: FileImageIcon, front: Image02Icon },
-    tone: 'cyan',
     keywords: ['png to jpg', 'jpg to webp', 'image convert'],
     metaTitle: 'Image Convert – swap formats locally | docXform',
     metaDescription: 'Convert PNG, JPEG, and WebP images on-device with quality control. No uploads, free, privacy-first.',
@@ -474,12 +422,8 @@ const rawToolDefinitions = [
     slug: 'image-compress',
     name: 'Image Compress',
     description: 'Shrink JPEG/PNG/WebP images for web or storage.',
-    accentClass: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-    badgeClass: 'text-emerald-700 bg-emerald-100',
-    buttonClass: 'from-emerald-600 to-emerald-500',
     icon: Minimize01Icon,
     iconPair: { back: FileImageIcon, front: Minimize01Icon },
-    tone: 'emerald',
     keywords: ['compress image', 'shrink jpg', 'optimize png'],
     metaTitle: 'Image Compress – shrink locally | docXform',
     metaDescription: 'Resize and compress images with presets in your browser. No uploads, free, privacy-first.',
@@ -502,12 +446,8 @@ const rawToolDefinitions = [
     slug: 'docx-to-text',
     name: 'DOCX to TXT / Markdown',
     description: 'Extract plain text or Markdown from Word documents.',
-    accentClass: 'bg-slate-50 text-slate-700 border-slate-200',
-    badgeClass: 'text-slate-700 bg-slate-200',
-    buttonClass: 'from-slate-700 to-slate-600',
     icon: TaskEdit01Icon,
     iconPair: { back: Doc01Icon, front: TaskEdit01Icon },
-    tone: 'slate',
     keywords: ['docx to txt', 'docx to markdown', 'word to text'],
     metaTitle: 'DOCX to Text & Markdown – extract locally | docXform',
     metaDescription: 'Pull text or Markdown out of DOCX files in your browser. Headings become #, lists become -.',
@@ -533,7 +473,16 @@ export const toolDefinitions: ToolDefinition[] = rawToolDefinitions.map((tool) =
   if (!taxonomy) {
     throw new Error(`Missing TOOL_TAXONOMY for slug: ${tool.slug}`);
   }
-  return { ...tool, ...taxonomy } as ToolDefinition;
+  const tone = getFormatTone(taxonomy.format);
+  const tokens = formatCatalogTokens(tone);
+  return {
+    ...tool,
+    ...taxonomy,
+    tone,
+    accentClass: tokens.accentClass,
+    badgeClass: tokens.badgeClass,
+    buttonClass: tokens.buttonClass,
+  } as ToolDefinition;
 });
 
 export function getToolFormat(tool: ToolDefinition): ToolFormat {

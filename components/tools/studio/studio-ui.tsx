@@ -3,6 +3,7 @@
 import clsx from 'clsx';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Add01Icon } from '@hugeicons/core-free-icons';
+import { getStudioAccent } from '@/components/tools/studio-accent';
 import { TONE_STYLES, type ToneKey } from '@/components/tools/tone-styles';
 
 export function StudioFabStack({
@@ -87,11 +88,14 @@ export function StudioTabBar<T extends string>({
   tabs,
   value,
   onChange,
+  tone,
 }: {
   tabs: { id: T; label: string; disabled?: boolean; badge?: string }[];
   value: T;
   onChange: (id: T) => void;
+  tone: ToneKey;
 }) {
+  const accent = getStudioAccent(tone);
   return (
     <div className="flex w-full min-w-0 gap-0.5 rounded-lg bg-muted/45 p-0.5 ring-1 ring-inset ring-black/[0.04] dark:bg-muted/25 dark:ring-white/[0.06]">
       {tabs.map((t) => {
@@ -103,7 +107,7 @@ export function StudioTabBar<T extends string>({
             disabled={t.disabled}
             onClick={() => !t.disabled && onChange(t.id)}
             className={clsx(
-              'relative flex min-h-10 min-w-0 flex-1 flex-col items-center justify-center rounded-md px-1 py-1 text-[10px] font-semibold uppercase tracking-wide outline-none transition focus-visible:ring-2 focus-visible:ring-amber-400/35 focus-visible:ring-offset-1 sm:px-1.5 sm:py-1.5 sm:text-[11px]',
+              `relative flex min-h-10 min-w-0 flex-1 flex-col items-center justify-center rounded-md px-1 py-1 text-[10px] font-semibold uppercase tracking-wide outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 sm:px-1.5 sm:py-1.5 sm:text-[11px]`,
               active
                 ? 'bg-white text-foreground shadow-sm dark:bg-zinc-900 dark:text-zinc-50'
                 : 'text-muted-foreground hover:bg-white/55 hover:text-foreground dark:hover:bg-white/10',
@@ -112,7 +116,7 @@ export function StudioTabBar<T extends string>({
           >
             <span className="min-w-0 text-center leading-tight">{t.label}</span>
             {t.badge ? (
-              <span className="mt-0.5 max-w-full truncate text-center text-[8px] font-semibold text-amber-700">
+              <span className={clsx('mt-0.5 max-w-full truncate text-center text-[8px] font-semibold', accent.tabBadge)}>
                 {t.badge}
               </span>
             ) : null}
@@ -127,14 +131,17 @@ export function StudioSegmentRow<T extends string>({
   options,
   value,
   onChange,
+  tone,
   activeClassName,
 }: {
   options: { id: T; label: string; disabled?: boolean }[];
   value: T;
   onChange: (id: T) => void;
-  /** Applied to the active option button (defaults to neutral ring). */
+  tone: ToneKey;
+  /** Override active segment wash (defaults to tone palette). */
   activeClassName?: string;
 }) {
+  const accent = getStudioAccent(tone);
   return (
     <div className="flex w-full min-w-0 rounded-lg bg-muted/45 p-0.5 ring-1 ring-inset ring-black/[0.04] dark:bg-muted/25 dark:ring-white/[0.06]">
       {options.map((o) => {
@@ -146,10 +153,9 @@ export function StudioSegmentRow<T extends string>({
             disabled={o.disabled}
             onClick={() => !o.disabled && onChange(o.id)}
             className={clsx(
-              'min-w-0 flex-1 rounded-md px-1.5 py-2 text-center text-[10px] font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-amber-400/35 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-45 sm:px-2 sm:text-[11px]',
+              `min-w-0 flex-1 rounded-md px-1.5 py-2 text-center text-[10px] font-semibold outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-45 sm:px-2 sm:text-[11px]`,
               active
-                ? activeClassName ??
-                  'bg-white text-foreground shadow-sm dark:bg-zinc-900 dark:text-zinc-50'
+                ? (activeClassName ?? accent.segmentActive)
                 : 'text-muted-foreground hover:bg-white/40 hover:text-foreground dark:hover:bg-white/10'
             )}
           >

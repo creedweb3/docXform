@@ -105,7 +105,7 @@ export type WorkspaceConfig = {
   primaryButtonClass: string;
   progressClass: string;
   iconPair?: ToolDefinition['iconPair'];
-  tone?: ToolDefinition['tone'];
+  tone?: import('@/components/tools/tone-styles').ToneKey;
   storageKey?: string;
   /** Title shown above the queue card once files are added (e.g. "PDF files ready"). */
   queuedTitle?: string;

@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { ToolWorkspace, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { compressImage, type CompressPreset } from '@/lib/tool-runs/image-compress';
 import { validateImageFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
@@ -11,23 +12,14 @@ import { useLocalSetting } from '@/lib/hooks/use-local-setting';
 
 const tool = getToolBySlug('image-compress')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop images to compress',
   hint: 'or click to browse - .jpg .png .webp - encode optimized JPEGs locally',
   accept: '.jpg,.jpeg,.png,.webp',
   allowMultiple: true,
-  cardClass: 'converter-main-card-emerald',
-  iconBoxClass: 'icon-box-emerald',
-  iconClass: 'text-emerald-700',
-  dragClass: 'ring-2 ring-emerald-300/50 bg-emerald-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-emerald-600 to-emerald-500',
-  progressClass: 'from-emerald-400 to-lime-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'Images ready to compress',
   actionLabel: 'Compress',
-};
+});
 
 export function ImageCompressTool() {
   const [preset, setPreset] = useLocalSetting<CompressPreset>('docxform:image-compress:preset', 'balanced');

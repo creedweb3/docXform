@@ -142,7 +142,7 @@ export default function Home() {
                 >
                   <ToolIcon
                     pair={{ back: Doc01Icon, front: Pdf01Icon }}
-                    tone="indigo"
+                    tone="blue"
                     label="Word to PDF"
                     className="mb-6 h-[4.5rem] w-[4.5rem] rounded-2xl"
                   />

@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState, type CSSProperties, type DragEvent } fr
 import { HugeiconsIcon } from '@hugeicons/react';
 import { DragDropVerticalIcon, GitMergeIcon, Image01Icon } from '@hugeicons/core-free-icons';
 import type { WorkspaceSurfaceApi } from '@/components/tools/tool-workspace';
+import { getStudioAccent } from '@/components/tools/studio-accent';
 import { TONE_STYLES } from '@/components/tools/tone-styles';
 import type { SplitMode } from '@/lib/tool-runs/pdf-split';
 import type { RotateAngle } from '@/lib/tool-runs/pdf-rotate';
@@ -78,6 +79,51 @@ function splitGroupsForBar(mode: SplitMode, pageCount: number): number[][] {
     .filter((g) => g.length > 0);
 }
 
+/**
+ * Pack range cards into a 3-column grid:
+ * - up to three single-page ranges per row
+ * - one single + one multi-page range per row (either order)
+ * - lone multi (or when no pair fits) spans the full row
+ * - two multi ranges never share a row
+ */
+function computeRangeCardColSpans(groups: number[][]): (1 | 2 | 3)[] {
+  const spans: (1 | 2 | 3)[] = [];
+  let col = 0;
+
+  const isSingle = (i: number) => groups[i].length === 1;
+  const isMulti = (i: number) => groups[i].length > 1;
+
+  for (let gi = 0; gi < groups.length; gi++) {
+    if (isSingle(gi)) {
+      if (col >= 3) col = 0;
+      spans.push(1);
+      col += 1;
+      if (col >= 3) col = 0;
+      continue;
+    }
+
+    const prevSingle = gi > 0 && isSingle(gi - 1);
+    const nextSingle = gi < groups.length - 1 && isSingle(gi + 1);
+    const prevMulti = gi > 0 && isMulti(gi - 1);
+    const nextMulti = gi < groups.length - 1 && isMulti(gi + 1);
+
+    const canPairOnRow =
+      col <= 1 && col + 2 <= 3 && (prevSingle || nextSingle) && !prevMulti && !nextMulti;
+
+    if (canPairOnRow) {
+      spans.push(2);
+      col += 2;
+    } else {
+      if (col > 0) col = 0;
+      spans.push(3);
+      col = 3;
+    }
+    if (col >= 3) col = 0;
+  }
+
+  return spans;
+}
+
 function thumbForPage(
   st: WorkspaceSurfaceApi['gridByFileId'][string] | undefined,
   pageNum: number
@@ -93,10 +139,12 @@ function PageThumbCard({
   fillCellHeight = false,
   inlineInGroup = false,
   captionTop = false,
+  selectOutlineClass,
 }: {
   pageNum: number;
   thumb?: { status: 'ready' | 'loading' | 'error'; thumbUrl?: string; error?: string };
   highlight?: 'select' | 'out' | 'none';
+  selectOutlineClass?: string;
   /** Smaller thumb for dense range preview (side‑by‑side in a grid cell). */
   size?: 'default' | 'sm';
   /** Grow the preview area to use vertical space inside a range card. */
@@ -139,7 +187,7 @@ function PageThumbCard({
         className={clsx(
           'relative flex w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border/50 bg-white shadow-sm',
           fillCellHeight ? 'min-h-[4.5rem] flex-1' : sm ? 'h-28' : 'h-40',
-          highlight === 'select' && 'outline outline-2 outline-offset-2 outline-amber-500',
+          highlight === 'select' && selectOutlineClass,
           highlight === 'out' &&
             'border-dashed border-muted-foreground/50 bg-muted/20 ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]'
         )}
@@ -174,9 +222,9 @@ function PageThumbCard({
   );
 }
 
-/** Range preview dashed cards: single-page groups only (flex + px-3). Multi uses subgrid shells above. */
+/** Range preview dashed cards: single-page groups (one grid column). */
 const PDF_SPLIT_RANGE_CARD_CLASS =
-  'flex h-full min-h-0 w-full min-w-0 flex-col gap-2 rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-3 pb-2 pt-2 shadow-sm dark:border-zinc-500/60 dark:bg-muted/20';
+  'col-span-1 flex h-full min-h-0 w-full min-w-0 flex-col gap-2 rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-3 pb-2 pt-2 shadow-sm dark:border-zinc-500/60 dark:bg-muted/20';
 
 /**
  * Full-row multi only: inherit parent `grid-cols-3` tracks so thumbs in columns 1 & 3 line up with singles.
@@ -186,7 +234,7 @@ const PDF_SPLIT_RANGE_CARD_ALONE_MULTI_CLASS =
   'col-span-3 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-0 pb-2 pt-2 shadow-sm [grid-template-columns:subgrid] gap-x-3 gap-y-2 sm:gap-x-4 dark:border-zinc-500/60 dark:bg-muted/20';
 
 /**
- * Multi + following single on one row: span columns 1–2 of parent `grid-cols-3`; thumbs align to tracks 1 & 2.
+ * Multi paired with an adjacent single on one row: span columns 1–2; thumbs align to tracks 1 & 2.
  */
 const PDF_SPLIT_RANGE_CARD_PAIR_MULTI_CLASS =
   'col-span-2 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-0 pb-2 pt-2 shadow-sm [grid-template-columns:subgrid] gap-x-3 gap-y-2 sm:gap-x-4 dark:border-zinc-500/60 dark:bg-muted/20';
@@ -229,6 +277,7 @@ export function PdfSplitStudioSurface({
     return new Set(raw);
   }, [st, pageCount]);
   const groups = pageCount > 0 && splitTab === 'range' ? splitGroupsForBar(mode, pageCount) : [];
+  const rangeColSpans = useMemo(() => computeRangeCardColSpans(groups), [groups]);
   const rangeOutputPdfCount =
     pageCount > 0 && splitTab === 'range' && groups.length > 0
       ? mergeRangeOutputs
@@ -236,6 +285,7 @@ export function PdfSplitStudioSurface({
         : groups.length
       : 0;
   const toneKey = api.config.tone;
+  const studioAccent = getStudioAccent(toneKey);
   const scrollThumbStyle: CSSProperties | undefined =
     toneKey && TONE_STYLES[toneKey]
       ? ({
@@ -386,7 +436,7 @@ export function PdfSplitStudioSurface({
               )}
             >
               {selectThumbMode
-                ? `Amber outline = included; dimmed = skipped. Click a page to toggle.${
+                ? `Highlighted outline = included; dimmed = skipped. Click a page to toggle.${
                     reorderThumbs ? ' Drag the preview or the “Drag” row below to reorder.' : ''
                   }`
                 : 'All pages are included. Choose “Select pages” to pick a subset.'}
@@ -426,13 +476,8 @@ export function PdfSplitStudioSurface({
                 const lo = Math.min(...pages);
                 const hi = Math.max(...pages);
                 const isMultiPageRange = pages.length > 1;
-                const nextGroup = groups[gi + 1];
-                const multiSharesRowWithFollowingSingle =
-                  isMultiPageRange && nextGroup != null && nextGroup.length === 1;
-                /** Multi alone: thumbs sit in outer columns 1 & 3. With adjacent single: columns 1 & 2 only. */
-                const fullWidthMultiRow =
-                  isMultiPageRange && !multiSharesRowWithFollowingSingle;
-                return fullWidthMultiRow ? (
+                const colSpan = rangeColSpans[gi] ?? (isMultiPageRange ? 3 : 1);
+                return colSpan === 3 && isMultiPageRange ? (
                   <div key={`g-${gi}-${lo}-${hi}`} className={PDF_SPLIT_RANGE_CARD_ALONE_MULTI_CLASS}>
                     <p className="col-span-3 px-3 text-center text-[11px] font-semibold text-foreground">
                       Range {gi + 1}
@@ -452,7 +497,7 @@ export function PdfSplitStudioSurface({
                       </span>
                     </div>
                   </div>
-                ) : isMultiPageRange && multiSharesRowWithFollowingSingle ? (
+                ) : isMultiPageRange && colSpan === 2 ? (
                   <div key={`g-${gi}-${lo}-${hi}`} className={PDF_SPLIT_RANGE_CARD_PAIR_MULTI_CLASS}>
                     <p className="col-span-2 px-3 text-center text-[11px] font-semibold text-foreground">
                       Range {gi + 1}
@@ -551,6 +596,7 @@ export function PdfSplitStudioSurface({
                         thumb={thumb}
                         highlight={highlight}
                         captionTop={splitTab === 'pages'}
+                        selectOutlineClass={studioAccent.pageSelectOutline}
                       />
                     </div>
                     {reorderThumbs ? (

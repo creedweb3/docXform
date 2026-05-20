@@ -13,6 +13,7 @@ import { AdSlot } from '@/components/ad-slot';
 import { MAX_CONVERSION_FILE_SIZE_LABEL } from '@/lib/conversion-limits';
 import type { ToolDefinition } from '@/lib/tools';
 import { TONE_STYLES } from '@/components/tools/tone-styles';
+import { getFormatTone } from '@/components/tools/tool-theme';
 
 type ToolExperienceProps = {
   tool: ToolDefinition;
@@ -55,7 +56,7 @@ const SHARED_LEARN_LINKS = [
 ];
 
 export function ToolExperience({ tool, workspace }: ToolExperienceProps) {
-  const tone = TONE_STYLES[tool.tone];
+  const tone = TONE_STYLES[getFormatTone(tool.format)];
   const infoSections = buildInfoSections(tool);
   const featureCards = [
     {
@@ -66,13 +67,13 @@ export function ToolExperience({ tool, workspace }: ToolExperienceProps) {
     },
     {
       icon: FlashIcon,
-      iconClass: 'text-amber-500',
+      iconClass: tone.pillIcon,
       title: 'Browser based',
       subtitle: 'Runs locally',
     },
     {
       icon: SparklesIcon,
-      iconClass: 'text-emerald-500',
+      iconClass: tone.iconTextSubtle,
       title: 'Clean output',
       subtitle: 'Ready to share',
     },

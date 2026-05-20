@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { ToolWorkspace, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { docxToText, type DocxTextMode } from '@/lib/tool-runs/docx-to-text';
 import { validateDocxFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
@@ -11,23 +12,14 @@ import { useLocalSetting } from '@/lib/hooks/use-local-setting';
 
 const tool = getToolBySlug('docx-to-text')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop DOCX files to extract text',
   hint: 'or click to browse - .docx - choose plain text or Markdown',
   accept: '.docx',
   allowMultiple: true,
-  cardClass: 'converter-main-card-slate',
-  iconBoxClass: 'icon-box-slate',
-  iconClass: 'text-slate-700',
-  dragClass: 'ring-2 ring-slate-300/50 bg-slate-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-slate-700 to-slate-600',
-  progressClass: 'from-slate-500 to-slate-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'DOCX files ready to extract',
   actionLabel: 'Extract',
-};
+});
 
 export function DocxToTextTool() {
   const [mode, setMode] = useLocalSetting<DocxTextMode>('docxform:docx-to-text:mode', 'markdown');

@@ -4,10 +4,10 @@ import { useCallback } from 'react';
 import {
   ToolWorkspace,
   type PdfPageGridProcessContext,
-  type WorkspaceConfig,
   type WorkspaceFile,
   type WorkspaceSurfaceApi,
 } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { PdfRotateStudioSurface } from '@/components/tools/studio/pdf-tool-studio-surfaces';
 import { rotatePdf, type RotateAngle, type RotateScope } from '@/lib/tool-runs/pdf-rotate';
 import { parseRanges } from '@/lib/tool-runs/pdf-split';
@@ -20,20 +20,11 @@ import { useLocalSetting } from '@/lib/hooks/use-local-setting';
 
 const tool = getToolBySlug('pdf-rotate')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop a PDF to rotate',
   hint: 'or click to browse - .pdf - rotate all, odd, or even pages',
   accept: '.pdf',
   allowMultiple: true,
-  cardClass: 'converter-main-card-sky',
-  iconBoxClass: 'icon-box-sky',
-  iconClass: 'text-sky-700',
-  dragClass: 'ring-2 ring-sky-300/50 bg-sky-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-sky-600 to-sky-500',
-  progressClass: 'from-sky-400 to-blue-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'PDF ready to rotate',
   actionLabel: 'Rotate',
   pageGrid: { layout: 'perFile', allowReorder: false },
@@ -43,7 +34,7 @@ const config: WorkspaceConfig = {
       when you need finer control.
     </>
   ),
-};
+});
 
 export function PdfRotateTool() {
   const [angle, setAngle] = useLocalSetting<RotateAngle>('docxform:pdf-rotate:angle', 90);

@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { ToolWorkspace, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { compressPdf } from '@/lib/tool-runs/pdf-compress';
 import { validatePdfFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_FILE_SIZE_BYTES, MAX_CONVERSION_BATCH_FILES } from '@/lib/conversion-limits';
@@ -12,20 +13,11 @@ import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-compress')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop a PDF to compress',
   hint: 'or click to browse - .pdf - choose a quality preset',
   accept: '.pdf',
   allowMultiple: true,
-  cardClass: 'converter-main-card-teal',
-  iconBoxClass: 'icon-box-teal',
-  iconClass: 'text-teal-700',
-  dragClass: 'ring-2 ring-teal-300/50 bg-teal-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-teal-600 to-teal-500',
-  progressClass: 'from-teal-400 to-green-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'PDFs ready to compress',
   actionLabel: 'Compress',
   studioStageTitle: 'Selected PDFs',
@@ -35,7 +27,7 @@ const config: WorkspaceConfig = {
       clarity matters most.
     </>
   ),
-};
+});
 
 type Preset = 'light' | 'balanced' | 'max';
 

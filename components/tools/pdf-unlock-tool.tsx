@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { ToolWorkspace, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { unlockPdf } from '@/lib/tool-runs/pdf-unlock';
 import { validatePdfFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
@@ -10,20 +11,11 @@ import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-unlock')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop a PDF to remove permission locks',
   hint: 'or click to browse - .pdf - works for owner-restricted files you can already open',
   accept: '.pdf',
   allowMultiple: true,
-  cardClass: 'converter-main-card-rose',
-  iconBoxClass: 'icon-box-rose',
-  iconClass: 'text-rose-700',
-  dragClass: 'ring-2 ring-rose-300/50 bg-rose-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-rose-600 to-rose-500',
-  progressClass: 'from-rose-400 to-pink-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'PDFs ready to unlock',
   actionLabel: 'Unlock',
   studioStageTitle: 'Selected PDFs',
@@ -33,7 +25,7 @@ const config: WorkspaceConfig = {
       not supported here.
     </>
   ),
-};
+});
 
 export function PdfUnlockTool() {
   const footer = (

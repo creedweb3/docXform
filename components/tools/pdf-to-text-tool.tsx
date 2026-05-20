@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { ToolWorkspace, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { pdfToText } from '@/lib/tool-runs/pdf-to-text';
 import { validatePdfFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
@@ -12,20 +13,11 @@ import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-to-text')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop a PDF to extract its text',
   hint: 'or click to browse - .pdf - text-only output, no OCR',
   accept: '.pdf',
   allowMultiple: true,
-  cardClass: 'converter-main-card-lime',
-  iconBoxClass: 'icon-box-lime',
-  iconClass: 'text-lime-700',
-  dragClass: 'ring-2 ring-lime-300/50 bg-lime-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-lime-600 to-lime-500',
-  progressClass: 'from-lime-400 to-green-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'PDFs ready to extract',
   actionLabel: 'Extract',
   studioStageTitle: 'Selected PDFs',
@@ -35,7 +27,7 @@ const config: WorkspaceConfig = {
       or per-page files.
     </>
   ),
-};
+});
 
 type Mode = 'combined' | 'per-page';
 

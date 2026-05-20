@@ -4,10 +4,10 @@ import { useCallback } from 'react';
 import {
   ToolWorkspace,
   type PdfPageGridProcessContext,
-  type WorkspaceConfig,
   type WorkspaceFile,
   type WorkspaceSurfaceApi,
 } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { PdfToImagesStudioSurface } from '@/components/tools/studio/pdf-tool-studio-surfaces';
 import { pdfToImages, type ImageFormat } from '@/lib/tool-runs/pdf-to-images';
 import { validatePdfFiles } from '@/lib/tool-validations';
@@ -19,20 +19,11 @@ import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-to-images')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop a PDF to export pages as images',
   hint: 'or click to browse - .pdf - choose PNG or JPEG output',
   accept: '.pdf',
   allowMultiple: true,
-  cardClass: 'converter-main-card-purple',
-  iconBoxClass: 'icon-box-purple',
-  iconClass: 'text-purple-700',
-  dragClass: 'ring-2 ring-purple-300/50 bg-purple-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-purple-600 to-purple-500',
-  progressClass: 'from-purple-400 to-indigo-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'PDFs ready to export',
   actionLabel: 'Export',
   pageGrid: { layout: 'perFile', allowReorder: false },
@@ -42,7 +33,7 @@ const config: WorkspaceConfig = {
       or change order.
     </>
   ),
-};
+});
 
 export function PdfToImagesTool() {
   const [format, setFormat] = useLocalSetting<ImageFormat>('docxform:pdf-to-images:format', 'png');

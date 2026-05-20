@@ -4,10 +4,10 @@ import { useCallback, useState } from 'react';
 import {
   ToolWorkspace,
   type PdfPageGridProcessContext,
-  type WorkspaceConfig,
   type WorkspaceFile,
   type WorkspaceSurfaceApi,
 } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { PdfOrganizeStudioSurface } from '@/components/tools/studio/pdf-tool-studio-surfaces';
 import { organizePdf, parsePageOrder } from '@/lib/tool-runs/pdf-organize';
 import { validatePdfFiles } from '@/lib/tool-validations';
@@ -18,20 +18,11 @@ import { generatePdfPreview } from '@/lib/client-previews';
 
 const tool = getToolBySlug('pdf-organize')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop a PDF to reorder or trim pages',
   hint: 'or click to browse - .pdf - keep only the pages you list',
   accept: '.pdf',
   allowMultiple: false,
-  cardClass: 'converter-main-card-violet',
-  iconBoxClass: 'icon-box-violet',
-  iconClass: 'text-violet-700',
-  dragClass: 'ring-2 ring-violet-300/50 bg-violet-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-violet-600 to-violet-500',
-  progressClass: 'from-violet-400 to-purple-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'PDF ready to reorganize',
   actionLabel: 'Reorganize',
   pageGrid: { layout: 'single', allowReorder: true },
@@ -41,7 +32,7 @@ const config: WorkspaceConfig = {
       visually; anything omitted from the list is removed from the output.
     </>
   ),
-};
+});
 
 export function PdfOrganizeTool() {
   const [order, setOrder] = useLocalSetting<string>('docxform:pdf-organize:order', '');

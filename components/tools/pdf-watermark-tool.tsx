@@ -4,10 +4,10 @@ import { useCallback } from 'react';
 import {
   ToolWorkspace,
   type PdfPageGridProcessContext,
-  type WorkspaceConfig,
   type WorkspaceFile,
   type WorkspaceSurfaceApi,
 } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { PdfWatermarkStudioSurface } from '@/components/tools/studio/pdf-tool-studio-surfaces';
 import { watermarkPdf, type WatermarkPosition } from '@/lib/tool-runs/pdf-watermark';
 import { validatePdfFiles } from '@/lib/tool-validations';
@@ -20,20 +20,11 @@ import { parseRanges } from '@/lib/tool-runs/pdf-split';
 
 const tool = getToolBySlug('pdf-watermark')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop a PDF to add a watermark',
   hint: 'or click to browse - .pdf - choose text, position, and color',
   accept: '.pdf',
   allowMultiple: true,
-  cardClass: 'converter-main-card-fuchsia',
-  iconBoxClass: 'icon-box-fuchsia',
-  iconClass: 'text-fuchsia-700',
-  dragClass: 'ring-2 ring-fuchsia-300/50 bg-fuchsia-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-fuchsia-600 to-fuchsia-500',
-  progressClass: 'from-fuchsia-400 to-pink-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'PDF ready to stamp',
   actionLabel: 'Stamp',
   pageGrid: { layout: 'perFile', allowReorder: false },
@@ -43,7 +34,7 @@ const config: WorkspaceConfig = {
       <strong>Pages</strong> grid still apply.
     </>
   ),
-};
+});
 
 function hexToRgb(hex: string) {
   const sanitized = hex.replace('#', '');

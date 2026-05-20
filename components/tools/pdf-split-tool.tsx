@@ -6,10 +6,10 @@ import { Delete02Icon } from '@hugeicons/core-free-icons';
 import {
   ToolWorkspace,
   type PdfPageGridProcessContext,
-  type WorkspaceConfig,
   type WorkspaceFile,
   type WorkspaceSurfaceApi,
 } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { PdfSplitStudioSurface } from '@/components/tools/studio/pdf-tool-studio-surfaces';
 import {
   splitPdf,
@@ -21,10 +21,12 @@ import { validatePdfFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
 import { getToolBySlug } from '@/lib/tools';
 import { generatePdfPreview } from '@/lib/client-previews';
+import { getStudioAccent } from '@/components/tools/studio-accent';
 import { StudioInfoBanner, StudioSegmentRow, StudioTabBar } from '@/components/tools/studio/studio-ui';
 import { TONE_STYLES } from '@/components/tools/tone-styles';
 
 const tool = getToolBySlug('pdf-split')!;
+const studioAccent = getStudioAccent(tool.tone);
 
 const PDF_SPLIT_RANGE_SCROLL_STYLE = {
   '--queue-scrollbar-thumb': TONE_STYLES[tool.tone].scrollbarThumb,
@@ -116,20 +118,11 @@ function isFullPageSelection(
   return true;
 }
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop a PDF to split',
   hint: 'or click to browse - .pdf — range, fixed intervals, or pick pages',
   accept: '.pdf',
   allowMultiple: false,
-  cardClass: 'converter-main-card-amber',
-  iconBoxClass: 'icon-box-amber',
-  iconClass: 'text-amber-700',
-  dragClass: 'ring-2 ring-amber-300/50 bg-amber-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-amber-500 to-amber-400',
-  progressClass: 'from-amber-400 to-orange-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'PDF ready to split',
   actionLabel: 'Split',
   pageGrid: {
@@ -145,7 +138,7 @@ const config: WorkspaceConfig = {
       to reorder.
     </>
   ),
-};
+});
 
 export function PdfSplitTool() {
   const [splitTab, setSplitTab] = useState<SplitSidebarTab>('range');
@@ -249,6 +242,7 @@ export function PdfSplitTool() {
           >
             <div className="mb-1 shrink-0">
               <StudioTabBar<SplitSidebarTab>
+                tone={tool.tone}
                 tabs={[
                   { id: 'range', label: 'Range' },
                   { id: 'pages', label: 'Pages' },
@@ -264,6 +258,7 @@ export function PdfSplitTool() {
                 <h3 className="shrink-0 text-xs font-semibold uppercase tracking-wide text-foreground">Range mode</h3>
                 <div className="shrink-0">
                   <StudioSegmentRow<RangeModeUi>
+                    tone={tool.tone}
                     options={[
                       { id: 'custom', label: 'Custom' },
                       { id: 'fixed', label: 'Fixed' },
@@ -280,7 +275,6 @@ export function PdfSplitTool() {
                         setMode({ kind: 'every', interval: Math.max(1, interval) });
                       }
                     }}
-                    activeClassName="bg-amber-100/90 text-amber-950 dark:bg-amber-900/45 dark:text-amber-50"
                   />
                 </div>
                 {rangeModeUi === 'custom' ? (
@@ -303,10 +297,7 @@ export function PdfSplitTool() {
                               aria-label={`Range ${idx + 1}`}
                               className="flex shrink-0 min-h-[1.75rem] min-w-0 flex-nowrap items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 dark:bg-white/[0.06]"
                             >
-                              <div
-                                className="flex h-7 w-7 shrink-0 flex-none items-center justify-center rounded-lg bg-amber-100/90 text-[11px] font-bold tabular-nums leading-none text-amber-950 dark:bg-amber-900/50 dark:text-amber-50"
-                                aria-hidden
-                              >
+                              <div className={studioAccent.rangeIndexBadge} aria-hidden>
                                 {idx + 1}
                               </div>
 
@@ -359,11 +350,7 @@ export function PdfSplitTool() {
                         })}
                       </CustomPageRangeListViewport>
                     ) : null}
-                    <button
-                      type="button"
-                      onClick={addCustomRange}
-                      className="w-full shrink-0 rounded-lg bg-amber-500/14 py-2 text-[11px] font-semibold text-amber-950 ring-1 ring-inset ring-amber-600/20 transition hover:bg-amber-500/22 dark:bg-amber-500/12 dark:text-amber-50 dark:ring-amber-400/25"
-                    >
+                    <button type="button" onClick={addCustomRange} className={studioAccent.addRangeButton}>
                       + Add range
                     </button>
                     <label className="flex shrink-0 cursor-pointer items-start gap-2.5 rounded-lg bg-muted/40 px-3 py-2.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
@@ -405,6 +392,7 @@ export function PdfSplitTool() {
               <div className="mt-4 shrink-0 space-y-4 border-t border-border/15 pt-4">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-foreground">Extract mode</h3>
                 <StudioSegmentRow<ExtractMode>
+                  tone={tool.tone}
                   options={[
                     { id: 'all', label: 'Extract all pages' },
                     { id: 'select', label: 'Select pages' },
@@ -414,7 +402,6 @@ export function PdfSplitTool() {
                     setExtractMode(id);
                     if (id === 'all' && file) api.selectAllPagesForFile(file.id);
                   }}
-                  activeClassName="bg-amber-100/90 text-amber-950 dark:bg-amber-900/45 dark:text-amber-50"
                 />
                 <label className="flex cursor-pointer items-start gap-3 rounded-lg bg-muted/40 px-3 py-2.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
                   <input

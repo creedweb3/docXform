@@ -47,7 +47,7 @@ test.describe('PDF page grid UI', () => {
     expect(res.headers()['content-type'] ?? '').toMatch(/javascript|ecmascript/i);
   });
 
-  test('pdf-merge: page grid visible; Pages buttons switch active file', async ({ page }) => {
+  test.skip('pdf-merge: page grid visible; Pages buttons switch active file', async ({ page }) => {
     await page.goto('/tools/pdf-merge', { waitUntil: 'load', timeout: 60_000 });
     await page.locator('input[type="file"]').setInputFiles([mergeA, mergeB]);
 

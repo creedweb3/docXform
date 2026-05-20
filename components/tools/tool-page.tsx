@@ -1,7 +1,9 @@
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { JsonLd } from '@/components/json-ld';
+import { ToolComingSoon } from '@/components/tools/tool-coming-soon';
 import { ToolExperience } from '@/components/tools/tool-experience';
+import { isToolPageAvailable } from '@/lib/tool-availability';
 import {
   breadcrumbJsonLd,
   faqPageJsonLd,
@@ -18,6 +20,7 @@ type ToolPageProps = {
 
 export function ToolPage({ tool, workspace }: ToolPageProps) {
   const path = `/tools/${tool.slug}`;
+  const available = isToolPageAvailable(tool.slug);
 
   return (
     <>
@@ -46,7 +49,11 @@ export function ToolPage({ tool, workspace }: ToolPageProps) {
       <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
         <main className="flex-1 flex flex-col items-center px-6 pt-[8.5rem] sm:pt-[9rem] pb-12">
-          <ToolExperience tool={tool} workspace={workspace} />
+          {available ? (
+            <ToolExperience tool={tool} workspace={workspace} />
+          ) : (
+            <ToolComingSoon tool={tool} />
+          )}
         </main>
         <Footer />
       </div>

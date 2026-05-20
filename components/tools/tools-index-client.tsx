@@ -19,8 +19,19 @@ import {
   type ToolFormat,
   type ToolIntent,
 } from '@/lib/tools';
+import { isToolPageAvailable } from '@/lib/tool-availability';
 import { ToolIcon } from '@/components/tools/tool-icon';
 import { TONE_TEXT_GRADIENT } from '@/components/tools/tone-styles';
+import {
+  FILTER_MODE_THUMB_ACTIVE,
+  FILTER_PILL_ACTIVE,
+  FORMAT_ACCENT,
+  getFormatTone,
+  INTENT_ACCENT,
+  TOOLS_INDEX_UTILITY_CARD,
+  toolsIndexCoreCardClass,
+  toolsIndexLinkClass,
+} from '@/components/tools/tool-theme';
 
 type FormatFilter = 'all' | ToolFormat;
 type IntentFilter = 'all' | ToolIntent;
@@ -34,6 +45,11 @@ const FORMAT_LABEL: Record<FormatFilter, string> = {
 };
 
 const FORMAT_ORDER: FormatFilter[] = ['all', 'pdf', 'docx', 'pptx', 'image'];
+
+/** Stable file-type blocks when "All tools" is selected (rose → blue → orange → purple). */
+const FORMAT_DISPLAY_ORDER: ToolFormat[] = ['pdf', 'docx', 'pptx', 'image'];
+
+const INTENT_DISPLAY_ORDER: ToolIntent[] = ['edit', 'convert', 'optimize', 'extract', 'privacy'];
 
 const INTENT_LABEL: Record<IntentFilter, string> = {
   all: 'All jobs',
@@ -82,7 +98,7 @@ const CORE_CONVERTERS = [
     name: 'Word to PDF',
     description: 'Convert DOC, DOCX, and Word files to PDF in your browser.',
     iconPair: { back: Doc01Icon, front: Pdf01Icon },
-    tone: 'indigo' as const,
+    tone: 'blue' as const,
   },
   {
     href: '/pdf-to-word',
@@ -109,14 +125,14 @@ function filterPillClass(active: boolean) {
   if (!active) {
     return `${base} border border-slate-200/90 bg-white font-medium text-muted-foreground shadow-sm transition hover:border-slate-300 hover:text-foreground focus-visible:ring-blue-500/30`;
   }
-  return `${base} bg-gradient-to-br from-blue-600 to-blue-500 font-semibold text-white shadow-sm focus-visible:ring-blue-500/40`;
+  return `${base} ${FILTER_PILL_ACTIVE} focus-visible:ring-blue-500/40`;
 }
 
 function countBadgeClass(active: boolean) {
   if (!active) {
     return 'rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground tabular-nums';
   }
-  return 'rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] leading-none tabular-nums';
+  return 'rounded-full bg-blue-100/80 px-1.5 py-0.5 text-[10px] leading-none tabular-nums text-blue-800';
 }
 
 function capabilityChips(tool: ToolDefinition) {
@@ -128,6 +144,119 @@ function capabilityChips(tool: ToolDefinition) {
   if (caps.zipOutput) chips.push('ZIP output');
   if (caps.qualityControls) chips.push('Quality');
   return chips;
+}
+
+function compareToolsByName(a: ToolDefinition, b: ToolDefinition) {
+  return a.name.localeCompare(b.name);
+}
+
+function groupToolsByFormat(tools: ToolDefinition[]) {
+  return FORMAT_DISPLAY_ORDER.map((format) => ({
+    format,
+    tools: tools.filter((t) => t.format === format).sort(compareToolsByName),
+  })).filter((g) => g.tools.length > 0);
+}
+
+function groupToolsByIntent(tools: ToolDefinition[]) {
+  return INTENT_DISPLAY_ORDER.map((intent) => ({
+    intent,
+    tools: tools
+      .filter((t) => toolHasIntent(t, intent))
+      .sort((a, b) => {
+        const formatDelta =
+          FORMAT_DISPLAY_ORDER.indexOf(a.format) - FORMAT_DISPLAY_ORDER.indexOf(b.format);
+        if (formatDelta !== 0) return formatDelta;
+        return compareToolsByName(a, b);
+      }),
+  })).filter((g) => g.tools.length > 0);
+}
+
+function ToolIndexCard({ tool }: { tool: ToolDefinition }) {
+  const available = isToolPageAvailable(tool.slug);
+  const fileType = tool.format;
+  const primaryIntent = tool.intents[0];
+  const formatTone = getFormatTone(fileType);
+  const gradient = TONE_TEXT_GRADIENT[formatTone];
+  const caps = capabilityChips(tool);
+
+  const cardBody = (
+    <>
+      <div className="flex items-start gap-3">
+        <ToolIcon pair={tool.iconPair} tone={formatTone} label={`${tool.name} icon`} />
+        <div className="min-w-0 flex-1 pt-1">
+          <h3 className="text-base font-bold tracking-tight">
+            <span className={`bg-gradient-to-br bg-clip-text text-transparent ${gradient}`}>
+              {tool.name}
+            </span>
+          </h3>
+          <span className="mt-1 flex flex-wrap items-center gap-1">
+            <span
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${FORMAT_ACCENT[fileType]}`}
+            >
+              {FORMAT_LABEL[fileType]}
+            </span>
+            <span
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${INTENT_ACCENT[primaryIntent]}`}
+            >
+              {INTENT_LABEL[primaryIntent]}
+            </span>
+            {!available ? (
+              <span className="inline-flex items-center rounded-full border border-amber-200/90 bg-amber-50/95 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                Coming soon
+              </span>
+            ) : null}
+          </span>
+        </div>
+      </div>
+      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed flex-1">{tool.description}</p>
+      {caps.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {caps.map((cap) => (
+            <span
+              key={cap}
+              className="inline-flex items-center rounded-full border border-border/60 bg-white/70 px-2 py-1 text-[11px] font-medium text-muted-foreground"
+            >
+              {cap}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+          <HugeiconsIcon icon={Shield01Icon} size={11} strokeWidth={2} className="text-emerald-500" />
+          Local-only
+        </span>
+        {available ? (
+          <span className={`${toolsIndexLinkClass(formatTone)} group-hover:gap-2`}>
+            Open tool <span aria-hidden>→</span>
+          </span>
+        ) : (
+          <span className="text-xs font-medium text-muted-foreground">Coming soon</span>
+        )}
+      </div>
+    </>
+  );
+
+  if (!available) {
+    return (
+      <div
+        className={`${TOOLS_INDEX_UTILITY_CARD} cursor-default opacity-[0.88]`}
+        aria-label={`${tool.name} - coming soon`}
+      >
+        {cardBody}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={`/tools/${tool.slug}`}
+      className={TOOLS_INDEX_UTILITY_CARD}
+      aria-label={`${tool.name} - ${tool.description}`}
+    >
+      {cardBody}
+    </Link>
+  );
 }
 
 export function ToolsIndexClient() {
@@ -200,6 +329,19 @@ export function ToolsIndexClient() {
     });
   }, [filterMode, formatFilter, intentFilter, deferredQuery]);
 
+  const groupByFormat = filterMode === 'format' && formatFilter === 'all';
+  const groupByIntent = filterMode === 'intent' && intentFilter === 'all';
+
+  const formatGroups = useMemo(
+    () => (groupByFormat ? groupToolsByFormat(filtered) : []),
+    [filtered, groupByFormat]
+  );
+
+  const intentGroups = useMemo(
+    () => (groupByIntent ? groupToolsByIntent(filtered) : []),
+    [filtered, groupByIntent]
+  );
+
   return (
     <div className="w-full max-w-6xl mx-auto pt-4">
       <div className="text-center mb-8">
@@ -231,7 +373,7 @@ export function ToolsIndexClient() {
               <Link
                 key={converter.href}
                 href={converter.href}
-                className="group flex flex-col gap-4 rounded-2xl border border-white/60 glass-subtle p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className={toolsIndexCoreCardClass(converter.tone)}
                 aria-label={`${converter.name} - ${converter.description}`}
               >
                 <div className="flex items-start gap-3">
@@ -255,9 +397,7 @@ export function ToolsIndexClient() {
                     <HugeiconsIcon icon={Shield01Icon} size={11} strokeWidth={2} className="text-emerald-500" />
                     Local-only
                   </span>
-                  <span
-                    className={`inline-flex items-center gap-1.5 text-xs font-semibold bg-gradient-to-br bg-clip-text text-transparent ${gradient} group-hover:gap-2 transition-all`}
-                  >
+                  <span className={`${toolsIndexLinkClass(converter.tone)} group-hover:gap-2`}>
                     Open converter <span aria-hidden>→</span>
                   </span>
                 </div>
@@ -296,13 +436,13 @@ export function ToolsIndexClient() {
                   aria-selected={selected}
                   onClick={() => switchFilterMode(option.mode)}
                   className={`relative min-w-[5.5rem] rounded-full px-4 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/35 focus-visible:ring-offset-2 ${
-                    selected ? 'text-white' : 'text-muted-foreground hover:text-foreground'
+                    selected ? 'text-blue-800' : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {selected && (
                     <motion.span
                       layoutId="tools-filter-mode-thumb"
-                      className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-600 to-blue-500 shadow-sm"
+                      className={FILTER_MODE_THUMB_ACTIVE}
                       transition={reduceMotion ? { duration: 0 } : searchSpring}
                     />
                   )}
@@ -455,59 +595,57 @@ export function ToolsIndexClient() {
             Try a different keyword or switch the file type / job filter above.
           </p>
         </div>
+      ) : groupByFormat ? (
+        <div className="space-y-10">
+          {formatGroups.map(({ format, tools }) => (
+            <section key={format} aria-labelledby={`tools-group-${format}`}>
+              <h3
+                id={`tools-group-${format}`}
+                className={`mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${FORMAT_ACCENT[format]}`}
+              >
+                {FORMAT_LABEL[format]} tools
+                <span className="ml-1.5 tabular-nums opacity-80">{tools.length}</span>
+              </h3>
+              <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {tools.map((tool) => (
+                  <ToolIndexCard key={tool.slug} tool={tool} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : groupByIntent ? (
+        <div className="space-y-10">
+          {intentGroups.map(({ intent, tools }) => (
+            <section key={intent} aria-labelledby={`tools-job-group-${intent}`}>
+              <h3
+                id={`tools-job-group-${intent}`}
+                className={`mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${INTENT_ACCENT[intent]}`}
+              >
+                {INTENT_LABEL[intent]}
+                <span className="ml-1.5 tabular-nums opacity-80">{tools.length}</span>
+              </h3>
+              <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {tools.map((tool) => (
+                  <ToolIndexCard key={tool.slug} tool={tool} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       ) : (
         <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((tool) => {
-            const fileType = tool.format;
-            const gradient = TONE_TEXT_GRADIENT[tool.tone];
-            const caps = capabilityChips(tool);
-            return (
-              <Link
-                key={tool.slug}
-                href={`/tools/${tool.slug}`}
-                className="group flex flex-col gap-4 rounded-2xl border border-white/60 glass-subtle p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={`${tool.name} - ${tool.description}`}
-              >
-                <div className="flex items-start gap-3">
-                  <ToolIcon pair={tool.iconPair} tone={tool.tone} label={`${tool.name} icon`} />
-                  <div className="min-w-0 flex-1 pt-1">
-                    <h3 className="text-base font-bold tracking-tight">
-                      <span className={`bg-gradient-to-br bg-clip-text text-transparent ${gradient}`}>
-                        {tool.name}
-                      </span>
-                    </h3>
-                    <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-border/40 bg-white/65 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {FORMAT_LABEL[fileType]}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed flex-1">
-                  {tool.description}
-                </p>
-                {caps.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {caps.map((cap) => (
-                      <span
-                        key={cap}
-                        className="inline-flex items-center rounded-full border border-border/60 bg-white/70 px-2 py-1 text-[11px] font-medium text-muted-foreground"
-                      >
-                        {cap}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <div className="flex items-center justify-between gap-2 pt-1">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-                    <HugeiconsIcon icon={Shield01Icon} size={11} strokeWidth={2} className="text-emerald-500" />
-                    Local-only
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 group-hover:gap-2 transition-all">
-                    Open tool <span aria-hidden>→</span>
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
+          {filtered
+            .slice()
+            .sort((a, b) => {
+              const formatDelta =
+                FORMAT_DISPLAY_ORDER.indexOf(a.format) - FORMAT_DISPLAY_ORDER.indexOf(b.format);
+              if (formatDelta !== 0) return formatDelta;
+              return compareToolsByName(a, b);
+            })
+            .map((tool) => (
+              <ToolIndexCard key={tool.slug} tool={tool} />
+            ))}
         </div>
       )}
     </div>

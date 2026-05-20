@@ -3,7 +3,8 @@
 import { useCallback, useMemo } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Shield01Icon } from '@hugeicons/core-free-icons';
-import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { ToolWorkspace, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { scrubDocx, type ScrubOptions } from '@/lib/tool-runs/docx-scrub';
 import { validateDocxFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
@@ -12,23 +13,14 @@ import { useLocalSetting } from '@/lib/hooks/use-local-setting';
 
 const tool = getToolBySlug('docx-scrub')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop DOCX files to scrub',
   hint: 'or click to browse - .docx - removes comments and metadata locally',
   accept: '.docx',
   allowMultiple: true,
-  cardClass: 'converter-main-card-slate',
-  iconBoxClass: 'icon-box-slate',
-  iconClass: 'text-slate-700',
-  dragClass: 'ring-2 ring-slate-300/50 bg-slate-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-slate-700 to-slate-600',
-  progressClass: 'from-slate-500 to-slate-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'DOCX files ready to clean',
   actionLabel: 'Clean',
-};
+});
 
 export function DocxScrubTool() {
   const [options, setOptions] = useLocalSetting<ScrubOptions>('docxform:docx-scrub:options', {

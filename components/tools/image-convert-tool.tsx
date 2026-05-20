@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ToolWorkspace, type WorkspaceConfig, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { ToolWorkspace, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { convertImage, type ImageOutputFormat } from '@/lib/tool-runs/image-convert';
 import { validateImageFiles } from '@/lib/tool-validations';
 import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/lib/conversion-limits';
@@ -11,23 +12,14 @@ import { useLocalSetting } from '@/lib/hooks/use-local-setting';
 
 const tool = getToolBySlug('image-convert')!;
 
-const config: WorkspaceConfig = {
+const config = buildWorkspaceConfig(tool, {
   title: 'Drop images to convert',
   hint: 'or click to browse - .jpg .png .webp - swap formats locally',
   accept: '.jpg,.jpeg,.png,.webp',
   allowMultiple: true,
-  cardClass: 'converter-main-card-cyan',
-  iconBoxClass: 'icon-box-cyan',
-  iconClass: 'text-cyan-700',
-  dragClass: 'ring-2 ring-cyan-300/50 bg-cyan-50/60 scale-[1.01]',
-  primaryButtonClass: 'from-cyan-600 to-cyan-500',
-  progressClass: 'from-cyan-400 to-teal-400',
-  iconPair: tool.iconPair,
-  tone: tool.tone,
-  storageKey: tool.slug,
   queuedTitle: 'Images ready to convert',
   actionLabel: 'Convert',
-};
+});
 
 export function ImageConvertTool() {
   const [format, setFormat] = useLocalSetting<ImageOutputFormat>('docxform:image-convert:format', 'jpeg');
