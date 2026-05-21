@@ -217,6 +217,7 @@ export function PdfSplitStudioSurface({
   splitTab,
   extractMode,
   mergeRangeOutputs,
+  mergeExtractedIntoOne,
 }: {
   api: WorkspaceSurfaceApi;
   mode: SplitMode;
@@ -224,6 +225,8 @@ export function PdfSplitStudioSurface({
   extractMode: 'all' | 'select';
   /** When true, range split produces one merged PDF (same count logic as the sidebar info banner). */
   mergeRangeOutputs: boolean;
+  /** When true, pages export merges into one PDF. */
+  mergeExtractedIntoOne: boolean;
 }) {
   const file = api.files[0];
   const preview = file?.preview;
@@ -258,6 +261,22 @@ export function PdfSplitStudioSurface({
         ? 1
         : groups.length
       : 0;
+  const studioOutputFileCount =
+    splitTab === 'range' && rangeOutputPdfCount > 0
+      ? rangeOutputPdfCount
+      : splitTab === 'pages' && pageCount > 0
+        ? mergeExtractedIntoOne
+          ? 1
+          : extractMode === 'all'
+            ? pageCount
+            : selectedSet.size
+        : 0;
+  const studioMergeMode =
+    splitTab === 'range' ? mergeRangeOutputs : splitTab === 'pages' ? mergeExtractedIntoOne : false;
+  const studioOutputPillLabel =
+    studioOutputFileCount > 0
+      ? `${studioOutputFileCount} file${studioOutputFileCount === 1 ? '' : 's'}${studioMergeMode ? ' · Merge mode' : ''}`
+      : null;
   const toneKey = api.config.tone;
   const studioAccent = getStudioAccent(toneKey);
   const scrollThumbStyle: CSSProperties | undefined =
@@ -356,7 +375,16 @@ export function PdfSplitStudioSurface({
             {selectedSet.size}/{pageCount}
           </span>
           </div>
-        ) : pageCount > 0 ? (
+        ) : studioOutputPillLabel ? (
+          <span
+            className={clsx(
+              'inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm',
+              studioPillClass
+            )}
+          >
+            {studioOutputPillLabel}
+          </span>
+        ) : pageCount > 0 && splitTab === 'size' ? (
           <span
             className={clsx(
               'inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm',

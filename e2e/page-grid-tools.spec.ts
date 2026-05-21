@@ -37,7 +37,7 @@ test.describe('PDF page grid UI', () => {
     await page.locator('input[type="file"]').setInputFiles(twoPagePdf);
 
     await expect(page.getByText('Split preview', { exact: true })).toBeVisible({ timeout: 45_000 });
-    await expect(page.getByText('2 pages', { exact: true }).first()).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByText('1 file', { exact: true }).first()).toBeVisible({ timeout: 45_000 });
     await expect(page.getByText('Range 1', { exact: true }).first()).toBeVisible({ timeout: 45_000 });
   });
 

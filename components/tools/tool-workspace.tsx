@@ -118,6 +118,8 @@ export type WorkspaceConfig = {
   studioHint?: React.ReactNode;
   /** Label above the default file-card strip when no custom `studioSurface` is passed. */
   studioStageTitle?: string;
+  /** When true, omit per-file Download on the queue row (use CTAs or tool-specific controls instead). */
+  hideQueueItemDownload?: boolean;
 };
 
 type WorkspaceActions = {
@@ -162,6 +164,11 @@ export type WorkspaceSurfaceApi = {
   selectNoPagesForFile: (fileId: string) => void;
   reorderPagesForFile: (fileId: string, fromIndex: number, toIndex: number) => void;
   pageGridToneClass: string;
+  /** True when every queued file has finished processing successfully. */
+  allDone: boolean;
+  downloadOutput: (output: { name: string; blob: Blob }) => void;
+  /** Clears outputs and returns finished files to ready so settings can change and the tool can run again. */
+  prepareForResplit: () => void;
 };
 
 type ToolWorkspaceProps = {
@@ -1044,6 +1051,32 @@ export function ToolWorkspace({
     inputRef.current?.click();
   }, []);
 
+  const handleDownloadSingle = useCallback((output: { name: string; blob: Blob }) => {
+    const url = URL.createObjectURL(output.blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = output.name;
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, []);
+
+  const prepareForResplit = useCallback(() => {
+    setFiles((current) =>
+      current.map((f) =>
+        f.status === 'done' || f.status === 'failed'
+          ? {
+              ...f,
+              status: 'ready' as const,
+              outputs: undefined,
+              progress: undefined,
+              error: undefined,
+              message: undefined,
+            }
+          : f
+      )
+    );
+  }, []);
+
   const surfaceApi: WorkspaceSurfaceApi = useMemo(
     () => ({
       files,
@@ -1066,6 +1099,9 @@ export function ToolWorkspace({
       selectNoPagesForFile,
       reorderPagesForFile,
       pageGridToneClass,
+      allDone,
+      downloadOutput: handleDownloadSingle,
+      prepareForResplit,
     }),
     [
       files,
@@ -1086,6 +1122,9 @@ export function ToolWorkspace({
       selectNoPagesForFile,
       reorderPagesForFile,
       pageGridToneClass,
+      allDone,
+      handleDownloadSingle,
+      prepareForResplit,
     ]
   );
 
@@ -1104,15 +1143,6 @@ export function ToolWorkspace({
   useEffect(() => {
     onPageGridStateChange?.(surfaceApiRef.current);
   }, [gridByFileId, onPageGridStateChange]);
-
-  const handleDownloadSingle = useCallback((output: { name: string; blob: Blob }) => {
-    const url = URL.createObjectURL(output.blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = output.name;
-    anchor.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, []);
 
   const handleDownload = useCallback(async () => {
     if (!outputs.length) return;
@@ -1139,9 +1169,6 @@ export function ToolWorkspace({
   const renderResultChips = (item: WorkspaceFile) => {
     const chips: string[] = [];
     const outputs = item.outputs ?? [];
-    if (outputs.length > 1) {
-      chips.push(`${outputs.length} outputs`);
-    }
     const beforeBytes = item.file.size;
     const afterBytes = outputs.reduce((total, out) => total + (out.blob?.size ?? 0), 0);
     if (afterBytes > 0 && beforeBytes > 0) {
@@ -1216,7 +1243,9 @@ export function ToolWorkspace({
       >
         {files.map((item) => {
           const isReorderable = config.allowMultiple && files.length > 1 && !busy;
-          const itemOutput = item.outputs?.[0];
+          const itemOutputs = item.outputs ?? [];
+          const itemOutput =
+            !config.hideQueueItemDownload && itemOutputs.length === 1 ? itemOutputs[0] : undefined;
           const pageCountLabel =
             item.preview?.pageCount && item.preview.pageCount > 0
               ? `${item.preview.pageCount} page${item.preview.pageCount === 1 ? '' : 's'}`

@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import clsx from 'clsx';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Delete02Icon } from '@hugeicons/core-free-icons';
+import { Delete02Icon, Download01Icon } from '@hugeicons/core-free-icons';
 import {
   ToolWorkspace,
   type PdfPageGridProcessContext,
@@ -123,6 +124,7 @@ const config = buildWorkspaceConfig(tool, {
   hint: 'or click to browse - .pdf — range, fixed intervals, or pick pages',
   accept: '.pdf',
   allowMultiple: false,
+  hideQueueItemDownload: true,
   queuedTitle: 'PDF ready to split',
   actionLabel: 'Split',
   pageGrid: {
@@ -203,6 +205,22 @@ export function PdfSplitTool() {
       const st = file ? api.gridByFileId[file.id] : undefined;
       const ordered = orderedPagesFromGrid(st, n);
       const groups = n > 0 && splitTab === 'range' ? splitGroupsForBar(mode, n) : [];
+      const rangeSplitComplete =
+        api.allDone &&
+        splitTab === 'range' &&
+        rangeModeUi === 'custom' &&
+        mode.kind === 'ranges' &&
+        file?.status === 'done';
+      const rangeOutputsByIndex =
+        rangeSplitComplete &&
+        !mergeRangeOutputs &&
+        file.outputs &&
+        file.outputs.length === mode.ranges.length
+          ? file.outputs
+          : null;
+      const rangeRowsLocked = rangeSplitComplete;
+      const rangeSettingsLocked =
+        api.allDone && splitTab === 'range' && file?.status === 'done';
 
       let outputPdfCount = 0;
       if (splitTab === 'range' && n) {
@@ -266,6 +284,7 @@ export function PdfSplitTool() {
                     ]}
                     value={rangeModeUi}
                     onChange={(id) => {
+                      if (rangeSettingsLocked) return;
                       setRangeModeUi(id);
                       if (id === 'custom') {
                         setMode((prev) =>
@@ -291,6 +310,9 @@ export function PdfSplitTool() {
                         {mode.ranges.map((pages, idx) => {
                           const from = Math.min(...pages);
                           const to = Math.max(...pages);
+                          const rangeOutput = rangeOutputsByIndex?.[idx];
+                          const showRangeDownload = Boolean(rangeOutput);
+                          const showRangeDelete = !rangeRowsLocked && mode.ranges.length > 1;
                           return (
                             <div
                               key={`range-${idx}-${from}-${to}`}
@@ -310,7 +332,8 @@ export function PdfSplitTool() {
                                     type="number"
                                     min={1}
                                     max={n > 0 ? n : undefined}
-                                    className="box-border h-7 w-11 shrink-0 rounded-lg max-md:rounded-2xl max-md:h-9 border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
+                                    disabled={rangeRowsLocked}
+                                    className="box-border h-7 w-11 shrink-0 rounded-lg max-md:rounded-2xl max-md:h-9 border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] disabled:cursor-default disabled:opacity-60 dark:bg-zinc-900/80 dark:ring-white/10"
                                     value={from}
                                     onChange={(e) =>
                                       patchCustomRange(idx, 'from', Math.max(1, Number(e.target.value) || 1))
@@ -325,7 +348,8 @@ export function PdfSplitTool() {
                                     type="number"
                                     min={1}
                                     max={n > 0 ? n : undefined}
-                                    className="box-border h-7 w-11 shrink-0 rounded-lg max-md:rounded-2xl max-md:h-9 border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
+                                    disabled={rangeRowsLocked}
+                                    className="box-border h-7 w-11 shrink-0 rounded-lg max-md:rounded-2xl max-md:h-9 border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] disabled:cursor-default disabled:opacity-60 dark:bg-zinc-900/80 dark:ring-white/10"
                                     value={to}
                                     onChange={(e) =>
                                       patchCustomRange(idx, 'to', Math.max(1, Number(e.target.value) || 1))
@@ -334,7 +358,17 @@ export function PdfSplitTool() {
                                 </label>
                               </div>
 
-                              {mode.ranges.length > 1 ? (
+                              {showRangeDownload && rangeOutput ? (
+                                <button
+                                  type="button"
+                                  aria-label={`Download range ${idx + 1}`}
+                                  title={`Download ${rangeOutput.name}`}
+                                  className="box-border flex h-7 w-7 shrink-0 items-center justify-center rounded-lg max-md:rounded-full bg-emerald-500 text-white shadow-sm transition hover:bg-emerald-600 active:scale-[0.98]"
+                                  onClick={() => api.downloadOutput(rangeOutput)}
+                                >
+                                  <HugeiconsIcon icon={Download01Icon} size={14} strokeWidth={2} aria-hidden />
+                                </button>
+                              ) : showRangeDelete ? (
                                 <button
                                   type="button"
                                   aria-label={`Remove range ${idx + 1}`}
@@ -350,14 +384,30 @@ export function PdfSplitTool() {
                         })}
                       </CustomPageRangeListViewport>
                     ) : null}
-                    <button type="button" onClick={addCustomRange} className={studioAccent.addRangeButton}>
-                      + Add range
-                    </button>
-                    <label className="flex shrink-0 cursor-pointer items-start gap-2.5 rounded-lg max-md:rounded-2xl bg-muted/40 px-3 py-3 max-md:py-3.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
+                    {rangeRowsLocked ? (
+                      <button
+                        type="button"
+                        onClick={() => api.prepareForResplit()}
+                        className="w-full shrink-0 rounded-lg max-md:rounded-2xl border border-border/50 bg-white/80 px-3 py-2.5 text-[11px] font-semibold text-foreground shadow-sm ring-1 ring-inset ring-black/[0.04] transition hover:bg-white dark:bg-zinc-900/70 dark:ring-white/[0.06] dark:hover:bg-zinc-900"
+                      >
+                        Edit ranges
+                      </button>
+                    ) : (
+                      <button type="button" onClick={addCustomRange} className={studioAccent.addRangeButton}>
+                        + Add range
+                      </button>
+                    )}
+                    <label
+                      className={clsx(
+                        'flex shrink-0 items-start gap-2.5 rounded-lg max-md:rounded-2xl bg-muted/40 px-3 py-3 max-md:py-3.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]',
+                        rangeSettingsLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                      )}
+                    >
                       <input
                         type="checkbox"
                         className="mt-0.5"
                         checked={mergeRangeOutputs}
+                        disabled={rangeSettingsLocked}
                         onChange={(e) => setMergeRangeOutputs(e.target.checked)}
                       />
                       <span className="text-[11px] leading-relaxed text-foreground">
@@ -370,9 +420,10 @@ export function PdfSplitTool() {
                     <label className="block space-y-1.5">
                       <span className="text-[11px] font-semibold text-foreground">Split into page ranges of</span>
                       <input
-                        className="w-full rounded-lg max-md:rounded-2xl border-0 bg-white/90 px-3 py-3 text-sm text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
+                        className="w-full rounded-lg max-md:rounded-2xl border-0 bg-white/90 px-3 py-3 text-sm text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] disabled:cursor-default disabled:opacity-60 dark:bg-zinc-900/80 dark:ring-white/10"
                         type="number"
                         min={1}
+                        disabled={rangeSettingsLocked}
                         value={interval}
                         onChange={(e) => {
                           const next = Math.max(1, Number(e.target.value) || 1);
@@ -544,9 +595,10 @@ export function PdfSplitTool() {
         splitTab={splitTab}
         extractMode={extractMode}
         mergeRangeOutputs={mergeRangeOutputs}
+        mergeExtractedIntoOne={mergeExtractedIntoOne}
       />
     ),
-    [mode, splitTab, extractMode, mergeRangeOutputs]
+    [mode, splitTab, extractMode, mergeRangeOutputs, mergeExtractedIntoOne]
   );
 
   return (
