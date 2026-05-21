@@ -1,7 +1,20 @@
 # Security, deploy, and ops plan
 
-Living checklist for docxform.com (Cloudflare Pages, Next.js 16, AdSense).  
-**Last reviewed:** 2026-05-20.
+Living checklist for **docxform.com** (Cloudflare Pages, Next.js 16, Google AdSense).  
+**Last updated:** 2026-05-20.
+
+---
+
+## Summary
+
+| Area | State |
+|------|--------|
+| **Production branches** | `master` and `dev-stable` at **`9c075d7`**; `dev-tools` same commit |
+| **npm audit** | **0 vulnerabilities** (Next **16.2.6**) |
+| **AdSense (code)** | Meta tag, `next/script`, `public/ads.txt` — deployed from `1c059a3`+ |
+| **AdSense (dashboard)** | 👤 Verify ownership + site review after each prod deploy |
+| **Cloudflare `_redirects`** | Removed; WASM proxy only in `middleware.ts` |
+| **SEO / tools index** | `noindex` on WIP tools; sitemap lists live tools only |
 
 ---
 
@@ -9,10 +22,47 @@ Living checklist for docxform.com (Cloudflare Pages, Next.js 16, AdSense).
 
 | Symbol | Meaning |
 |--------|---------|
-| ✅ | Done |
+| ✅ | Done (code merged or verified) |
 | 🔄 | In progress |
 | ⏳ | Planned |
-| 👤 | Manual (dashboard / no code) |
+| 👤 | Manual (dashboard / browser checks) |
+
+---
+
+## Branch and deploy flow
+
+```text
+dev-tools  →  dev-stable  →  master  →  Cloudflare Pages (production)
+```
+
+| Commit | Branch(es) | What shipped |
+|--------|------------|--------------|
+| `8219a0e` | all three | Format-based tones, tools hub, coming-soon gates, PDF split studio, docs (`colors`, `pages-reference`, `tool-status`) |
+| `1c059a3` | all three | AdSense: `lib/adsense.ts`, layout script + meta, `noindex`/sitemap for WIP tools; removed click-only `adsense-loader` |
+| `b655c13` | all three | Fix `getStudioAccent(tone \| undefined)` — Cloudflare build TypeScript |
+| `9c075d7` | all three | Next **16.2.6**, `npm audit` clean, delete `public/_redirects`, this plan doc |
+
+**Production deploy:** Trigger Cloudflare Pages on **`master`** or **`dev-stable`** (whichever the project uses). Latest merge: **`0d32d42`** on `master` (merge of `9c075d7`). Confirm build log shows commit **`9c075d7`** or newer.
+
+---
+
+## Code inventory (AdSense & SEO)
+
+| Requirement | Location |
+|-------------|----------|
+| Publisher ID `ca-pub-7154775313079570` | `lib/adsense.ts` |
+| AdSense script (`adsbygoogle.js`) | `app/layout.tsx` — `next/script`, `strategy="afterInteractive"` |
+| Meta `google-adsense-account` | `app/layout.tsx` — `metadata.other` |
+| ads.txt line | `public/ads.txt` (same line as `ADSENSE_ADS_TXT_LINE` in `lib/adsense.ts`) |
+| CSP allowlist for Google ads | `next.config.js` — `script-src`, `connect-src`, `frame-src` |
+| ads.txt not wrapped in COEP middleware | `middleware.ts` matcher excludes `ads.txt` |
+| Canonical host `https://www.docxform.com` | `lib/seo.ts` — `SITE_URL` |
+| Sitemap: live tools only | `lib/seo.ts` — filters via `lib/tool-availability.ts` |
+| WIP tool pages `noindex` | `lib/seo.ts` — `createToolPageMetadata()` |
+| WASM same-origin proxy | `middleware.ts` → `wasm.docxform.com` (not `_redirects`) |
+| robots.txt | `app/robots.ts` — allows `/`; blocks `/admin-private/`, `/api/` only |
+
+**AdSense add-site field:** use **`docxform.com`** (no `www`, no `https://`). Public site canonical remains **www**.
 
 ---
 
@@ -20,62 +70,59 @@ Living checklist for docxform.com (Cloudflare Pages, Next.js 16, AdSense).
 
 ### H1 — Patch Next.js and npm audit (supply chain)
 
-**Why:** `npm audit` reported **high** issues on Next 16.0.0–16.2.5 (middleware bypass, CSP/XSS, DoS). Patched in **16.2.6+**.
+**Why:** Next 16.0.0–16.2.5 had high-severity advisories (middleware bypass, CSP/XSS, DoS).
 
-**Steps:**
+**Done:**
 
-1. `npm install next@16.2.6` (align `@next/bundle-analyzer` if present).
-2. `npm audit fix` (addresses transitive e.g. `brace-expansion`).
-3. `npm run build` and `npm run typecheck` locally.
-4. Deploy via normal branch flow (`dev-tools` → `dev-stable` → `master` or Pages preview).
-5. Re-run `npm audit` — target **0 high** on production dependencies.
+- `next` and `eslint-config-next` → **16.2.6**
+- `npm audit fix` → **0 vulnerabilities**
+- Local `npm run build` OK
+- Merged `dev-tools` → `dev-stable` → `master` (`9c075d7`)
 
-**Acceptance:** Clean audit for app deps; production build green on Cloudflare.
+**Acceptance:** ✅ Clean audit; green Cloudflare build on `9c075d7`.
 
-**Status:** ✅ (2026-05-20: `next@16.2.6`, `npm audit` clean, build OK)
+**Status:** ✅
 
 ---
 
 ### H2 — Remove invalid Cloudflare `_redirects` WASM proxy lines
 
-**Why:** Deploy log showed:
+**Why:** Deploy log reported invalid rules — external `200` targets not allowed on Cloudflare Pages. Rules were ignored; WASM already handled in middleware.
 
-```text
-Proxy (200) redirects can only point to relative paths.
-```
+**Done:**
 
-Those two lines are **ignored** by Cloudflare. WASM is already proxied in `middleware.ts` → `wasm.docxform.com`.
+- Deleted `public/_redirects` (contained only invalid `/wasm/soffice.*` → CDN lines)
+- WASM unchanged: `middleware.ts` rewrites `/wasm/soffice.wasm`, `/wasm/soffice.data`, `/wasm/bin/<rev>/…`
 
-**Steps:**
+**Post-deploy check:** Run Word/PDF convert once after deploy to confirm WASM loads.
 
-1. Remove `/wasm/soffice.wasm` and `/wasm/soffice.data` external `200` rules from `public/_redirects`.
-2. Delete `public/_redirects` if empty, or leave a one-line comment file only if your host supports it (CF Pages: prefer delete).
-3. Confirm converter still loads WASM after deploy (versioned `/wasm/bin/<rev>/` and legacy `/wasm/soffice.*`).
+**Acceptance:** ✅ No “invalid redirect lines” in deploy log; converters work.
 
-**Acceptance:** Next deploy shows **0 invalid redirect lines**; PDF/Word conversion works.
-
-**Status:** ✅ (2026-05-20: `public/_redirects` removed; WASM via `middleware.ts` only)
+**Status:** ✅
 
 ---
 
-### H3 — AdSense verification on production (post-deploy)
+### H3 — AdSense verification on production (dashboard)
 
-**Why:** Dashboard showed “Requires review”, ads.txt “Not found” before latest deploy. Code includes meta tag, script, `public/ads.txt`.
+**Why:** AdSense showed “Requires review” and ads.txt “Not found” before AdSense code shipped. Implementation is in repo from **`1c059a3`** onward.
 
-**Steps (manual — 👤):**
+**Code is live when deploy ≥ `1c059a3` (ideally `9c075d7`).**
 
-1. Confirm deploy includes commit with `lib/adsense.ts` + layout `Script` (≥ `1c059a3`, ideally `b655c13+`).
-2. In browser:
-   - https://docxform.com/ads.txt → should show `google.com, pub-7154775313079570, DIRECT, …`
-   - https://www.docxform.com/ → view source → `google-adsense-account` and `adsbygoogle.js`
-3. AdSense → **Sites** → add/verify property **`docxform.com`** only (not `www` in the add-site field).
-4. **Let’s go** → verify via **Meta tag** (or ads.txt) → **I’ve placed the code**.
-5. **ads.txt** row → **Check for updates**.
-6. Wait for **site review** (days–weeks). Optional: **Ads → Explore** for auto-ad preview.
+**Manual checklist (👤):**
 
-**Acceptance:** Green check on site ownership; ads.txt status **Found**; review eventually **Ready**.
+1. Confirm Cloudflare deploy commit ≥ `9c075d7`.
+2. Browser checks:
+   - https://docxform.com/ads.txt → `google.com, pub-7154775313079570, DIRECT, f08c47fec0942fa0`
+   - https://www.docxform.com/ads.txt → same (apex redirects to www)
+   - https://www.docxform.com/ → view source → `google-adsense-account` and `pagead2.googlesyndication.com`
+3. AdSense → **Sites** → property **`docxform.com`** (not `www.docxform.com` in the add-site field).
+4. **Sites** → **Let’s go** → verify (**Meta tag** or **ads.txt**) → confirm ownership.
+5. **ads.txt** column → **Check for updates** if still “Not found”.
+6. Wait for **site review** (often days–weeks). Optional: **Ads → Explore** for preview.
 
-**Status:** 👤 (after each production deploy)
+**Acceptance:** Ownership verified; ads.txt **Found**; review moves toward **Ready**.
+
+**Status:** 👤 — code ✅; dashboard steps pending your confirmation
 
 ---
 
@@ -83,17 +130,15 @@ Those two lines are **ignored** by Cloudflare. WASM is already proxied in `middl
 
 ### M1 — Google Search Console
 
-**Why:** Indexing and sitemap coverage independent of AdSense.
+**Why:** Indexing and sitemap coverage; separate from AdSense.
 
 **Steps:**
 
-1. Add property: `https://www.docxform.com` (URL prefix or domain).
-2. Verify via DNS TXT or HTML (meta already on site if using HTML method on root).
-3. Submit sitemap: `https://www.docxform.com/sitemap.xml`.
-4. Request indexing for: `/`, `/word-to-pdf`, `/pdf-to-word`, `/tools`, `/tools/pdf-split`.
-5. Monitor **Pages** and **Core Web Vitals** monthly.
-
-**Acceptance:** Sitemap processed; flagship URLs indexed.
+1. Add property: `https://www.docxform.com`
+2. Verify (DNS TXT or HTML)
+3. Submit `https://www.docxform.com/sitemap.xml`
+4. Request indexing: `/`, `/word-to-pdf`, `/pdf-to-word`, `/tools`, `/tools/pdf-split`
+5. Monitor Pages / Core Web Vitals monthly
 
 **Status:** ⏳
 
@@ -101,16 +146,14 @@ Those two lines are **ignored** by Cloudflare. WASM is already proxied in `middl
 
 ### M2 — CSP review (don’t break WASM / AdSense)
 
-**Why:** CSP includes `'unsafe-inline'` and `'unsafe-eval'` for Next, WASM, and ads. Tightening improves security but can break converters.
+**Why:** `next.config.js` uses `'unsafe-inline'` and `'unsafe-eval'` for Next, WASM, and ads.
 
 **Steps:**
 
-1. Document current CSP in `next.config.js` and why each directive exists.
-2. Test removing `'unsafe-eval'` on staging — run full Word/PDF convert smoke test.
-3. If AdSense uses inline scripts, evaluate **nonce-based** CSP (Next 16 supports; larger refactor).
-4. Avoid `script-src *` or broad `https:` on scripts.
-
-**Acceptance:** Documented tradeoffs; any CSP change passes e2e + manual convert test.
+1. Document each CSP directive and why it exists
+2. Test removing `'unsafe-eval'` on staging + full convert smoke test
+3. Consider nonce-based CSP later (larger change)
+4. Never use blanket `script-src https:`
 
 **Status:** ⏳
 
@@ -118,16 +161,14 @@ Those two lines are **ignored** by Cloudflare. WASM is already proxied in `middl
 
 ### M3 — API abuse protection
 
-**Why:** Edge routes: `/api/contact`, `/api/metrics/converter`, admin APIs. Public contact form is spam-prone.
+**Why:** Public edge routes: `/api/contact`, `/api/metrics/converter`; admin behind secret slug.
 
 **Steps:**
 
-1. Cloudflare **WAF** / rate limiting rules per path (e.g. 10 req/min/IP on `/api/contact`).
-2. Optional: honeypot or Turnstile on contact form (code change).
-3. Ensure admin routes stay non-enumerable (`ADMIN_ENTRY_SLUG`, no links from public site).
-4. Review Supabase RLS / keys only in env (never client).
-
-**Acceptance:** Rate limits active; no spike in spam or metrics noise.
+1. Cloudflare WAF / rate limit (e.g. `/api/contact` 10 req/min/IP)
+2. Optional: Turnstile or honeypot on contact form
+3. Keep admin paths non-linked; env-only secrets
+4. Supabase keys server-side only
 
 **Status:** ⏳
 
@@ -135,15 +176,13 @@ Those two lines are **ignored** by Cloudflare. WASM is already proxied in `middl
 
 ### M4 — Dependency hygiene in CI
 
-**Why:** Prevent drift and repeat audit surprises.
+**Why:** Keep audit clean after `9c075d7`.
 
 **Steps:**
 
-1. Add CI step: `npm audit --audit-level=high` (fail on high/critical).
-2. Enable **Dependabot** or Renovate on `package.json` (weekly, grouped).
-3. Pin major versions; allow patch/minor auto-PRs for Next/React.
-
-**Acceptance:** PRs fail on new high vulnerabilities; weekly update PRs optional.
+1. CI: `npm audit --audit-level=high` (fail on high/critical)
+2. Dependabot or Renovate on `package.json`
+3. Bump patch/minor for Next/React via PRs
 
 **Status:** ⏳
 
@@ -151,33 +190,37 @@ Those two lines are **ignored** by Cloudflare. WASM is already proxied in `middl
 
 ### M5 — SEO consistency (www canonical)
 
-**Why:** Canonical is `https://www.docxform.com`; AdSense property is `docxform.com`.
+**Why:** `SITE_URL` is www; AdSense property label is apex `docxform.com`.
 
-**Steps:**
+**Done (code):**
 
-1. Confirm Cloudflare **apex → www** 301 (already expected).
-2. Search Console: prefer **www** property; optional domain property for whole zone.
-3. Keep `SITE_URL` in `lib/seo.ts` as www — no change unless rebranding.
+- `lib/seo.ts` → `https://www.docxform.com`
+- Apex → www redirect confirmed in production (ads.txt works on both)
 
-**Acceptance:** No duplicate indexing of apex vs www; canonicals all www.
+**Remaining (👤):** Search Console property on www; optional domain property for whole zone.
 
-**Status:** ✅ (code); 👤 (GSC)
+**Status:** ✅ code · 👤 GSC
 
 ---
 
 ### M6 — Coming-soon tools (index hygiene)
 
-**Why:** WIP tool pages use `noindex`; sitemap lists only live tools (`pdf-split`). Already implemented in `1c059a3+`.
+**Why:** Avoid indexing thin WIP utility pages.
 
-**Steps:**
+**Done (code, `8219a0e` / `1c059a3`):**
 
-1. When enabling a tool, set `TOOL_PAGE_AVAILABLE[slug] = true` in `lib/tool-availability.ts`.
-2. Redeploy; confirm sitemap includes new slug.
-3. Remove “Coming soon” from index card when live.
+- `lib/tool-availability.ts` — only `pdf-split` live
+- `createToolPageMetadata()` — `noindex` when not available
+- Sitemap excludes WIP tool URLs
+- `/tools` index: WIP cards without links + “Coming soon” badge
 
-**Acceptance:** Only finished tools indexed and in sitemap.
+**When launching a tool:**
 
-**Status:** ✅ (process)
+1. Set `TOOL_PAGE_AVAILABLE[slug] = true`
+2. Redeploy
+3. Confirm sitemap + remove coming-soon on index
+
+**Status:** ✅
 
 ---
 
@@ -185,16 +228,9 @@ Those two lines are **ignored** by Cloudflare. WASM is already proxied in `middl
 
 ### L1 — Migrate Cloudflare build: `next-on-pages` → OpenNext
 
-**Why:** `@cloudflare/next-on-pages@1.13.16` is deprecated; OpenNext is the supported path for Next on Cloudflare.
+**Why:** `@cloudflare/next-on-pages@1.13.16` deprecated; OpenNext recommended.
 
-**Steps:**
-
-1. Read https://opennext.js.org/cloudflare
-2. Spike branch: replace build command, compare worker size and cold start.
-3. Re-test middleware, edge API routes, static assets, WASM proxy.
-4. Switch production build when parity confirmed.
-
-**Effort:** Multi-day; schedule outside feature work.
+**Note:** Production builds today use `npx @cloudflare/next-on-pages@1` successfully on `b655c13` / `9c075d7`.
 
 **Status:** ⏳
 
@@ -202,41 +238,27 @@ Those two lines are **ignored** by Cloudflare. WASM is already proxied in `middl
 
 ### L2 — Next.js middleware → “proxy” convention
 
-**Why:** Next 16 warns: middleware file convention deprecated in favor of `proxy`.
+**Why:** Next 16 build warns middleware convention → proxy.
 
-**Steps:**
-
-1. Follow Next upgrade guide when `proxy` API is stable for your version.
-2. Rename/migrate `middleware.ts` per official docs.
-3. Full regression: COEP headers, WASM rewrites, admin rewrites.
-
-**Status:** ⏳ (track Next release notes)
+**Status:** ⏳
 
 ---
 
 ### L3 — AdSense / privacy copy polish
 
-**Why:** GDPR/consent expectations when serving personalized ads in EU/UK.
+**Why:** EU/UK consent if personalized ads expand.
 
-**Steps:**
+**Note:** `/cookies` and `/privacy` already mention AdSense cookies.
 
-1. Review `/cookies` and `/privacy` for AdSense, DoubleClick, Funding Choices.
-2. Optional: CMP / consent banner if traffic is EU-heavy (not required for US-only launch).
-3. Link policies in footer on all layouts.
-
-**Status:** ⏳ (content/legal review)
+**Status:** ⏳
 
 ---
 
 ### L4 — Lighthouse / performance budget
 
-**Why:** Core Web Vitals affect SEO and AdSense quality signals indirectly.
+**Why:** CWV and LCP with AdSense script.
 
-**Steps:**
-
-1. Run existing `npm run test:lighthouse` on home + converters post-deploy.
-2. Track LCP on pages with AdSense script (`afterInteractive`).
-3. Keep WASM load deferred (post-LCP prime) — already partially done.
+**Note:** WASM primed post-LCP (`PostLcpWasmPrime`); AdSense `afterInteractive`.
 
 **Status:** ⏳
 
@@ -244,30 +266,43 @@ Those two lines are **ignored** by Cloudflare. WASM is already proxied in `middl
 
 ### L5 — Invalid prerender config (`/articles/[slug]`)
 
-**Why:** next-on-pages warns on `[slug]` prerender config; static output still works.
-
-**Steps:**
-
-1. Audit `app/articles/[slug]/page.tsx` vs static article routes.
-2. Either align `generateStaticParams` with `SITE_ARTICLES` or remove duplicate dynamic route if redundant.
-3. Rebuild and confirm warning gone.
+**Why:** next-on-pages warns on `/articles/[slug]`; build still completes (435 prerendered routes).
 
 **Status:** ⏳
 
 ---
 
-## Execution order (recommended)
+## Build warnings (non-blocking)
+
+| Warning | Impact | Action |
+|---------|--------|--------|
+| Invalid `_redirects` WASM lines | Log noise | ✅ Fixed in `9c075d7` |
+| `Invalid prerender config` for `/articles/[slug]` | None observed | L5 |
+| `middleware` → `proxy` deprecation | Future | L2 |
+| `@cloudflare/next-on-pages` deprecated | Future | L1 |
+| npm deprecated glob/tar in CF install | Transitive / npx | Monitor |
+
+---
+
+## Execution order (updated)
 
 ```text
-H1 + H2 (code) → deploy → H3 (manual AdSense)
-     → M1 (GSC) → M3 (WAF) → M4 (CI audit)
-     → M2 (CSP spike) → L1/L2 when platform allows
+✅ H1 + H2 — merged to master (9c075d7)
+✅ AdSense code — merged (1c059a3+)
+→ Deploy master / dev-stable (confirm 9c075d7 on CF)
+→ 👤 H3 AdSense dashboard verify
+→ M1 Search Console
+→ M3 WAF / rate limits
+→ M4 CI npm audit gate
+→ M2 CSP spike
+→ L1 / L2 when upgrading platform
 ```
 
 ---
 
 ## Related docs
 
-- `docs/tool-status.md` — which tools are live
-- `docs/pages-reference.md` — routes and SEO surfaces
-- `lib/adsense.ts` — publisher ID and script URL
+- `docs/tool-status.md` — which `/tools/*` routes are live vs coming soon
+- `docs/pages-reference.md` — routes, SEO, studio UI
+- `docs/colors.md` — format-based tone palette
+- `lib/adsense.ts` — publisher ID, script URL, ads.txt line
