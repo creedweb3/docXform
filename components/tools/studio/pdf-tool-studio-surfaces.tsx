@@ -12,6 +12,7 @@ import type { RotateAngle } from '@/lib/tool-runs/pdf-rotate';
 import type { WatermarkPosition } from '@/lib/tool-runs/pdf-watermark';
 import {
   computeRangeCardColSpans,
+  computeRangeCardColSpansMobile,
   pairSingleWideIndices,
   rangeCardGridColSpan,
 } from '@/lib/pdf-split-range-layout';
@@ -134,7 +135,7 @@ function PageThumbCard({
         'flex min-w-0 flex-col gap-0.5',
         captionTop && 'gap-1',
         inlineInGroup
-          ? clsx('shrink-0', sm ? 'w-[4.25rem]' : 'w-[6.75rem]')
+          ? clsx('shrink-0', sm ? 'w-[4.25rem]' : 'w-[6.75rem]', 'max-md:w-[4.25rem]')
           : clsx(
               'mx-auto flex',
               sm ? 'w-[4.25rem] max-w-[4.25rem] shrink-0' : 'w-full min-w-0 max-w-[6.75rem]',
@@ -146,7 +147,12 @@ function PageThumbCard({
       <div
         className={clsx(
           'relative flex w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border/50 bg-white shadow-sm',
-          fillCellHeight ? 'min-h-[4.5rem] flex-1' : sm ? 'h-28' : 'h-40',
+          fillCellHeight
+            ? 'min-h-[4.5rem] flex-1'
+            : clsx(
+                sm ? 'h-28' : 'h-40',
+                'max-md:h-auto max-md:w-full max-md:max-w-[4.25rem] max-md:shrink-0 max-md:aspect-[85/110] max-md:mx-auto'
+              ),
           highlight === 'select' && selectOutlineClass,
           highlight === 'out' &&
             'border-dashed border-muted-foreground/50 bg-muted/20 ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]'
@@ -244,6 +250,7 @@ export function PdfSplitStudioSurface({
   }, [st, pageCount]);
   const groups = pageCount > 0 && splitTab === 'range' ? splitGroupsForBar(mode, pageCount) : [];
   const rangeColSpans = useMemo(() => computeRangeCardColSpans(groups), [groups]);
+  const rangeColSpansMobile = useMemo(() => computeRangeCardColSpansMobile(groups), [groups]);
   const pairSingleWide = useMemo(() => pairSingleWideIndices(rangeColSpans), [rangeColSpans]);
   const rangeOutputPdfCount =
     pageCount > 0 && splitTab === 'range' && groups.length > 0
@@ -305,9 +312,9 @@ export function PdfSplitStudioSurface({
   );
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-2 basis-0 min-h-0">
-      <div className="flex min-w-0 shrink-0 items-center justify-between gap-2 px-3 pr-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-2 basis-0 min-h-0 max-md:basis-auto max-md:gap-2.5">
+      <div className="flex min-w-0 shrink-0 items-center justify-between gap-2 px-3 pr-2 max-md:px-2.5 max-md:pr-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground max-md:text-xs">
           {splitTab === 'range' ? 'Split preview' : splitTab === 'pages' ? 'Page previews' : 'By size'}
         </p>
         {selectThumbMode && file ? (
@@ -341,13 +348,13 @@ export function PdfSplitStudioSurface({
               Clear
             </button>
             <span
-              className={clsx(
-                'inline-flex shrink-0 items-center rounded-full px-2.5 py-1 tabular-nums text-[11px] font-medium shadow-sm',
-                studioPillClass
-              )}
-            >
-              {selectedSet.size}/{pageCount}
-            </span>
+            className={clsx(
+              'inline-flex shrink-0 items-center rounded-full px-2.5 py-1 tabular-nums text-[11px] font-medium shadow-sm max-md:min-h-7 max-md:px-3',
+              studioPillClass
+            )}
+          >
+            {selectedSet.size}/{pageCount}
+          </span>
           </div>
         ) : pageCount > 0 ? (
           <span
@@ -370,17 +377,27 @@ export function PdfSplitStudioSurface({
         ) : null}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col justify-start min-h-0">
+      <div className="flex min-h-0 flex-1 flex-col justify-start min-h-0 max-md:min-h-[min(56vh,26rem)]">
         {pageCount > 0 &&
         file &&
         !previewFailed &&
         !previewPending &&
         splitTab === 'range' &&
         groups.length > 0 ? (
-          <div className="mb-1.5 min-w-0 shrink-0 px-3 pr-2">
+          <div className="mb-1.5 min-w-0 shrink-0 px-3 pr-2 max-md:mb-1 max-md:px-2">
+            <details className={clsx('rounded-2xl shadow-sm md:hidden', studioPillClass)}>
+              <summary className="cursor-pointer list-none px-3 py-2.5 text-[11px] font-semibold leading-snug marker:content-none min-h-11 flex items-center [&::-webkit-details-marker]:hidden">
+                {rangeOutputPdfCount} PDF{rangeOutputPdfCount === 1 ? '' : 's'} · tap for details
+              </summary>
+              <p className="border-t border-border/15 px-2.5 pb-2 pt-1.5 text-[10px] leading-snug text-muted-foreground">
+                {mergeRangeOutputs
+                  ? 'Each dashed group merges into one ordered PDF.'
+                  : 'Each dashed box is one output file.'}
+              </p>
+            </details>
             <p
               className={clsx(
-                'w-full rounded-2xl px-3 py-2 text-left text-[11px] leading-snug shadow-sm',
+                'hidden w-full rounded-2xl px-3 py-2 text-left text-[11px] leading-snug shadow-sm md:block',
                 studioPillClass
               )}
             >
@@ -438,7 +455,7 @@ export function PdfSplitStudioSurface({
             className="queue-list-scrollbar min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain px-3 py-1.5 pr-2"
             style={scrollThumbStyle}
           >
-            <div className="grid min-w-0 grid-cols-6 items-stretch gap-x-3 gap-y-3 sm:gap-x-4">
+            <div className="grid min-w-0 grid-cols-6 items-stretch gap-x-3 gap-y-3 sm:gap-x-4 max-md:grid-cols-2 max-md:items-start max-md:gap-2">
               {groups.map((pages, gi) => {
                 const lo = Math.min(...pages);
                 const hi = Math.max(...pages);
@@ -446,8 +463,15 @@ export function PdfSplitStudioSurface({
                 const logicalSpan = rangeColSpans[gi] ?? (isMultiPageRange ? 3 : 1);
                 const gridSpan = rangeCardGridColSpan(logicalSpan, pairSingleWide.has(gi));
                 const gridSpanClass = RANGE_GRID_COL_SPAN[gridSpan];
+                const mobileSpan = rangeColSpansMobile[gi] ?? (isMultiPageRange ? 2 : 2);
                 return logicalSpan === 3 && isMultiPageRange ? (
-                  <div key={`g-${gi}-${lo}-${hi}`} className={PDF_SPLIT_RANGE_CARD_ALONE_MULTI_CLASS}>
+                  <div
+                    key={`g-${gi}-${lo}-${hi}`}
+                    className={clsx(
+                      PDF_SPLIT_RANGE_CARD_ALONE_MULTI_CLASS,
+                      'max-md:col-span-2 max-md:h-auto mobile-range-card max-md:gap-y-2.5'
+                    )}
+                  >
                     <p className="col-span-6 px-3 text-center text-[11px] font-semibold text-foreground">
                       Range {gi + 1}
                     </p>
@@ -467,7 +491,13 @@ export function PdfSplitStudioSurface({
                     </div>
                   </div>
                 ) : isMultiPageRange && logicalSpan === 2 ? (
-                  <div key={`g-${gi}-${lo}-${hi}`} className={PDF_SPLIT_RANGE_CARD_PAIR_MULTI_CLASS}>
+                  <div
+                    key={`g-${gi}-${lo}-${hi}`}
+                    className={clsx(
+                      PDF_SPLIT_RANGE_CARD_PAIR_MULTI_CLASS,
+                      'max-md:col-span-2 max-md:h-auto mobile-range-card max-md:gap-y-2.5'
+                    )}
+                  >
                     <p className="col-span-4 px-3 text-center text-[11px] font-semibold text-foreground">
                       Range {gi + 1}
                     </p>
@@ -489,13 +519,18 @@ export function PdfSplitStudioSurface({
                 ) : (
                   <div
                     key={`g-${gi}-${lo}-${hi}`}
-                    className={clsx(PDF_SPLIT_RANGE_CARD_CLASS, gridSpanClass)}
+                    className={clsx(
+                      PDF_SPLIT_RANGE_CARD_CLASS,
+                      gridSpanClass,
+                      'max-md:h-auto max-md:items-center max-md:justify-center max-md:gap-2 max-md:py-2.5 mobile-range-card',
+                      mobileSpan === 2 ? 'max-md:col-span-2' : 'max-md:col-span-1'
+                    )}
                   >
-                    <p className="text-center text-[11px] font-semibold text-foreground">Range {gi + 1}</p>
-                    <div className="flex min-h-0 flex-1 w-full flex-col justify-center">
-                      <div className="flex w-full min-w-0 justify-center">
-                        <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo)} highlight="none" inlineInGroup />
-                      </div>
+                    <p className="shrink-0 text-center text-[11px] font-semibold text-foreground max-md:text-xs">
+                      Range {gi + 1}
+                    </p>
+                    <div className="flex w-full min-w-0 flex-col items-center justify-center max-md:flex-none">
+                      <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo)} highlight="none" inlineInGroup />
                     </div>
                   </div>
                 );
@@ -511,7 +546,7 @@ export function PdfSplitStudioSurface({
           >
             <div
               id={selectThumbMode && file ? `page-grid-${file.id}` : undefined}
-              className="grid min-w-0 grid-cols-3 items-start justify-items-center gap-x-2 gap-y-3 sm:gap-x-3"
+              className="grid min-w-0 grid-cols-3 items-start justify-items-center gap-x-2 gap-y-3 sm:gap-x-3 max-md:grid-cols-2"
             >
               {order.map((pageNum, index) => {
                 const thumb = thumbForPage(st, pageNum);

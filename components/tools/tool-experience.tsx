@@ -81,14 +81,14 @@ export function ToolExperience({ tool, workspace }: ToolExperienceProps) {
 
   return (
     <div className={clsx('w-full mx-auto pt-4', tool.experienceMaxWidthClass ?? 'max-w-4xl')}>
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 glass-subtle rounded-full px-4 py-1.5 mb-6 border border-white/5">
+      <div className="text-center mb-8 max-md:mb-5">
+        <div className="inline-flex items-center gap-2 glass-subtle rounded-full px-4 py-1.5 mb-6 border border-white/5 max-md:mb-4 max-md:max-w-full max-md:px-3 max-md:py-1">
           <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className={tone.pillIcon} />
           <span className="text-xs font-medium text-muted-foreground">
             No file upload &middot; up to {MAX_CONVERSION_FILE_SIZE_LABEL} &middot; free to use
           </span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2 max-md:text-2xl max-md:mb-1.5">
           <span className={`bg-gradient-to-br bg-clip-text text-transparent ${tone.gradientText}`}>
             {tool.name}
           </span>

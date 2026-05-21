@@ -465,7 +465,7 @@ export function ToolsIndexClient() {
                 initial={reduceMotion ? false : 'initial'}
                 animate="animate"
                 exit="exit"
-                className="flex flex-wrap items-center justify-center gap-2 overflow-visible"
+                className="flex max-md:flex-nowrap max-md:justify-start max-md:overflow-x-auto max-md:overscroll-x-contain max-md:pb-1 max-md:-mx-1 max-md:px-1 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden flex-wrap items-center justify-center gap-2 overflow-visible md:flex-wrap"
               >
                 <motion.div
                   className={`relative shrink-0 self-center overflow-hidden rounded-full border bg-white shadow-sm ${FILTER_CONTROL_HEIGHT_CLASS} ${

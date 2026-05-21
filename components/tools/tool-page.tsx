@@ -48,7 +48,7 @@ export function ToolPage({ tool, workspace }: ToolPageProps) {
       />
       <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
-        <main className="flex-1 flex flex-col items-center px-6 pt-[8.5rem] sm:pt-[9rem] pb-12">
+        <main className="flex-1 flex flex-col items-center px-4 pt-[7.75rem] pb-10 max-md:px-3 max-md:pt-[7rem] max-md:pb-safe sm:px-6 sm:pt-[9rem] sm:pb-12">
           {available ? (
             <ToolExperience tool={tool} workspace={workspace} />
           ) : (

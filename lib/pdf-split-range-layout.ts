@@ -128,3 +128,50 @@ export function rangeCardGridColSpan(
   if (logical === 2) return 4;
   return 6;
 }
+
+export type RangeCardMobileColSpan = 1 | 2;
+
+/**
+ * 2-column phone grid only:
+ * - multi alone → span 2 (full row)
+ * - single + single → span 1 each
+ * - single alone → span 2 (full row)
+ */
+export function computeRangeCardColSpansMobile(groups: number[][]): RangeCardMobileColSpan[] {
+  const spans: RangeCardMobileColSpan[] = [];
+  let col = 0;
+
+  const isSingle = (i: number) => groups[i].length === 1;
+  const isMulti = (i: number) => groups[i].length > 1;
+
+  for (let gi = 0; gi < groups.length; gi++) {
+    if (isMulti(gi)) {
+      if (col > 0) col = 0;
+      spans.push(2);
+      col = 2;
+      if (col >= 2) col = 0;
+      continue;
+    }
+
+    if (col >= 2) col = 0;
+    const nextSingle = gi < groups.length - 1 && isSingle(gi + 1);
+
+    if (col === 0 && nextSingle) {
+      spans.push(1);
+      col = 1;
+    } else if (col === 1) {
+      spans.push(1);
+      col = 2;
+    } else {
+      spans.push(2);
+      col = 2;
+    }
+    if (col >= 2) col = 0;
+  }
+
+  return spans;
+}
+
+export function rangeCardMobileColSpanClass(span: RangeCardMobileColSpan): 'col-span-1' | 'col-span-2' {
+  return span === 2 ? 'col-span-2' : 'col-span-1';
+}

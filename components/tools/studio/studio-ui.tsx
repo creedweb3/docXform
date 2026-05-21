@@ -68,7 +68,8 @@ export function StudioInfoBanner({ tone, children }: { tone: ToneKey; children: 
     <div
       className={clsx(
         'flex min-w-0 gap-3 rounded-2xl p-4 text-[11px] leading-relaxed',
-        toneStyle.studioInfoPill
+        toneStyle.studioInfoPill,
+        'max-md:rounded-2xl max-md:p-3.5 max-md:shadow-none max-md:ring-0'
       )}
     >
       <span
@@ -97,7 +98,7 @@ export function StudioTabBar<T extends string>({
 }) {
   const accent = getStudioAccent(tone);
   return (
-    <div className="flex w-full min-w-0 gap-0.5 rounded-lg bg-muted/45 p-0.5 ring-1 ring-inset ring-black/[0.04] dark:bg-muted/25 dark:ring-white/[0.06]">
+    <div className="mobile-rail-track flex w-full min-w-0 gap-0.5 rounded-lg bg-muted/40 p-0.5 dark:bg-muted/25 max-md:gap-1 max-md:rounded-3xl max-md:p-1.5 max-md:ring-0">
       {tabs.map((t) => {
         const active = value === t.id;
         return (
@@ -107,7 +108,7 @@ export function StudioTabBar<T extends string>({
             disabled={t.disabled}
             onClick={() => !t.disabled && onChange(t.id)}
             className={clsx(
-              `relative flex min-h-10 min-w-0 flex-1 flex-col items-center justify-center rounded-md px-1 py-1 text-[10px] font-semibold uppercase tracking-wide outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 sm:px-1.5 sm:py-1.5 sm:text-[11px]`,
+              `relative flex min-h-10 min-w-0 flex-1 flex-col items-center justify-center rounded-md px-1 py-1 text-[10px] font-semibold uppercase tracking-wide outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 sm:px-1.5 sm:py-1.5 sm:text-[11px] max-md:min-h-11 max-md:rounded-2xl max-md:px-2 max-md:text-[11px]`,
               active
                 ? 'bg-white text-foreground shadow-sm dark:bg-zinc-900 dark:text-zinc-50'
                 : 'text-muted-foreground hover:bg-white/55 hover:text-foreground dark:hover:bg-white/10',
@@ -143,7 +144,7 @@ export function StudioSegmentRow<T extends string>({
 }) {
   const accent = getStudioAccent(tone);
   return (
-    <div className="flex w-full min-w-0 rounded-lg bg-muted/45 p-0.5 ring-1 ring-inset ring-black/[0.04] dark:bg-muted/25 dark:ring-white/[0.06]">
+    <div className="mobile-rail-track flex w-full min-w-0 rounded-lg bg-muted/40 p-0.5 dark:bg-muted/25 max-md:rounded-3xl max-md:p-1.5 max-md:ring-0">
       {options.map((o) => {
         const active = value === o.id;
         return (
@@ -153,7 +154,7 @@ export function StudioSegmentRow<T extends string>({
             disabled={o.disabled}
             onClick={() => !o.disabled && onChange(o.id)}
             className={clsx(
-              `min-w-0 flex-1 rounded-md px-1.5 py-2 text-center text-[10px] font-semibold outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-45 sm:px-2 sm:text-[11px]`,
+              `min-w-0 flex-1 rounded-md px-1.5 py-2 text-center text-[10px] font-semibold outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-45 sm:px-2 sm:text-[11px] max-md:min-h-11 max-md:rounded-2xl max-md:px-2.5 max-md:text-[11px]`,
               active
                 ? (activeClassName ?? accent.segmentActive)
                 : 'text-muted-foreground hover:bg-white/40 hover:text-foreground dark:hover:bg-white/10'

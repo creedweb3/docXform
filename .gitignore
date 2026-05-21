@@ -55,6 +55,7 @@ tmp-*.png
 AGENTS.md
 CLAUDE.md
 GEMINI.md
+docs/mobile-ui-gemini-flash-output.md
 
 # local env files
 .env

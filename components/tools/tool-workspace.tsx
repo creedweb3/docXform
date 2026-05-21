@@ -34,7 +34,8 @@ import { getCachedPerfProfile, getMotionBudget } from '@/lib/perf-profile';
 import { ToolIcon } from '@/components/tools/tool-icon';
 import { PageGrid, type PageThumb } from '@/components/tools/page-grid';
 import type { ToolDefinition } from '@/lib/tools';
-import { TONE_STYLES } from '@/components/tools/tone-styles';
+import { TONE_STYLES, type ToneKey } from '@/components/tools/tone-styles';
+import { MobileStudioRail } from '@/components/tools/studio/mobile-studio-rail';
 import { StudioFabStack } from '@/components/tools/studio/studio-ui';
 import { DefaultBatchStudioSurface } from '@/components/tools/studio/default-batch-studio-surface';
 import { renderPdfPageThumbnails, revokePdfThumbUrls } from '@/lib/client-previews';
@@ -179,6 +180,10 @@ type ToolWorkspaceProps = {
   showPageGridPanel?: (api: WorkspaceSurfaceApi) => boolean;
   /** Fires after the grid snapshot updates (selection, select-all/none, reorder). */
   onPageGridStateChange?: (api: WorkspaceSurfaceApi) => void;
+  /** Phones only: settings + CTAs in right slide-in rail; sidebar hidden below md. */
+  mobileActionsInRail?: boolean;
+  mobileRailTitle?: string;
+  mobileRailTone?: ToneKey;
 };
 
 type NoticeKind = 'success' | 'info' | 'error';
@@ -198,6 +203,10 @@ const QUEUE_SCROLL_AFTER_FILE_COUNT = 4;
 
 const CTA_FLEX_LAYOUT =
   'inline-flex min-h-12 min-w-0 flex-1 basis-0 select-none items-center justify-center gap-2 self-stretch rounded-xl box-border px-4 py-3 text-center text-xs font-semibold leading-snug';
+
+/** Full-width stacked CTAs in the phone settings rail (no dashed / nested card chrome). */
+const MOBILE_RAIL_CTA_BASE =
+  'flex w-full min-h-11 select-none items-center justify-center gap-2 rounded-full px-5 text-center text-xs font-semibold leading-snug';
 
 function statusLabel(file: WorkspaceFile) {
   if (file.status === 'done') return 'Done';
@@ -270,7 +279,18 @@ function revokeGridStateThumbs(state: PerFileGridState | undefined) {
   revokePdfThumbUrls(urls);
 }
 
-export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface, showPageGridPanel, onPageGridStateChange }: ToolWorkspaceProps) {
+export function ToolWorkspace({
+  config,
+  actions,
+  subtitle,
+  footer,
+  studioSurface,
+  showPageGridPanel,
+  onPageGridStateChange,
+  mobileActionsInRail = false,
+  mobileRailTitle,
+  mobileRailTone,
+}: ToolWorkspaceProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const processStartedAtRef = useRef<number | null>(null);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1394,8 +1414,14 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
     </div>
   );
 
-  const renderCtaRow = () => (
-    <div className="flex w-full min-w-0 flex-col gap-2">
+  const renderCtaRow = (opts?: { mobileRail?: boolean }) => {
+    const mobile = opts?.mobileRail === true;
+    const mobilePrimary = `${MOBILE_RAIL_CTA_BASE} bg-gradient-to-br ${config.primaryButtonClass} text-white shadow-sm hover:opacity-90 disabled:opacity-45`;
+    const mobileSecondary = `${MOBILE_RAIL_CTA_BASE} border border-border/30 bg-white text-foreground hover:bg-muted/20 disabled:opacity-45 dark:bg-zinc-900/80`;
+    const mobileIdle = `${MOBILE_RAIL_CTA_BASE} bg-muted/35 text-muted-foreground disabled:opacity-100`;
+
+    return (
+    <div className={clsx('flex w-full min-w-0 flex-col', mobile ? 'mobile-rail-cta gap-2.5' : 'gap-2')}>
       <button
         type="button"
         onClick={() => {
@@ -1406,9 +1432,15 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
           }
         }}
         disabled={allDone ? busy : busy || pendingCount === 0}
-        className={`${downloadPrimary ? secondaryCtaClass : primaryCtaClass} ${
-          downloadPrimary ? 'order-2 sm:order-2' : 'order-1 sm:order-1'
-        }`}
+        className={
+          mobile
+            ? downloadPrimary
+              ? mobileSecondary
+              : mobilePrimary
+            : `${downloadPrimary ? secondaryCtaClass : primaryCtaClass} ${
+                downloadPrimary ? 'order-2 sm:order-2' : 'order-1 sm:order-1'
+              }`
+        }
       >
         <HugeiconsIcon
           icon={busy || allDone ? RefreshIcon : File01Icon}
@@ -1427,13 +1459,21 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
         onClick={() => void handleDownload()}
         disabled={!downloadReady}
         aria-busy={busy}
-        className={`${
-          downloadPrimary
-            ? primaryCtaClass
-            : downloadReady
-              ? secondaryCtaClass
-              : downloadIdleCtaClass
-        } ${downloadPrimary ? 'order-1 sm:order-1' : 'order-2 sm:order-2'}`}
+        className={
+          mobile
+            ? downloadPrimary
+              ? mobilePrimary
+              : downloadReady
+                ? mobileSecondary
+                : mobileIdle
+            : `${
+                downloadPrimary
+                  ? primaryCtaClass
+                  : downloadReady
+                    ? secondaryCtaClass
+                    : downloadIdleCtaClass
+              } ${downloadPrimary ? 'order-1 sm:order-1' : 'order-2 sm:order-2'}`
+        }
       >
         {downloadReady ? (
           <HugeiconsIcon
@@ -1461,7 +1501,8 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
             : 'Almost there · hit ' + actionLabel}
       </button>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="w-full space-y-4">
@@ -1673,11 +1714,11 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={spring}
-          className="glass relative z-0 flex min-h-0 flex-col gap-3 overflow-x-visible rounded-3xl p-5 sm:p-6"
+          className="mobile-studio-glass glass relative z-0 flex min-h-0 flex-col gap-3 overflow-x-visible rounded-3xl p-5 sm:p-6 max-md:overflow-hidden max-md:rounded-[1.75rem] max-md:p-3 max-md:pb-safe"
         >
-          <div className="flex min-h-0 w-full flex-col gap-3 px-2 sm:px-3">
-            <div className="grid w-full items-stretch gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)] lg:min-h-0">
-              <div className="relative flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-x-visible rounded-2xl border border-border/40 bg-[#f4f5f7] p-4 sm:p-6 dark:bg-muted/25">
+          <div className="flex min-h-0 w-full flex-col gap-3 px-2 sm:px-3 max-md:overflow-x-hidden max-md:px-0">
+            <div className="grid w-full items-stretch gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)] lg:min-h-0 max-md:grid-cols-1 max-md:gap-4">
+              <div className="relative flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-x-visible rounded-2xl border border-border/40 bg-[#f4f5f7] p-4 sm:p-6 dark:bg-muted/25 mobile-preview-shell max-md:rounded-[1.75rem] max-md:min-h-[min(58vh,28rem)] max-md:overflow-hidden max-md:p-3 max-md:pb-14">
                 {config.allowMultiple ? (
                   <StudioFabStack
                     fileCount={files.length}
@@ -1689,7 +1730,7 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                     primaryButtonClass={config.primaryButtonClass}
                   />
                 ) : null}
-                <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden basis-0 px-px pt-px">
+                <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden basis-0 px-px pt-px max-md:basis-auto max-md:min-h-[min(52vh,24rem)]">
                   {/* eslint-disable-next-line react-hooks/refs -- false positive: surfaceApi is state snapshot; refs only used when callers invoke picker */}
                   {studioSurface ? studioSurface(surfaceApi) : <DefaultBatchStudioSurface api={surfaceApi} />}
                 </div>
@@ -1704,7 +1745,8 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
               <aside
                 className={clsx(
                   'flex h-full w-full min-h-0 min-w-0 flex-col overflow-visible rounded-2xl border border-border/50 bg-gradient-to-b from-white/75 to-white/60 px-4 py-4 shadow-sm backdrop-blur-md sm:px-5 sm:py-5 dark:from-zinc-950/50 dark:to-zinc-950/35',
-                  pageGridPanelVisible && 'lg:sticky lg:top-36'
+                  pageGridPanelVisible && 'lg:sticky lg:top-36',
+                  mobileActionsInRail && 'max-md:hidden'
                 )}
               >
                 <div className="mx-auto flex w-full min-w-0 max-w-sm flex-col gap-5">
@@ -1733,12 +1775,15 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                     {formatBytes(totalBytes)}.
                   </p>
                 </div>
-                <div className="shrink-0">{renderQueueToolbar()}</div>
+                <div className={clsx('shrink-0', mobileActionsInRail && !config.allowMultiple && 'max-md:hidden')}>
+                  {renderQueueToolbar()}
+                </div>
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-5">
                   <div
                     ref={queueListScrollRef}
                     className={clsx(
                       'w-full min-w-0',
+                      mobileActionsInRail && !config.allowMultiple && 'max-md:hidden',
                       queueListUsesScrollRegion
                         ? clsx(
                             'min-h-0 shrink-0 overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable]',
@@ -1758,6 +1803,15 @@ export function ToolWorkspace({ config, actions, subtitle, footer, studioSurface
                 </div>
               </aside>
             </div>
+            {mobileActionsInRail && footer ? (
+              <MobileStudioRail
+                title={mobileRailTitle ?? 'Settings'}
+                tone={mobileRailTone ?? config.tone}
+                actions={renderCtaRow({ mobileRail: true })}
+              >
+                {typeof footer === 'function' ? footer(surfaceApi) : footer}
+              </MobileStudioRail>
+            ) : null}
           </div>
         </motion.div>
       )}

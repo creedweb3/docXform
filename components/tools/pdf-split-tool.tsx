@@ -235,9 +235,9 @@ export function PdfSplitTool() {
                   : `Selected pages export as separate files. ${outputPdfCount} PDF${outputPdfCount === 1 ? '' : 's'} will be created.`;
 
       return (
-        <div className="flex w-full min-w-0 flex-col gap-5 text-xs text-muted-foreground">
+        <div className="flex w-full min-w-0 flex-col gap-5 text-xs text-muted-foreground max-md:gap-4">
           <section
-            className="min-w-0 w-full shrink-0 overflow-x-visible rounded-2xl border border-border/30 bg-white/95 px-4 pb-5 pt-4 shadow-md ring-1 ring-black/[0.04] sm:px-5 sm:pb-6 dark:border-white/[0.08] dark:bg-zinc-950/50 dark:ring-white/[0.06]"
+            className="min-w-0 w-full shrink-0 overflow-x-visible rounded-2xl border border-border/30 bg-white/95 px-4 pb-5 pt-4 shadow-md ring-1 ring-black/[0.04] sm:px-5 sm:pb-6 dark:border-white/[0.08] dark:bg-zinc-950/50 dark:ring-white/[0.06] max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:px-0 max-md:pb-0 max-md:pt-0 max-md:shadow-none max-md:ring-0"
             aria-label="PDF split options"
           >
             <div className="mb-1 shrink-0">
@@ -295,7 +295,7 @@ export function PdfSplitTool() {
                             <div
                               key={`range-${idx}-${from}-${to}`}
                               aria-label={`Range ${idx + 1}`}
-                              className="flex shrink-0 min-h-[1.75rem] min-w-0 flex-nowrap items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 dark:bg-white/[0.06]"
+                              className="flex shrink-0 min-h-[1.75rem] min-w-0 flex-nowrap items-center gap-2 rounded-lg max-md:rounded-2xl bg-muted/40 px-2 py-2 max-md:px-3 dark:bg-white/[0.06]"
                             >
                               <div className={studioAccent.rangeIndexBadge} aria-hidden>
                                 {idx + 1}
@@ -310,7 +310,7 @@ export function PdfSplitTool() {
                                     type="number"
                                     min={1}
                                     max={n > 0 ? n : undefined}
-                                    className="box-border h-7 w-11 shrink-0 rounded-lg border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
+                                    className="box-border h-7 w-11 shrink-0 rounded-lg max-md:rounded-2xl max-md:h-9 border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
                                     value={from}
                                     onChange={(e) =>
                                       patchCustomRange(idx, 'from', Math.max(1, Number(e.target.value) || 1))
@@ -325,7 +325,7 @@ export function PdfSplitTool() {
                                     type="number"
                                     min={1}
                                     max={n > 0 ? n : undefined}
-                                    className="box-border h-7 w-11 shrink-0 rounded-lg border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
+                                    className="box-border h-7 w-11 shrink-0 rounded-lg max-md:rounded-2xl max-md:h-9 border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
                                     value={to}
                                     onChange={(e) =>
                                       patchCustomRange(idx, 'to', Math.max(1, Number(e.target.value) || 1))
@@ -339,7 +339,7 @@ export function PdfSplitTool() {
                                   type="button"
                                   aria-label={`Remove range ${idx + 1}`}
                                   title="Remove range"
-                                  className="box-border flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground dark:hover:bg-white/10"
+                                  className="box-border flex h-7 w-7 shrink-0 items-center justify-center rounded-lg max-md:rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground dark:hover:bg-white/10"
                                   onClick={() => removeCustomRange(idx)}
                                 >
                                   <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} aria-hidden />
@@ -353,7 +353,7 @@ export function PdfSplitTool() {
                     <button type="button" onClick={addCustomRange} className={studioAccent.addRangeButton}>
                       + Add range
                     </button>
-                    <label className="flex shrink-0 cursor-pointer items-start gap-2.5 rounded-lg bg-muted/40 px-3 py-2.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
+                    <label className="flex shrink-0 cursor-pointer items-start gap-2.5 rounded-lg max-md:rounded-2xl bg-muted/40 px-3 py-3 max-md:py-3.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
                       <input
                         type="checkbox"
                         className="mt-0.5"
@@ -370,7 +370,7 @@ export function PdfSplitTool() {
                     <label className="block space-y-1.5">
                       <span className="text-[11px] font-semibold text-foreground">Split into page ranges of</span>
                       <input
-                        className="w-full rounded-lg border-0 bg-white/90 px-3 py-2.5 text-sm text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
+                        className="w-full rounded-lg max-md:rounded-2xl border-0 bg-white/90 px-3 py-3 text-sm text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] dark:bg-zinc-900/80 dark:ring-white/10"
                         type="number"
                         min={1}
                         value={interval}
@@ -383,7 +383,7 @@ export function PdfSplitTool() {
                     </label>
                   </div>
                 ) : (
-                  <p className="shrink-0 rounded-lg bg-muted/35 px-3 py-3 text-[11px] ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
+                  <p className="shrink-0 rounded-lg max-md:rounded-2xl bg-muted/35 px-3 py-3.5 text-[11px] ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
                     Smart split is not available yet.
                   </p>
                 )}
@@ -403,7 +403,7 @@ export function PdfSplitTool() {
                     if (id === 'all' && file) api.selectAllPagesForFile(file.id);
                   }}
                 />
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg bg-muted/40 px-3 py-2.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg max-md:rounded-2xl bg-muted/40 px-3 py-3.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
                   <input
                     type="checkbox"
                     className="mt-0.5"
@@ -428,7 +428,7 @@ export function PdfSplitTool() {
             )}
           </section>
 
-          <div className="shrink-0">
+          <div className="shrink-0 max-md:mt-1">
             <StudioInfoBanner tone={tool.tone}>{bannerText}</StudioInfoBanner>
           </div>
         </div>
@@ -562,6 +562,9 @@ export function PdfSplitTool() {
       studioSurface={studioSurface}
       showPageGridPanel={() => false}
       onPageGridStateChange={handlePageGridStateChange}
+      mobileActionsInRail
+      mobileRailTitle="Split settings"
+      mobileRailTone={tool.tone}
     />
   );
 }

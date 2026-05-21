@@ -83,7 +83,7 @@ export default function Home() {
         <Navbar />
 
         <main className="flex-1 pt-[8.5rem] sm:pt-[9rem]">
-          <section className="px-6 pt-4 pb-16 sm:pb-20">
+          <section className="px-4 pt-4 pb-14 max-md:pb-safe sm:px-6 sm:pb-16 md:pb-20">
             <div className="max-w-4xl mx-auto text-center">
               <div className="inline-flex items-center gap-2 glass-subtle rounded-full px-4 py-1.5 mb-6 border border-white/5">
                 <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className="text-blue-500" />
@@ -92,13 +92,13 @@ export default function Home() {
                 </span>
               </div>
 
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl tracking-tight leading-[1.08] mb-8">
+              <h1 className="text-3xl max-md:leading-tight sm:text-6xl lg:text-7xl tracking-tight leading-[1.08] mb-6 sm:mb-8">
                 <span className="block" aria-label="docXform">
                   <span className="text-[#333333] font-semibold">doc</span>
                   <span className="text-[#2563eb] font-extrabold">X</span>
                   <span className="text-[#333333] font-semibold">form</span>
                 </span>
-                <span className="block mt-4 text-2xl sm:text-4xl lg:text-5xl font-semibold text-foreground">
+                <span className="block mt-3 text-xl max-md:leading-snug sm:mt-4 sm:text-4xl lg:text-5xl font-semibold text-foreground">
                   Private Word and PDF converter
                 </span>
               </h1>
