@@ -10,6 +10,11 @@ import { TONE_STYLES } from '@/components/tools/tone-styles';
 import type { SplitMode } from '@/lib/tool-runs/pdf-split';
 import type { RotateAngle } from '@/lib/tool-runs/pdf-rotate';
 import type { WatermarkPosition } from '@/lib/tool-runs/pdf-watermark';
+import {
+  computeRangeCardColSpans,
+  pairSingleWideIndices,
+  rangeCardGridColSpan,
+} from '@/lib/pdf-split-range-layout';
 
 export function PdfMergeStudioSurface({ api }: { api: WorkspaceSurfaceApi }) {
   const { files, busy, draggedFileId, setDraggedFileId, reorderFilesInQueue, config } = api;
@@ -77,51 +82,6 @@ function splitGroupsForBar(mode: SplitMode, pageCount: number): number[][] {
   return mode.ranges
     .map((r) => r.filter((p) => p >= 1 && p <= n))
     .filter((g) => g.length > 0);
-}
-
-/**
- * Pack range cards into a 3-column grid:
- * - up to three single-page ranges per row
- * - one single + one multi-page range per row (either order)
- * - lone multi (or when no pair fits) spans the full row
- * - two multi ranges never share a row
- */
-function computeRangeCardColSpans(groups: number[][]): (1 | 2 | 3)[] {
-  const spans: (1 | 2 | 3)[] = [];
-  let col = 0;
-
-  const isSingle = (i: number) => groups[i].length === 1;
-  const isMulti = (i: number) => groups[i].length > 1;
-
-  for (let gi = 0; gi < groups.length; gi++) {
-    if (isSingle(gi)) {
-      if (col >= 3) col = 0;
-      spans.push(1);
-      col += 1;
-      if (col >= 3) col = 0;
-      continue;
-    }
-
-    const prevSingle = gi > 0 && isSingle(gi - 1);
-    const nextSingle = gi < groups.length - 1 && isSingle(gi + 1);
-    const prevMulti = gi > 0 && isMulti(gi - 1);
-    const nextMulti = gi < groups.length - 1 && isMulti(gi + 1);
-
-    const canPairOnRow =
-      col <= 1 && col + 2 <= 3 && (prevSingle || nextSingle) && !prevMulti && !nextMulti;
-
-    if (canPairOnRow) {
-      spans.push(2);
-      col += 2;
-    } else {
-      if (col > 0) col = 0;
-      spans.push(3);
-      col = 3;
-    }
-    if (col >= 3) col = 0;
-  }
-
-  return spans;
 }
 
 function thumbForPage(
@@ -222,22 +182,28 @@ function PageThumbCard({
   );
 }
 
-/** Range preview dashed cards: single-page groups (one grid column). */
+/** Range preview dashed cards: single-page groups (grid col-span set per card). */
 const PDF_SPLIT_RANGE_CARD_CLASS =
-  'col-span-1 flex h-full min-h-0 w-full min-w-0 flex-col gap-2 rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-3 pb-2 pt-2 shadow-sm dark:border-zinc-500/60 dark:bg-muted/20';
+  'flex h-full min-h-0 w-full min-w-0 flex-col gap-2 rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-3 pb-2 pt-2 shadow-sm dark:border-zinc-500/60 dark:bg-muted/20';
 
-/**
- * Full-row multi only: inherit parent `grid-cols-3` tracks so thumbs in columns 1 & 3 line up with singles.
- * Horizontal padding only on the title; shell uses `px-0` so subgrid is not inset.
- */
+/** Full-row multi on 6-column grid. */
 const PDF_SPLIT_RANGE_CARD_ALONE_MULTI_CLASS =
-  'col-span-3 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-0 pb-2 pt-2 shadow-sm [grid-template-columns:subgrid] gap-x-3 gap-y-2 sm:gap-x-4 dark:border-zinc-500/60 dark:bg-muted/20';
+  'col-span-6 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-0 pb-2 pt-2 shadow-sm gap-y-2 dark:border-zinc-500/60 dark:bg-muted/20';
 
-/**
- * Multi paired with an adjacent single on one row: span columns 1–2; thumbs align to tracks 1 & 2.
- */
+/** Multi paired with single on one row (4 of 6 cols). */
 const PDF_SPLIT_RANGE_CARD_PAIR_MULTI_CLASS =
-  'col-span-2 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-0 pb-2 pt-2 shadow-sm [grid-template-columns:subgrid] gap-x-3 gap-y-2 sm:gap-x-4 dark:border-zinc-500/60 dark:bg-muted/20';
+  'col-span-4 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-0 pb-2 pt-2 shadow-sm gap-y-2 dark:border-zinc-500/60 dark:bg-muted/20';
+
+/** Two equal halves; each thumb centered in its half (1.5+1.5 style positioning). */
+const PDF_SPLIT_RANGE_MULTI_THUMBS_CLASS =
+  'relative grid min-h-0 min-w-0 grid-cols-2 items-center gap-x-3 sm:gap-x-4';
+
+const RANGE_GRID_COL_SPAN: Record<2 | 3 | 4 | 6, string> = {
+  2: 'col-span-2',
+  3: 'col-span-3',
+  4: 'col-span-4',
+  6: 'col-span-6',
+};
 
 export function PdfSplitStudioSurface({
   api,
@@ -278,6 +244,7 @@ export function PdfSplitStudioSurface({
   }, [st, pageCount]);
   const groups = pageCount > 0 && splitTab === 'range' ? splitGroupsForBar(mode, pageCount) : [];
   const rangeColSpans = useMemo(() => computeRangeCardColSpans(groups), [groups]);
+  const pairSingleWide = useMemo(() => pairSingleWideIndices(rangeColSpans), [rangeColSpans]);
   const rangeOutputPdfCount =
     pageCount > 0 && splitTab === 'range' && groups.length > 0
       ? mergeRangeOutputs
@@ -471,22 +438,24 @@ export function PdfSplitStudioSurface({
             className="queue-list-scrollbar min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain px-3 py-1.5 pr-2"
             style={scrollThumbStyle}
           >
-            <div className="grid min-w-0 grid-cols-3 items-stretch gap-x-3 gap-y-3 sm:gap-x-4">
+            <div className="grid min-w-0 grid-cols-6 items-stretch gap-x-3 gap-y-3 sm:gap-x-4">
               {groups.map((pages, gi) => {
                 const lo = Math.min(...pages);
                 const hi = Math.max(...pages);
                 const isMultiPageRange = pages.length > 1;
-                const colSpan = rangeColSpans[gi] ?? (isMultiPageRange ? 3 : 1);
-                return colSpan === 3 && isMultiPageRange ? (
+                const logicalSpan = rangeColSpans[gi] ?? (isMultiPageRange ? 3 : 1);
+                const gridSpan = rangeCardGridColSpan(logicalSpan, pairSingleWide.has(gi));
+                const gridSpanClass = RANGE_GRID_COL_SPAN[gridSpan];
+                return logicalSpan === 3 && isMultiPageRange ? (
                   <div key={`g-${gi}-${lo}-${hi}`} className={PDF_SPLIT_RANGE_CARD_ALONE_MULTI_CLASS}>
-                    <p className="col-span-3 px-3 text-center text-[11px] font-semibold text-foreground">
+                    <p className="col-span-6 px-3 text-center text-[11px] font-semibold text-foreground">
                       Range {gi + 1}
                     </p>
-                    <div className="relative col-span-3 grid min-h-0 min-w-0 [grid-template-columns:subgrid] gap-x-3 sm:gap-x-4">
-                      <div className="col-start-1 row-start-1 flex min-w-0 justify-center">
+                    <div className={clsx(PDF_SPLIT_RANGE_MULTI_THUMBS_CLASS, 'col-span-6 px-1 sm:px-2')}>
+                      <div className="flex min-w-0 justify-center">
                         <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo)} highlight="none" inlineInGroup />
                       </div>
-                      <div className="col-start-3 row-start-1 flex min-w-0 justify-center">
+                      <div className="flex min-w-0 justify-center">
                         <PageThumbCard pageNum={hi} thumb={thumbForPage(st, hi)} highlight="none" inlineInGroup />
                       </div>
                       <span
@@ -497,16 +466,16 @@ export function PdfSplitStudioSurface({
                       </span>
                     </div>
                   </div>
-                ) : isMultiPageRange && colSpan === 2 ? (
+                ) : isMultiPageRange && logicalSpan === 2 ? (
                   <div key={`g-${gi}-${lo}-${hi}`} className={PDF_SPLIT_RANGE_CARD_PAIR_MULTI_CLASS}>
-                    <p className="col-span-2 px-3 text-center text-[11px] font-semibold text-foreground">
+                    <p className="col-span-4 px-3 text-center text-[11px] font-semibold text-foreground">
                       Range {gi + 1}
                     </p>
-                    <div className="relative col-span-2 grid min-h-0 min-w-0 [grid-template-columns:subgrid] gap-x-3 sm:gap-x-4">
-                      <div className="col-start-1 row-start-1 flex min-w-0 justify-center">
+                    <div className={clsx(PDF_SPLIT_RANGE_MULTI_THUMBS_CLASS, 'col-span-4 px-1 sm:px-2')}>
+                      <div className="flex min-w-0 justify-center">
                         <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo)} highlight="none" inlineInGroup />
                       </div>
-                      <div className="col-start-2 row-start-1 flex min-w-0 justify-center">
+                      <div className="flex min-w-0 justify-center">
                         <PageThumbCard pageNum={hi} thumb={thumbForPage(st, hi)} highlight="none" inlineInGroup />
                       </div>
                       <span
@@ -518,7 +487,10 @@ export function PdfSplitStudioSurface({
                     </div>
                   </div>
                 ) : (
-                  <div key={`g-${gi}-${lo}-${hi}`} className={PDF_SPLIT_RANGE_CARD_CLASS}>
+                  <div
+                    key={`g-${gi}-${lo}-${hi}`}
+                    className={clsx(PDF_SPLIT_RANGE_CARD_CLASS, gridSpanClass)}
+                  >
                     <p className="text-center text-[11px] font-semibold text-foreground">Range {gi + 1}</p>
                     <div className="flex min-h-0 flex-1 w-full flex-col justify-center">
                       <div className="flex w-full min-w-0 justify-center">
