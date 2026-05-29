@@ -367,13 +367,23 @@ export function PdfSplitStudioSurface({
               Clear
             </button>
             <span
-            className={clsx(
-              'inline-flex shrink-0 items-center rounded-full px-2.5 py-1 tabular-nums text-[11px] font-medium shadow-sm max-md:min-h-7 max-md:px-3',
-              studioPillClass
-            )}
-          >
-            {selectedSet.size}/{pageCount}
-          </span>
+              className={clsx(
+                'inline-flex shrink-0 items-center rounded-full px-2.5 py-1 tabular-nums text-[11px] font-medium shadow-sm max-md:min-h-7 max-md:px-3',
+                studioPillClass
+              )}
+            >
+              {selectedSet.size}/{pageCount}
+            </span>
+            {studioOutputPillLabel ? (
+              <span
+                className={clsx(
+                  'inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm max-md:min-h-7 max-md:px-3',
+                  studioPillClass
+                )}
+              >
+                {studioOutputPillLabel}
+              </span>
+            ) : null}
           </div>
         ) : studioOutputPillLabel ? (
           <span

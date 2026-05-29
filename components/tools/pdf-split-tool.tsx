@@ -106,6 +106,11 @@ function splitGroupsForBar(mode: SplitMode, pageCount: number): number[][] {
     .filter((g) => g.length > 0);
 }
 
+function fullDocumentRange(pageCount: number): number[] {
+  const n = Math.max(1, pageCount);
+  return Array.from({ length: n }, (_, i) => i + 1);
+}
+
 function isFullPageSelection(
   st: { selected: number[]; order: number[] } | undefined,
   pageCount: number
@@ -151,6 +156,21 @@ export function PdfSplitTool() {
   const [mode, setMode] = useState<SplitMode>({ kind: 'ranges', ranges: [[1]] });
   const [interval, setInterval] = useState(2);
   const pageCountRef = useRef(0);
+  const defaultRangeAppliedForFileIdRef = useRef<string | null>(null);
+
+  const applyDefaultRangeWhenPreviewReady = useCallback((api: WorkspaceSurfaceApi) => {
+    const file = api.files[0];
+    const n = file?.preview?.pageCount ?? 0;
+    pageCountRef.current = n;
+    if (!file) {
+      defaultRangeAppliedForFileIdRef.current = null;
+      return;
+    }
+    if (n <= 0 || defaultRangeAppliedForFileIdRef.current === file.id) return;
+    defaultRangeAppliedForFileIdRef.current = file.id;
+    setMode({ kind: 'ranges', ranges: [fullDocumentRange(n)] });
+  }, []);
+
   const addCustomRange = useCallback(() => {
     setMode((prev) => {
       if (prev.kind !== 'ranges') return { kind: 'ranges', ranges: [[1]] };
@@ -186,6 +206,7 @@ export function PdfSplitTool() {
 
   const handlePageGridStateChange = useCallback(
     (api: WorkspaceSurfaceApi) => {
+      applyDefaultRangeWhenPreviewReady(api);
       if (splitTab !== 'pages' || extractMode !== 'all') return;
       const file = api.files[0];
       const n = file?.preview?.pageCount ?? 0;
@@ -194,7 +215,7 @@ export function PdfSplitTool() {
       if (!st) return;
       if (!isFullPageSelection(st, n)) setExtractMode('select');
     },
-    [splitTab, extractMode]
+    [splitTab, extractMode, applyDefaultRangeWhenPreviewReady]
   );
 
   const footer = useCallback(
