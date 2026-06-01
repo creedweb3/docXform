@@ -11,6 +11,7 @@ import {
 import { HomeHero } from '@/components/site/home-hero';
 import { Container } from '@/components/site/ui/container';
 import { SectionHeader } from '@/components/site/ui/section-header';
+import { ZoneSeparator } from '@/components/site/ui/zone-separator';
 
 export function CreativeHome() {
   return (
@@ -34,6 +35,7 @@ export function CreativeHome() {
       <HomeToolsTeaser />
       <HomeFeatures />
       <HomeWorkflow />
+      <ZoneSeparator />
       <HomeCta />
     </>
   );

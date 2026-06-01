@@ -74,7 +74,7 @@ export function MobileStudioRail({
       {open ? (
       <aside
         className={clsx(
-          'mobile-rail-panel fixed z-50 flex w-[min(20rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-[-8px_0_32px_rgba(15,23,42,0.12)] transition-transform duration-300 ease-out dark:bg-zinc-950',
+          'mobile-rail-panel studio-shell-panel fixed z-50 flex w-[min(20rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-sm border shadow-[-8px_0_32px_rgba(0,0,0,0.55)] transition-transform duration-300 ease-out',
           'right-3 top-[max(0.75rem,env(safe-area-inset-top,0px))] bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))]',
           'translate-x-0'
         )}
@@ -82,8 +82,10 @@ export function MobileStudioRail({
         aria-modal
         aria-label={title}
       >
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/15 bg-white px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] dark:bg-zinc-950">
-          <p className="min-w-0 flex-1 text-sm font-semibold text-foreground">{title}</p>
+        <div className="studio-shell-panel flex shrink-0 items-center justify-between gap-2 border-b px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
+          <p className="min-w-0 flex-1 font-mono text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
+            {title}
+          </p>
           <button
             type="button"
             aria-label="Close settings"
@@ -93,13 +95,13 @@ export function MobileStudioRail({
             <HugeiconsIcon icon={Cancel01Icon} size={20} strokeWidth={2} aria-hidden />
           </button>
         </div>
-        <div className="flex min-h-0 flex-1 flex-col bg-white dark:bg-zinc-950">
+        <div className="studio-shell-panel flex min-h-0 flex-1 flex-col">
           <div className="mobile-rail-panel__body min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 [scrollbar-gutter:auto]">
             {children}
             {sheetFooter ? <div className="mt-4 shrink-0">{sheetFooter}</div> : null}
           </div>
           {actions ? (
-            <div className="shrink-0 border-t border-border/15 bg-white px-4 py-3 pb-safe dark:bg-zinc-950">
+            <div className="studio-shell-panel shrink-0 border-t px-4 py-3 pb-safe">
               {actions}
             </div>
           ) : null}

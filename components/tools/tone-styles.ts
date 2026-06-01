@@ -21,10 +21,6 @@ const DARK_DRAG_FUCHSIA = 'ring-2 ring-fuchsia-500/20 bg-fuchsia-500/[0.06]';
 const DARK_CHIP = 'border-border/70 bg-card/50 text-muted-foreground';
 const DARK_LINK = 'text-foreground/85 hover:text-foreground underline-offset-4';
 const DARK_PAGE_GRID = 'border-border/80 bg-card/50 text-foreground';
-const DARK_STUDIO_INFO_PILL =
-  'border-border/70 bg-card/40 text-foreground shadow-sm ring-1 ring-border/40';
-const DARK_STUDIO_BANNER_MARK = 'bg-card/60 text-muted-foreground';
-
 /** All pastel palette keys (format tones + legacy studio hues). */
 export type ToneKey =
   | FormatTone
@@ -91,8 +87,9 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     linkText: DARK_LINK,
     chip: DARK_CHIP,
     studioInfoPill:
-      'border-blue-300/70 bg-blue-50/95 text-blue-950 shadow-sm ring-1 ring-blue-500/10',
-    studioInfoBannerMark: DARK_STUDIO_BANNER_MARK,
+      'border-blue-300/70 bg-blue-50/95 text-blue-950 shadow-sm ring-1 ring-blue-500/10 dark:border-blue-400/35 dark:bg-blue-950/50 dark:text-blue-50 dark:ring-blue-400/10',
+    studioInfoBannerMark:
+      'bg-blue-200/70 text-blue-900 dark:bg-blue-800/80 dark:text-blue-100',
     scrollbarThumb: 'rgba(147, 197, 253, 0.78)',
     scrollbarThumbHover: 'rgba(125, 211, 252, 0.88)',
   },
@@ -383,4 +380,3 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
     scrollbarThumbHover: 'rgba(232, 121, 249, 0.88)',
   },
 };
-

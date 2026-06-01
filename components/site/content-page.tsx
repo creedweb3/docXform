@@ -11,7 +11,7 @@ type ContentPageProps = {
 export function ContentPage({ title, description, path = '/legal', children }: ContentPageProps) {
   return (
     <SiteShell>
-      <HackerPage path={path} title={title} description={description} />
+      <HackerPage path={path} title={title} description={description} separatorAfter />
       <HackerPageBody>
         <div className="prose prose-invert prose-sm max-w-none text-foreground/90 [&_a]:text-[hsl(var(--brand-copper))] [&_h2]:font-display [&_h2]:text-foreground">
           {children}

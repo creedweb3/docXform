@@ -42,13 +42,9 @@
   * {
     @apply border-border;
   }
+  /* Reserve scrollbar space on the scroll side only — both-edges caused a visible vertical strip on every page */
   html {
-    scrollbar-gutter: stable both-edges;
-  }
-  @media (max-width: 767px) {
-    html {
-      scrollbar-gutter: stable;
-    }
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground antialiased;
@@ -240,6 +236,10 @@
   .brand-rule {
     @apply h-px w-10 bg-[hsl(var(--brand-copper))];
   }
+  /* Full-width rule inside max-w content — same length everywhere */
+  .content-rule {
+    background: hsl(var(--border) / 0.65);
+  }
   .label-mono {
     font-family: var(--font-mono), ui-monospace, monospace;
     @apply text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground;
@@ -319,6 +319,18 @@
       opacity: 0;
     }
   }
+  @media (hover: hover) {
+    .faq-details:hover {
+      border-color: hsl(var(--brand-copper) / 0.3);
+    }
+    .faq-details:hover summary {
+      background: hsl(var(--brand-copper) / 0.06);
+    }
+    .faq-details:hover .faq-expander {
+      border-color: hsl(var(--brand-copper) / 0.38);
+      color: hsl(var(--foreground) / 0.9);
+    }
+  }
   .term-faq details {
     border-radius: 2px;
     border-color: hsl(var(--brand-copper) / 0.18);
@@ -338,6 +350,228 @@
     font-size: 11px;
     line-height: 1.65;
     color: hsl(var(--muted-foreground));
+  }
+  /* Zone spacing: bands without a line use half+half; separators use 2× that total */
+  :root {
+    --marketing-zone-gap: 2.75rem;
+    --marketing-separator-gap: calc(var(--marketing-zone-gap) * 2);
+  }
+  @media (min-width: 640px) {
+    :root {
+      --marketing-zone-gap: 3rem;
+    }
+  }
+  .marketing-page {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .zone-gap-after {
+    padding-bottom: calc(var(--marketing-zone-gap) / 2);
+  }
+  .zone-gap-before {
+    padding-top: calc(var(--marketing-zone-gap) / 2);
+  }
+  /* Separator owns equal space above & below the line (2× default zone gap total) */
+  .marketing-zone-separator {
+    padding-top: calc(var(--marketing-separator-gap) / 2);
+    padding-bottom: calc(var(--marketing-separator-gap) / 2);
+  }
+  /* Avoid stacking neighbor halves + separator padding */
+  .zone-gap-after:has(+ [data-marketing-separator]) {
+    padding-bottom: 0;
+  }
+  [data-marketing-separator] + .zone-gap-before {
+    padding-top: 0;
+  }
+  /* Terminal content is already padded — don't inset the rule again */
+  .term-shell .marketing-zone-separator > div {
+    max-width: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  /* Tool workspace inside terminal — align studio surfaces with Imprint */
+  .term-shell
+    .tool-workspace
+    :where(.rounded-xl, .rounded-2xl, .rounded-3xl):not(.rounded-full):not(.studio-page-thumb) {
+    border-radius: var(--radius);
+  }
+
+  /* Studio: one wide row — avoid nested “card in card” chrome */
+  .term-shell .tool-workspace--studio .mobile-preview-shell {
+    min-height: min(32rem, 72vh);
+  }
+
+  /* Hide uploads/runtime/output row when split/merge studio is active */
+  .term-shell:has([data-studio-queued='true']) .term-trust-signals {
+    display: none;
+  }
+
+  /*
+   * Legacy tool-tone wash (converter-main-card-*). Set on `.tool-workspace--studio[data-tone]`.
+   */
+  .tool-workspace--studio[data-tone='rose'] {
+    --studio-h: 350;
+    --studio-s: 60%;
+    --studio-l: 55%;
+  }
+  .tool-workspace--studio[data-tone='blue'] {
+    --studio-h: 217;
+    --studio-s: 35%;
+    --studio-l: 55%;
+  }
+  .tool-workspace--studio[data-tone='purple'] {
+    --studio-h: 270;
+    --studio-s: 30%;
+    --studio-l: 55%;
+  }
+  .tool-workspace--studio[data-tone='orange'] {
+    --studio-h: 28;
+    --studio-s: 35%;
+    --studio-l: 55%;
+  }
+  .tool-workspace--studio[data-tone='emerald'] {
+    --studio-h: 160;
+    --studio-s: 30%;
+    --studio-l: 50%;
+  }
+  .tool-workspace--studio[data-tone='amber'] {
+    --studio-h: 38;
+    --studio-s: 35%;
+    --studio-l: 55%;
+  }
+  .tool-workspace--studio[data-tone='teal'] {
+    --studio-h: 175;
+    --studio-s: 30%;
+    --studio-l: 50%;
+  }
+  .tool-workspace--studio[data-tone='cyan'] {
+    --studio-h: 195;
+    --studio-s: 30%;
+    --studio-l: 50%;
+  }
+  .tool-workspace--studio[data-tone='indigo'] {
+    --studio-h: 235;
+    --studio-s: 30%;
+    --studio-l: 55%;
+  }
+  .tool-workspace--studio[data-tone='slate'] {
+    --studio-h: 220;
+    --studio-s: 10%;
+    --studio-l: 60%;
+  }
+  .tool-workspace--studio[data-tone='sky'] {
+    --studio-h: 199;
+    --studio-s: 70%;
+    --studio-l: 55%;
+  }
+  .tool-workspace--studio[data-tone='violet'] {
+    --studio-h: 270;
+    --studio-s: 35%;
+    --studio-l: 55%;
+  }
+  .tool-workspace--studio[data-tone='lime'] {
+    --studio-h: 84;
+    --studio-s: 40%;
+    --studio-l: 45%;
+  }
+  .tool-workspace--studio[data-tone='fuchsia'] {
+    --studio-h: 300;
+    --studio-s: 40%;
+    --studio-l: 55%;
+  }
+  .tool-workspace--studio:not([data-tone]) {
+    --studio-h: 28;
+    --studio-s: 35%;
+    --studio-l: 55%;
+  }
+
+  /* Accent only — panels/inputs use terminal copper (studio-shell-*). */
+  .tool-workspace--studio {
+    --studio-dash: hsl(var(--studio-h) var(--studio-s) var(--studio-l) / 0.26);
+  }
+
+  .term-shell .tool-workspace--studio .studio-shell-panel {
+    background: hsl(0 0% 0% / 0.28);
+    border-color: hsl(var(--brand-copper) / 0.14);
+  }
+  .term-shell .tool-workspace--studio .studio-shell-divider {
+    border-color: hsl(var(--brand-copper) / 0.1);
+  }
+  .term-shell .tool-workspace--studio .studio-shell-track {
+    border-color: hsl(var(--brand-copper) / 0.12);
+    background: hsl(0 0% 0% / 0.35);
+  }
+  .term-shell .tool-workspace--studio .studio-shell-tab-active {
+    border-color: hsl(var(--brand-copper) / 0.32);
+    background: hsl(var(--brand-copper) / 0.08);
+    color: hsl(var(--brand-copper));
+  }
+  .term-shell .tool-workspace--studio .studio-shell-input {
+    border-color: hsl(var(--border) / 0.75);
+    background: hsl(0 0% 0% / 0.4);
+  }
+  .term-shell .tool-workspace--studio .studio-shell-pill {
+    border-color: hsl(var(--brand-copper) / 0.12);
+    background: hsl(0 0% 0% / 0.22);
+  }
+  .term-shell .tool-workspace--studio .studio-shell-thumb {
+    background: hsl(0 0% 0% / 0.45);
+  }
+  .term-shell .tool-workspace--studio .studio-shell-badge {
+    border-color: hsl(var(--brand-copper) / 0.2);
+    background: hsl(0 0% 0% / 0.5);
+    color: hsl(var(--foreground));
+  }
+  .term-shell .tool-workspace--studio .studio-range-outline {
+    border-width: 2px;
+    border-style: dashed;
+    border-color: var(--studio-dash);
+    background: transparent;
+  }
+  .term-shell .tool-workspace--studio .studio-shell-aside-divider {
+    border-color: hsl(var(--brand-copper) / 0.12);
+  }
+
+  /* Converter / marketing section rhythm — plain CSS so spacing survives Tailwind content scans */
+  .term-section-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  /* In-zone lines: same rhythm as ZoneSeparator */
+  .term-section-stack > * {
+    padding-bottom: calc(var(--marketing-separator-gap) / 2);
+  }
+  .term-section-stack > * + * {
+    margin-top: 0;
+    padding-top: calc(var(--marketing-separator-gap) / 2);
+    border-top: 1px solid hsl(var(--border) / 0.65);
+  }
+  .term-section-stack > *:last-child {
+    padding-bottom: 0;
+  }
+  .term-module-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .term-module-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1.25rem;
+      row-gap: 1.5rem;
+    }
+  }
+  .term-list-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+  }
+  @media (min-width: 640px) {
+    .term-list-stack {
+      gap: 1rem;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .creative-scroll {
@@ -1096,17 +1330,11 @@
     border-radius: 1.75rem;
   }
 
-  .mobile-range-card {
+  .tool-workspace--studio .mobile-range-card {
     border-radius: 1rem;
-    border-style: dashed;
-    border-color: rgb(228 228 231 / 0.9);
-    background: rgb(255 255 255 / 0.92);
+    background: transparent;
+    border-color: var(--studio-dash);
     box-shadow: none;
-  }
-
-  .dark .mobile-range-card {
-    border-color: rgb(82 82 91 / 0.55);
-    background: rgb(24 24 27 / 0.45);
   }
 
   /**

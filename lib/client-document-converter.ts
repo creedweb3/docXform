@@ -84,6 +84,11 @@ function emitProgress(progress: WasmLoadProgress | ClientConversionProgress) {
   });
 }
 
+function isWorkerLoadTimeoutError(error: unknown): boolean {
+  const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  return message.includes('worker load timeout');
+}
+
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -204,8 +209,7 @@ async function resolveBinaryAssetBase(): Promise<string> {
   };
 
   const tryCdnFallbackOrThrow = async (primaryBase: string, phase: 'probe' | 'init') => {
-    const canFallbackToCdn =
-      process.env.NODE_ENV === 'production' && primaryBase.startsWith('/wasm/') && typeof window !== 'undefined';
+    const canFallbackToCdn = primaryBase.startsWith('/wasm/') && typeof window !== 'undefined';
     if (!canFallbackToCdn) {
       throw new Error(`WASM ${phase} failed for ${primaryBase} and CDN fallback is disabled.`);
     }
@@ -283,6 +287,7 @@ async function getConverter(onProgress?: ProgressHandler) {
           ...wasmPaths,
           browserWorkerJs: getBrowserWorkerJsUrl(),
           onProgress: emitProgress,
+          verbose: process.env.NODE_ENV === 'development',
         });
         await withTimeout(
           converter.initialize(),
@@ -292,16 +297,30 @@ async function getConverter(onProgress?: ProgressHandler) {
         return converter;
       };
 
+      const initializeWithWorkerRetry = async (base: string) => {
+        try {
+          return await createAndInitialize(base);
+        } catch (firstError) {
+          if (!isWorkerLoadTimeoutError(firstError)) {
+            throw firstError;
+          }
+          activeProgressHandler?.({
+            percent: 6,
+            message: 'Converter worker slow to start — retrying once…',
+          });
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          return await createAndInitialize(base);
+        }
+      };
+
       try {
-        const converter = await createAndInitialize(binaryBase);
+        const converter = await initializeWithWorkerRetry(binaryBase);
         converterInstance = converter;
         markCurrentWasmRevisionCached();
         return converter;
       } catch (primaryInitError) {
         const shouldTryCdnFallback =
-          process.env.NODE_ENV === 'production' &&
-          binaryBase.startsWith('/wasm/') &&
-          typeof window !== 'undefined';
+          binaryBase.startsWith('/wasm/') && typeof window !== 'undefined';
 
         if (!shouldTryCdnFallback) {
           throw primaryInitError;
@@ -314,7 +333,7 @@ async function getConverter(onProgress?: ProgressHandler) {
 
         try {
           await probeCoreWasmAssets(fallbackBase);
-          const converter = await createAndInitialize(fallbackBase);
+          const converter = await initializeWithWorkerRetry(fallbackBase);
           console.warn(
             `[docXform] Initialized converter via CDN fallback after same-origin init failed: ${String(
               primaryInitError
@@ -576,7 +595,7 @@ export function conversionErrorMessage(error: unknown) {
   }
 
   if (lowerMessage.includes('worker load timeout')) {
-    return 'Converter is temporarily unavailable. Please refresh the page and try again.';
+    return 'The converter worker did not start in time. Reload the page, ensure /wasm/ assets are present (run npm run wasm:diagnose locally), or wait for the first WASM download to finish on a slow connection.';
   }
 
   if (lowerMessage.includes('converter initialization')) {

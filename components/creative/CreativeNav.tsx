@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const LINKS = [
@@ -14,12 +15,28 @@ const LINKS = [
 
 export function CreativeNav({ floating = false }: { floating?: boolean }) {
   const pathname = usePathname() || '/';
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (!floating) return;
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [floating]);
 
   return (
     <header
       className={cn(
         'z-[100] flex items-center justify-between gap-6 px-5 py-5 sm:px-8 lg:px-10',
-        floating ? 'fixed left-0 right-0 top-0' : 'relative border-b border-exhibit-paper/10'
+        floating
+          ? cn(
+              'fixed left-0 right-0 top-0 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-200',
+              scrolled
+                ? 'border-b border-border/70 bg-background/85 shadow-[0_10px_40px_-16px_hsl(0_0%_0%/0.65)] backdrop-blur-md supports-[backdrop-filter]:bg-background/70'
+                : 'border-b border-transparent bg-transparent'
+            )
+          : 'relative border-b border-exhibit-paper/10'
       )}
     >
       <Link

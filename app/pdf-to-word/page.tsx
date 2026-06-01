@@ -100,7 +100,7 @@ export default function PdfToWordPage() {
         ])}
       />
       <ConverterLandingPage
-        accent="rose"
+        path="/pdf-to-word"
         eyebrow="No file upload"
         title="PDF to Word converter"
         description="Convert PDF files into editable DOCX documents in your browser."

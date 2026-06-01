@@ -2,9 +2,11 @@
 
 import type { PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf';
 
-import { loadPdfJs } from '@/lib/pdfjs-load';
+import { getPdfPageCount } from '@/lib/pdf-page-count';
+import { assertPdfJsWorkerReachable, loadPdfJs } from '@/lib/pdfjs-load';
 
 const PDF_PREVIEW_TIMEOUT_MS = 90_000;
+const PDF_PAGE_RENDER_TIMEOUT_MS = 45_000;
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -16,6 +18,30 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+/**
+ * Fast metadata-only pass so page-grid / split studio can render before the
+ * cover thumbnail finishes (or if cover render is slow).
+ */
+export async function probePdfPageCount(file: File): Promise<number> {
+  if (typeof window === 'undefined') return 0;
+  return withTimeout(getPdfPageCount(file), 60_000, 'PDF page count');
+}
+
+async function openPdfBytes(bytes: Uint8Array): Promise<PDFDocumentProxy> {
+  await assertPdfJsWorkerReachable();
+  const { getDocument } = await loadPdfJs();
+  return withTimeout(
+    getDocument({ data: bytes }).promise,
+    PDF_PREVIEW_TIMEOUT_MS,
+    'PDF open'
+  );
+}
+
+async function openPdfFromFile(file: File): Promise<PDFDocumentProxy> {
+  const arrayBuffer = await file.arrayBuffer();
+  return openPdfBytes(new Uint8Array(arrayBuffer));
 }
 
 /**
@@ -38,10 +64,11 @@ async function generatePdfPreviewInner(file: File): Promise<{
   pageCount?: number;
   label?: string;
 }> {
-  const { getDocument } = await loadPdfJs();
-
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf: PDFDocumentProxy = await getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const [pageCount, pdf] = await Promise.all([
+    getPdfPageCount(file),
+    openPdfBytes(bytes),
+  ]);
   const page = await pdf.getPage(1);
   const viewport = page.getViewport({ scale: 1 });
   const targetWidth = 220;
@@ -60,7 +87,7 @@ async function generatePdfPreviewInner(file: File): Promise<{
   const thumbUrl = URL.createObjectURL(blob);
   return {
     thumbUrl,
-    pageCount: pdf.numPages,
+    pageCount,
     label: 'PDF',
   };
 }
@@ -80,27 +107,22 @@ export async function renderPdfPageThumbnails(
     maxWidth?: number;
     jpegQuality?: number;
     signal?: AbortSignal;
-    onPageDone?: (done: number, total: number) => void;
+    /** Called after each page thumbnail is rendered (for progressive UI). */
+    onPageDone?: (thumb: PdfPageThumb, done: number, total: number) => void;
   }
 ): Promise<{ pageCount: number; thumbs: PdfPageThumb[] }> {
   if (typeof window === 'undefined') {
     return { pageCount: 0, thumbs: [] };
   }
 
-  const { getDocument } = await loadPdfJs();
-
   const maxWidth = options?.maxWidth ?? 160;
   const jpegQuality = options?.jpegQuality ?? 0.78;
   const signal = options?.signal;
 
-  const arrayBuffer = await file.arrayBuffer();
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
-  const pdf: PDFDocumentProxy = await withTimeout(
-    getDocument({ data: new Uint8Array(arrayBuffer) }).promise,
-    PDF_PREVIEW_TIMEOUT_MS,
-    'PDF thumbnails'
-  );
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const pdf = await openPdfBytes(bytes);
   const thumbs: PdfPageThumb[] = [];
   const total = pdf.numPages;
 
@@ -118,7 +140,13 @@ export async function renderPdfPageThumbnails(
     if (!context) throw new Error('Canvas not supported in this browser.');
     canvas.width = thumbViewport.width;
     canvas.height = thumbViewport.height;
-    await page.render({ canvasContext: context, viewport: thumbViewport, canvas }).promise;
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    await withTimeout(
+      page.render({ canvasContext: context, viewport: thumbViewport, canvas }).promise,
+      PDF_PAGE_RENDER_TIMEOUT_MS,
+      `PDF page ${i} render`
+    );
 
     const blob = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(
@@ -127,8 +155,9 @@ export async function renderPdfPageThumbnails(
         jpegQuality
       );
     });
-    thumbs.push({ pageNumber: i, thumbUrl: URL.createObjectURL(blob) });
-    options?.onPageDone?.(i, total);
+    const thumb = { pageNumber: i, thumbUrl: URL.createObjectURL(blob) };
+    thumbs.push(thumb);
+    options?.onPageDone?.(thumb, i, total);
   }
 
   return { pageCount: total, thumbs };

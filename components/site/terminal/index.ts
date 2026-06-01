@@ -1,4 +1,5 @@
 export { HackerPage, HackerPageBody } from './hacker-page';
+export { TermInquiryCta } from './term-inquiry-cta';
 export {
   HackerTerminal,
   type HackerTab,
@@ -11,6 +12,7 @@ export {
   TermCmd,
   TermComment,
   TermFrame,
+  TermKeyGroup,
   TermKeyRow,
   TermLog,
   TermLink,
@@ -18,4 +20,5 @@ export {
   TermOut,
   TermProse,
   TermSection,
+  TermSectionStack,
 } from './hacker-primitives';

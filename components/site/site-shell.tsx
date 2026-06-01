@@ -1,7 +1,9 @@
 import { SiteFooter } from '@/components/site/site-footer';
+import { ZoneSeparator } from '@/components/site/ui/zone-separator';
 import CreativeEngine, { type CreativeBootMode } from '@/components/creative/CreativeEngine';
 import { CreativeNav } from '@/components/creative/CreativeNav';
 import { MarketingBackdrop } from '@/components/site/marketing-backdrop';
+import { MARKETING_MAIN, MARKETING_PAGE } from '@/lib/marketing-layout';
 import { cn } from '@/lib/utils';
 
 type SiteShellProps = {
@@ -20,8 +22,13 @@ export function SiteShell({ children, className, plain, boot }: SiteShellProps) 
         {!plain ? <MarketingBackdrop /> : null}
         <CreativeNav floating />
         <div className="relative z-[2] mx-auto w-full max-w-[72rem] px-0">
-          <main className={cn(plain ? 'marketing-main pt-14' : 'pt-14')}>{children}</main>
-          <SiteFooter />
+          <main className={cn(MARKETING_MAIN, plain && 'marketing-main')}>
+            <div className={MARKETING_PAGE}>
+              {children}
+              <ZoneSeparator />
+              <SiteFooter />
+            </div>
+          </main>
         </div>
       </div>
     </CreativeEngine>

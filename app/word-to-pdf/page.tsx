@@ -100,7 +100,7 @@ export default function WordToPdfPage() {
         ])}
       />
       <ConverterLandingPage
-        accent="blue"
+        path="/word-to-pdf"
         eyebrow="No file upload"
         title="Word to PDF converter"
         description="Convert DOC and DOCX files into downloadable PDFs in your browser."

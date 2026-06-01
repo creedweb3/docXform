@@ -223,9 +223,9 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const noticeKind = isValidating ? 'info' : notice?.kind ?? 'info';
   const noticeToneClass =
     noticeKind === 'error'
-      ? 'border-red-200/80 bg-red-50/90 text-red-700'
+      ? 'border-red-500/35 bg-red-500/10 text-red-300'
       : `${config.chipClass} text-muted-foreground`;
-  const noticeIconClass = noticeKind === 'error' ? 'text-red-500' : config.iconClass;
+  const noticeIconClass = noticeKind === 'error' ? 'text-red-400' : config.iconClass;
 
   const resetInput = useCallback(() => {
     if (inputRef.current) inputRef.current.value = '';
@@ -646,14 +646,14 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const hasConvertedOutput = convertedItems.length > 0;
   const downloadReady = hasConvertedOutput && !isConverting;
   const ctaFlexLayout =
-    'inline-flex min-h-12 min-w-0 flex-1 basis-0 select-none items-center justify-center gap-2 self-stretch rounded-xl box-border px-4 py-3 text-center text-xs font-semibold leading-snug';
+    'flex min-h-12 w-full min-w-0 select-none items-center justify-center gap-2 rounded-sm box-border px-4 py-3 text-center text-xs font-semibold leading-snug';
 
   const primaryCtaClass = `${ctaFlexLayout} ${config.primaryButtonClass} transition-opacity disabled:cursor-not-allowed disabled:opacity-45`;
   const secondaryCtaClass =
     `${ctaFlexLayout} ${WORKSPACE_SECONDARY_SURFACE} disabled:cursor-not-allowed disabled:opacity-45`;
   /** Disabled download slot: own surface so it is not overridden by secondaryCtaClass border/bg. */
   const downloadIdleCtaClass =
-    `${ctaFlexLayout} border border-dashed border-slate-300/75 bg-slate-100 text-slate-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-100`;
+    `${ctaFlexLayout} border border-dashed border-border/80 bg-card/30 text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100`;
 
   const handleDownloadSingle = useCallback((file: ConvertedDocument) => {
     reportConverterMetric({ event: 'download', mode, count: 1 });
@@ -700,7 +700,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
         transition={spring}
       >
         <div
-          className={`${config.cardClass} rounded-3xl p-7 sm:p-8 transition-all duration-300 ${
+          className={`${config.cardClass} rounded-sm p-7 sm:p-8 transition-all duration-300 ${
             dragOver ? config.dragClass : ''
           } ${busy ? 'cursor-default opacity-85' : 'cursor-pointer'}`}
           onDragOver={(event) => {
@@ -728,7 +728,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
           />
           <div className="flex flex-col items-center gap-5">
             <motion.div
-              className={`w-14 h-14 rounded-2xl ${config.iconBoxClass} flex items-center justify-center`}
+              className={`w-14 h-14 rounded-sm ${config.iconBoxClass} flex items-center justify-center`}
               animate={dragOver ? { scale: 1.08 } : { scale: 1 }}
               transition={spring}
             >
@@ -739,11 +739,11 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               <p className="text-xs text-muted-foreground">{config.hint}</p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5 bg-card/40 rounded-full px-3 py-1.5 border border-border/70">
+              <span className="inline-flex items-center gap-1.5 rounded-sm border border-border/70 bg-card/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em]">
                 <HugeiconsIcon icon={Shield01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 Never uploaded to any server
               </span>
-              <span className="inline-flex items-center gap-1.5 bg-card/40 rounded-full px-3 py-1.5 border border-border/70">
+              <span className="inline-flex items-center gap-1.5 rounded-sm border border-border/70 bg-card/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em]">
                 {MAX_CONVERSION_FILE_SIZE_LABEL} per file
               </span>
             </div>
@@ -870,7 +870,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={spring}
-          className="glass flex flex-col gap-3 rounded-3xl p-5 sm:p-6"
+          className="flex flex-col gap-3 rounded-sm border border-[hsl(var(--brand-copper)/0.18)] bg-card/40 p-5 sm:p-6"
         >
           <div className="flex w-full flex-col gap-3 px-1">
             <div className="flex w-full flex-col gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
@@ -886,7 +886,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   type="button"
                   onClick={() => inputRef.current?.click()}
                   disabled={busy || items.length >= MAX_CONVERSION_BATCH_FILES}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/70 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-sm border border-border/70 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:border-[hsl(var(--brand-copper)/0.3)] hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
                   Add files
@@ -895,7 +895,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   type="button"
                   onClick={handleClear}
                   disabled={busy}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/70 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-sm border border-border/70 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:border-[hsl(var(--brand-copper)/0.3)] hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
                   Clear all
@@ -903,8 +903,15 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               </div>
             </div>
 
-            {/* Scroll only after QUEUE_SCROLL_AFTER_FILE_COUNT files; pad CTAs by measured scrollbar so edges stay aligned. */}
-            <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-2">
+            {/* Scroll only after QUEUE_SCROLL_AFTER_FILE_COUNT files; pad list + CTAs together when scrollbar shows. */}
+            <div
+              className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-2"
+              style={
+                queueListUsesScrollRegion
+                  ? { paddingRight: `calc(1rem + ${queueScrollbarPadPx}px)` }
+                  : undefined
+              }
+            >
               <div
                 ref={queueListScrollRef}
                 className={`min-h-0 w-full min-w-0 overflow-x-hidden ${
@@ -922,14 +929,14 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                     : undefined
                 }
               >
-                <div className="flex w-full min-w-0 flex-col gap-2 py-0.5 pr-4">
+                <div className="flex w-full min-w-0 flex-col gap-2 py-0.5">
                 {items.map((item) => (
               <div
                 key={item.id}
-                className="min-h-12 rounded-xl border border-border/70 bg-card/40 px-2.5 py-2 box-border"
+                className="box-border min-h-12 w-full rounded-sm border border-border/70 bg-card/40 px-2.5 py-2"
               >
                 <div className="flex w-full items-center gap-2.5">
-                  <div className={`h-8 w-8 shrink-0 rounded-lg ${config.iconBoxClass} flex items-center justify-center`}>
+                  <div className={`h-8 w-8 shrink-0 rounded-sm ${config.iconBoxClass} flex items-center justify-center`}>
                     <HugeiconsIcon
                       icon={item.status === 'converted' ? CheckmarkCircle01Icon : item.status === 'converting' ? RefreshIcon : File01Icon}
                       size={15}
@@ -952,7 +959,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                           <button
                             type="button"
                             onClick={() => handleDownloadSingle(item.output as ConvertedDocument)}
-                            className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium ${config.linkClass}`}
+                            className={`inline-flex items-center justify-center gap-1.5 rounded-sm px-2.5 py-1.5 text-[11px] font-medium ${config.linkClass}`}
                           >
                             <HugeiconsIcon icon={Download01Icon} size={12} strokeWidth={2} />
                             Download
@@ -963,7 +970,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                           onClick={() => handleRemove(item.id)}
                           disabled={busy}
                           aria-label={`Remove ${item.file.name}`}
-                          className="inline-flex items-center justify-center rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                          className="inline-flex items-center justify-center rounded-sm px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
                         </button>
@@ -990,14 +997,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               </div>
             </div>
 
-            <div
-              className="flex w-full min-w-0 flex-col gap-2 pr-4 sm:flex-row sm:items-stretch"
-              style={
-                queueListUsesScrollRegion
-                  ? { paddingRight: `calc(1rem + ${queueScrollbarPadPx}px)` }
-                  : undefined
-              }
-            >
+            <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:items-stretch">
             <button
               type="button"
               onClick={() => {

@@ -155,7 +155,7 @@ export function HomeWorkflow() {
 
 export function HomeCta() {
   return (
-    <PageSection separated className="z-50 !pb-20 lg:!pb-24">
+    <PageSection className="z-50">
       <CreativeReveal>
         <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-lg">

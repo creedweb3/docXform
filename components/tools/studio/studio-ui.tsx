@@ -5,6 +5,12 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Add01Icon } from '@hugeicons/core-free-icons';
 import { getStudioAccent } from '@/components/tools/studio-accent';
 import { TONE_STYLES, type ToneKey } from '@/components/tools/tone-styles';
+import {
+  STUDIO_INFO_BANNER,
+  STUDIO_TAB_ACTIVE,
+  STUDIO_TAB_IDLE,
+  STUDIO_TAB_TRACK,
+} from '@/components/tools/studio/studio-theme';
 
 export function StudioFabStack({
   fileCount,
@@ -34,13 +40,13 @@ export function StudioFabStack({
           disabled={busy || atCap}
           onClick={onAdd}
           className={clsx(
-            'relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40',
+            'relative flex h-12 w-12 items-center justify-center rounded-sm shadow-lg transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40',
             primaryButtonClass
           )}
         >
-          <HugeiconsIcon icon={Add01Icon} size={26} strokeWidth={2} />
+          <HugeiconsIcon icon={Add01Icon} size={24} strokeWidth={2} />
         </button>
-        <span className="absolute -left-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full border border-border/60 bg-zinc-900 px-1.5 text-[11px] font-bold text-white shadow">
+        <span className="studio-shell-badge absolute -left-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-sm border px-1.5 font-mono text-[10px] font-bold">
           {fileCount}
         </span>
       </div>
@@ -51,9 +57,9 @@ export function StudioFabStack({
           aria-label="Sort files A to Z"
           disabled={busy || fileCount < 2}
           onClick={onSort}
-          className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-card/80 text-foreground shadow-md transition hover:bg-card disabled:cursor-not-allowed disabled:opacity-40"
+          className="studio-shell-input pointer-events-auto flex h-10 w-10 items-center justify-center rounded-sm border font-mono text-[10px] font-bold text-foreground shadow-md transition hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <span className="text-[11px] font-bold leading-none tracking-tight" aria-hidden>
+          <span className="leading-none tracking-tight" aria-hidden>
             A<span className="text-muted-foreground">↓</span>Z
           </span>
         </button>
@@ -62,22 +68,10 @@ export function StudioFabStack({
   );
 }
 
-export function StudioInfoBanner({ tone, children }: { tone: ToneKey; children: React.ReactNode }) {
-  const toneStyle = TONE_STYLES[tone];
+export function StudioInfoBanner({ children }: { tone?: ToneKey; children: React.ReactNode }) {
   return (
-    <div
-      className={clsx(
-        'flex min-w-0 gap-3 rounded-2xl p-4 text-[11px] leading-relaxed',
-        toneStyle.studioInfoPill,
-        'max-md:rounded-2xl max-md:p-3.5 max-md:shadow-none max-md:ring-0'
-      )}
-    >
-      <span
-        className={clsx(
-          'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-bold',
-          toneStyle.studioInfoBannerMark
-        )}
-      >
+    <div className={STUDIO_INFO_BANNER}>
+      <span className="studio-shell-badge mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border font-mono text-[10px] font-bold">
         i
       </span>
       <div className="min-w-0">{children}</div>
@@ -98,7 +92,7 @@ export function StudioTabBar<T extends string>({
 }) {
   const accent = getStudioAccent(tone);
   return (
-    <div className="mobile-rail-track flex w-full min-w-0 gap-0.5 rounded-lg bg-muted/40 p-0.5 dark:bg-muted/25 max-md:gap-1 max-md:rounded-3xl max-md:p-1.5 max-md:ring-0">
+    <div className={STUDIO_TAB_TRACK}>
       {tabs.map((t) => {
         const active = value === t.id;
         return (
@@ -108,10 +102,8 @@ export function StudioTabBar<T extends string>({
             disabled={t.disabled}
             onClick={() => !t.disabled && onChange(t.id)}
             className={clsx(
-              `relative flex min-h-10 min-w-0 flex-1 flex-col items-center justify-center rounded-md px-1 py-1 text-[10px] font-semibold uppercase tracking-wide outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 sm:px-1.5 sm:py-1.5 sm:text-[11px] max-md:min-h-11 max-md:rounded-2xl max-md:px-2 max-md:text-[11px]`,
-              active
-                ? 'bg-white text-foreground shadow-sm dark:bg-zinc-900 dark:text-zinc-50'
-                : 'text-muted-foreground hover:bg-card/55 hover:text-foreground',
+              `relative flex min-h-10 min-w-0 flex-1 flex-col items-center justify-center rounded-sm px-1 py-1 font-mono text-[10px] font-semibold uppercase tracking-wide outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 sm:px-1.5 sm:py-1.5`,
+              active ? STUDIO_TAB_ACTIVE : STUDIO_TAB_IDLE,
               t.disabled && 'cursor-not-allowed opacity-45'
             )}
           >
@@ -139,12 +131,11 @@ export function StudioSegmentRow<T extends string>({
   value: T;
   onChange: (id: T) => void;
   tone: ToneKey;
-  /** Override active segment wash (defaults to tone palette). */
   activeClassName?: string;
 }) {
   const accent = getStudioAccent(tone);
   return (
-    <div className="mobile-rail-track flex w-full min-w-0 rounded-lg bg-muted/40 p-0.5 dark:bg-muted/25 max-md:rounded-3xl max-md:p-1.5 max-md:ring-0">
+    <div className={STUDIO_TAB_TRACK}>
       {options.map((o) => {
         const active = value === o.id;
         return (
@@ -154,10 +145,8 @@ export function StudioSegmentRow<T extends string>({
             disabled={o.disabled}
             onClick={() => !o.disabled && onChange(o.id)}
             className={clsx(
-              `min-w-0 flex-1 rounded-md px-1.5 py-2 text-center text-[10px] font-semibold outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-45 sm:px-2 sm:text-[11px] max-md:min-h-11 max-md:rounded-2xl max-md:px-2.5 max-md:text-[11px]`,
-              active
-                ? (activeClassName ?? accent.segmentActive)
-                : 'text-muted-foreground hover:bg-card/40 hover:text-foreground'
+              `min-w-0 flex-1 rounded-sm px-1.5 py-2 text-center font-mono text-[10px] font-semibold uppercase tracking-wide outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-45 sm:px-2 sm:text-[11px]`,
+              active ? (activeClassName ?? accent.segmentActive) : STUDIO_TAB_IDLE
             )}
           >
             {o.label}

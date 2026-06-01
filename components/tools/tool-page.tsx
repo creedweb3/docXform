@@ -1,7 +1,6 @@
-import { SiteShell } from '@/components/site/site-shell';
 import { JsonLd } from '@/components/json-ld';
 import { ToolComingSoon } from '@/components/tools/tool-coming-soon';
-import { ToolExperience } from '@/components/tools/tool-experience';
+import { ToolLandingPage } from '@/components/tools/tool-landing-page';
 import { isToolPageAvailable } from '@/lib/tool-availability';
 import {
   breadcrumbJsonLd,
@@ -45,15 +44,11 @@ export function ToolPage({ tool, workspace }: ToolPageProps) {
           faqPageJsonLd(toolFaqsForJsonLd(tool), path),
         ])}
       />
-      <SiteShell plain>
-        <div className="flex flex-col items-center px-4 pb-10 max-md:px-3 max-md:pb-safe sm:px-6 sm:pb-12">
-          {available ? (
-            <ToolExperience tool={tool} workspace={workspace} />
-          ) : (
-            <ToolComingSoon tool={tool} />
-          )}
-        </div>
-      </SiteShell>
+      {available ? (
+        <ToolLandingPage tool={tool} workspace={workspace} />
+      ) : (
+        <ToolComingSoon tool={tool} />
+      )}
     </>
   );
 }

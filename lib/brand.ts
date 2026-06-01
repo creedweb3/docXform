@@ -3,8 +3,11 @@
  * Use these class fragments instead of ad-hoc Tailwind for marketing UI.
  */
 
-/** Copper hairline — signature section marker */
+/** Copper hairline — signature section marker (titles, footer brand mark) */
 export const BRAND_RULE = 'h-px w-10 bg-[hsl(var(--brand-copper))]';
+
+/** Full content-column separator — major zone breaks only (hero/body, catalog/filter). */
+export const CONTENT_RULE = 'content-rule block h-px w-full shrink-0 border-0';
 
 /** Mono label (tool metadata, section index, WASM readout) */
 export const LABEL_MONO =

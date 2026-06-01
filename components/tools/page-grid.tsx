@@ -112,7 +112,7 @@ export function PageGrid({
   }, [compact, dense]);
 
   return (
-    <div className="w-full rounded-2xl border border-border/70 bg-card/40 p-3 backdrop-blur-md">
+    <div className="studio-shell-panel w-full rounded-sm border border-dashed p-3">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-foreground">Pages</span>
@@ -183,7 +183,7 @@ export function PageGrid({
                 onDragOver={handleDragOver}
                 onDrop={reorderable ? handleDropOn(index) : undefined}
                 className={clsx(
-                  'group relative flex flex-col gap-2 rounded-xl border border-border/70 bg-card/40 p-2 transition-colors hover:border-foreground/12 hover:bg-card/55',
+                  'studio-shell-panel group relative flex flex-col gap-2 rounded-sm border p-2 transition-colors hover:border-[hsl(var(--brand-copper)/0.22)]',
                   isSelected ? `${toneClass} border-opacity-80` : 'border-border/60',
                   reorderable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
                   reorderable && draggingFrom === index && 'ring-2 ring-ring/50'

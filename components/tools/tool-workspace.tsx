@@ -38,7 +38,7 @@ import { TONE_STYLES, type ToneKey } from '@/components/tools/tone-styles';
 import { MobileStudioRail } from '@/components/tools/studio/mobile-studio-rail';
 import { StudioFabStack } from '@/components/tools/studio/studio-ui';
 import { DefaultBatchStudioSurface } from '@/components/tools/studio/default-batch-studio-surface';
-import { renderPdfPageThumbnails, revokePdfThumbUrls } from '@/lib/client-previews';
+import { probePdfPageCount, renderPdfPageThumbnails, revokePdfThumbUrls } from '@/lib/client-previews';
 
 type Status = 'idle' | 'validating' | 'ready' | 'processing' | 'done' | 'failed';
 
@@ -314,10 +314,15 @@ export function ToolWorkspace({
   const [gridByFileId, setGridByFileId] = useState<Record<string, PerFileGridState>>({});
   const thumbAbortRef = useRef<AbortController | null>(null);
   const gridByFileIdRef = useRef(gridByFileId);
+  const filesRef = useRef(files);
 
   useLayoutEffect(() => {
     gridByFileIdRef.current = gridByFileId;
   }, [gridByFileId]);
+
+  useLayoutEffect(() => {
+    filesRef.current = files;
+  }, [files]);
 
   const reducedMotion = useReducedMotion();
   const perfProfile = useMemo(() => getCachedPerfProfile(), []);
@@ -427,7 +432,7 @@ export function ToolWorkspace({
 
   useEffect(() => {
     if (!thumbTargetKey || !activePageGridFileId) return;
-    const wf = files.find((f) => f.id === activePageGridFileId);
+    const wf = filesRef.current.find((f) => f.id === activePageGridFileId);
     const pageCount = wf?.preview?.pageCount ?? 0;
     if (!wf || pageCount <= 0) return;
 
@@ -443,7 +448,12 @@ export function ToolWorkspace({
     const readyMatches =
       curSnap?.thumbsLoad === 'ready' &&
       curSnap.thumbs.length === orderSnap.length &&
-      orderSnap.every((p, idx) => curSnap.thumbs[idx]?.pageNumber === p);
+      orderSnap.every(
+        (p, idx) =>
+          curSnap.thumbs[idx]?.pageNumber === p &&
+          curSnap.thumbs[idx]?.status === 'ready' &&
+          Boolean(curSnap.thumbs[idx]?.thumbUrl)
+      );
     if (readyMatches) {
       return () => {
         ac.abort();
@@ -465,7 +475,12 @@ export function ToolWorkspace({
         const alreadyReady =
           cur?.thumbsLoad === 'ready' &&
           cur.thumbs.length === order.length &&
-          order.every((p, idx) => cur.thumbs[idx]?.pageNumber === p);
+          order.every(
+            (p, idx) =>
+              cur.thumbs[idx]?.pageNumber === p &&
+              cur.thumbs[idx]?.status === 'ready' &&
+              Boolean(cur.thumbs[idx]?.thumbUrl)
+          );
         if (alreadyReady) return prev;
         revokeGridStateThumbs(cur);
         return {
@@ -481,12 +496,50 @@ export function ToolWorkspace({
       });
     });
 
+    const mergeThumbIntoGrid = (thumb: { pageNumber: number; thumbUrl: string }) => {
+      setGridByFileId((prev) => {
+        const cur = prev[activePageGridFileId];
+        if (!cur) return prev;
+        const nextThumbs = cur.order.map((pageNum) => {
+          if (pageNum !== thumb.pageNumber) {
+            const existing = cur.thumbs.find((t) => t.pageNumber === pageNum);
+            return (
+              existing ?? {
+                id: `page-${pageNum}`,
+                pageNumber: pageNum,
+                status: 'loading' as const,
+              }
+            );
+          }
+          return {
+            id: `page-${pageNum}`,
+            pageNumber: pageNum,
+            thumbUrl: thumb.thumbUrl,
+            status: 'ready' as const,
+          };
+        });
+        return {
+          ...prev,
+          [activePageGridFileId]: {
+            ...cur,
+            thumbs: nextThumbs,
+            thumbsLoad: 'loading',
+          },
+        };
+      });
+    };
+
     void (async () => {
+      const generation = thumbTargetKey;
       try {
         const { thumbs: loaded } = await renderPdfPageThumbnails(wf.file, {
           signal: ac.signal,
           maxWidth: config.pageGrid?.thumbRender?.maxWidth ?? 168,
           jpegQuality: config.pageGrid?.thumbRender?.jpegQuality ?? 0.78,
+          onPageDone: (thumb) => {
+            if (ac.signal.aborted) return;
+            mergeThumbIntoGrid(thumb);
+          },
         });
         if (ac.signal.aborted) return;
         const byPage = new Map(loaded.map((t) => [t.pageNumber, t.thumbUrl]));
@@ -526,6 +579,9 @@ export function ToolWorkspace({
             },
           };
         });
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[docXform] PDF page thumbnails failed:', generation, err);
+        }
       }
     })();
 
@@ -534,7 +590,6 @@ export function ToolWorkspace({
     };
   }, [
     activePageGridFileId,
-    files,
     thumbTargetKey,
     config.pageGrid?.thumbRender?.maxWidth,
     config.pageGrid?.thumbRender?.jpegQuality,
@@ -713,12 +768,75 @@ export function ToolWorkspace({
         const previewId = crypto.randomUUID();
         if (actions.generatePreview) {
           preview = { status: 'loading' };
+          const isPdf = /\.pdf$/i.test(file.name);
+          if (isPdf) {
+            void probePdfPageCount(file)
+              .then((pageCount) => {
+                if (pageCount <= 0) {
+                  setFiles((current) =>
+                    current.map((f) =>
+                      f.id === previewId
+                        ? {
+                            ...f,
+                            preview: {
+                              status: 'error',
+                              error: 'This PDF has no readable pages.',
+                            },
+                          }
+                        : f
+                    )
+                  );
+                  return;
+                }
+                setFiles((current) =>
+                  current.map((f) =>
+                    f.id === previewId
+                      ? {
+                          ...f,
+                          preview: {
+                            ...f.preview,
+                            status: 'ready',
+                            pageCount,
+                            label: f.preview?.label ?? 'PDF',
+                          },
+                        }
+                      : f
+                  )
+                );
+              })
+              .catch((err) => {
+                const message =
+                  err instanceof Error ? err.message : 'Could not read this PDF for preview.';
+                setFiles((current) =>
+                  current.map((f) =>
+                    f.id === previewId
+                      ? {
+                          ...f,
+                          preview: {
+                            status: 'error',
+                            error: message,
+                          },
+                        }
+                      : f
+                  )
+                );
+              });
+          }
           actions
             .generatePreview(file)
             .then((result) => {
               setFiles((current) =>
                 current.map((f) =>
-                  f.id === previewId ? { ...f, preview: { ...result, status: 'ready' } } : f
+                  f.id === previewId
+                    ? {
+                        ...f,
+                        preview: {
+                          ...result,
+                          status: 'ready',
+                          pageCount: result?.pageCount ?? f.preview?.pageCount,
+                        },
+                      }
+                    : f
                 )
               );
             })
@@ -726,7 +844,15 @@ export function ToolWorkspace({
               const message = err instanceof Error ? err.message : 'Preview failed';
               setFiles((current) =>
                 current.map((f) =>
-                  f.id === previewId ? { ...f, preview: { status: 'error', error: message } } : f
+                  f.id === previewId
+                    ? {
+                        ...f,
+                        preview:
+                          f.preview?.pageCount && f.preview.pageCount > 0
+                            ? { ...f.preview, status: 'ready' }
+                            : { status: 'error', error: message },
+                      }
+                    : f
                 )
               );
             });
@@ -1263,7 +1389,10 @@ export function ToolWorkspace({
               onDrop={() => isReorderable && handleReorder(item.id)}
               onDragEnd={() => setDraggedFileId(null)}
               className={clsx(
-                'box-border min-h-12 w-full min-w-0 overflow-hidden rounded-xl border border-border/45 bg-card/40 px-2.5 py-2 transition focus-within:ring-2 focus-within:ring-ring',
+                'box-border min-h-12 w-full min-w-0 overflow-hidden px-1 py-2 transition',
+                studioChrome
+                  ? 'border-b border-border/25 bg-transparent last:border-b-0 focus-within:brightness-110'
+                  : 'rounded-sm border border-[hsl(var(--brand-copper)/0.12)] bg-black/25 px-2.5 focus-within:ring-2 focus-within:ring-[hsl(var(--brand-copper)/0.35)]',
                 draggedFileId === item.id && 'opacity-50',
                 isReorderable && 'cursor-grab active:cursor-grabbing'
               )}
@@ -1387,7 +1516,7 @@ export function ToolWorkspace({
                         </span>
                       ))}
                       {item.preview?.status === 'error' && item.preview.error && (
-                        <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-600 border border-rose-200/70">
+                        <span className="inline-flex items-center rounded-sm border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 font-mono text-[10px] font-medium text-rose-200">
                           {item.preview.error}
                         </span>
                       )}
@@ -1426,7 +1555,7 @@ export function ToolWorkspace({
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={busy || files.length >= effectiveBatchMax}
-        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-1.5 rounded-sm border border-border/70 bg-[#0a0a0a] px-3 py-2 font-mono text-xs font-medium uppercase tracking-wide text-foreground transition-colors hover:bg-black/40 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
         Add files
@@ -1435,7 +1564,7 @@ export function ToolWorkspace({
         type="button"
         onClick={handleReset}
         disabled={busy}
-        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-1.5 rounded-sm border border-border/70 bg-[#0a0a0a] px-3 py-2 font-mono text-xs font-medium uppercase tracking-wide text-foreground transition-colors hover:bg-black/40 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
         Clear all
@@ -1446,7 +1575,7 @@ export function ToolWorkspace({
   const renderCtaRow = (opts?: { mobileRail?: boolean }) => {
     const mobile = opts?.mobileRail === true;
     const mobilePrimary = `${MOBILE_RAIL_CTA_BASE} ${config.primaryButtonClass} disabled:opacity-45`;
-    const mobileSecondary = `${MOBILE_RAIL_CTA_BASE} border border-border/30 bg-white text-foreground hover:bg-muted/20 disabled:opacity-45 dark:bg-zinc-900/80`;
+    const mobileSecondary = `${MOBILE_RAIL_CTA_BASE} border border-border/70 bg-[#0a0a0a] text-foreground hover:bg-black/40 disabled:opacity-45`;
     const mobileIdle = `${MOBILE_RAIL_CTA_BASE} bg-muted/35 text-muted-foreground disabled:opacity-100`;
 
     return (
@@ -1533,12 +1662,18 @@ export function ToolWorkspace({
     );
   };
 
+  const studioChrome = Boolean(studioSurface);
+
   return (
-    <div className="w-full space-y-4">
+    <div
+      className={clsx('tool-workspace w-full space-y-4', studioChrome && 'tool-workspace--studio')}
+      data-tone={studioChrome && config.tone ? config.tone : undefined}
+      {...(studioChrome && hasFiles ? { 'data-studio-queued': 'true' } : {})}
+    >
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
         <div
           className={clsx(
-            `${config.cardClass} rounded-3xl p-7 sm:p-8 transition-all duration-300`,
+            `${config.cardClass} rounded-sm p-6 sm:p-7 transition-all duration-300`,
             dragOver && config.dragClass,
             busy ? 'cursor-default opacity-85' : 'cursor-pointer'
           )}
@@ -1572,7 +1707,7 @@ export function ToolWorkspace({
           />
           <div className="flex flex-col items-center gap-5">
             <motion.div
-              className={`w-14 h-14 rounded-2xl ${config.iconBoxClass} flex items-center justify-center`}
+              className={`flex h-14 w-14 items-center justify-center rounded-sm ${config.iconBoxClass}`}
               animate={dragOver ? { scale: 1.08 } : { scale: 1 }}
               transition={spring}
             >
@@ -1587,11 +1722,11 @@ export function ToolWorkspace({
               <p className="text-xs text-muted-foreground">{config.hint}</p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5 bg-card/40 rounded-full px-3 py-1.5 border border-border/70">
+              <span className="inline-flex items-center gap-1.5 rounded-sm border border-border/70 bg-card/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide">
                 <HugeiconsIcon icon={Shield01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 Never uploaded to any server
               </span>
-              <span className="inline-flex items-center gap-1.5 bg-card/40 rounded-full px-3 py-1.5 border border-border/70">
+              <span className="inline-flex items-center gap-1.5 rounded-sm border border-border/70 bg-card/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide">
                 {MAX_CONVERSION_FILE_SIZE_LABEL} per file
               </span>
               {subtitle}
@@ -1615,7 +1750,7 @@ export function ToolWorkspace({
             {isValidating ? (
               <span
                 className={clsx(
-                  'inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] shadow-sm backdrop-blur-md',
+                  'inline-flex max-w-full items-center gap-1.5 rounded-sm border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-[11px] shadow-sm backdrop-blur-md',
                   noticeToneClass
                 )}
               >
@@ -1630,7 +1765,7 @@ export function ToolWorkspace({
             ) : (
               <span
                 className={clsx(
-                  'inline-flex max-w-full items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-center text-[11px] leading-snug shadow-sm backdrop-blur-md',
+                  'inline-flex max-w-full items-center justify-center gap-1.5 rounded-sm border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-center text-[11px] leading-snug shadow-sm backdrop-blur-md',
                   noticeToneClass
                 )}
               >
@@ -1665,7 +1800,7 @@ export function ToolWorkspace({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.94 }}
                     transition={chipMotion}
-                    className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${chipClass} text-muted-foreground`}
+                    className={`inline-flex max-w-full items-center gap-1.5 rounded-sm border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide shadow-sm backdrop-blur-md ${chipClass} text-muted-foreground`}
                   >
                     <HugeiconsIcon
                       icon={CheckmarkCircle01Icon}
@@ -1679,20 +1814,20 @@ export function ToolWorkspace({
               </AnimatePresence>
               <motion.span
                 layout
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${chipClass}`}
+                className={`inline-flex items-center gap-1.5 rounded-sm border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide shadow-sm backdrop-blur-md ${chipClass}`}
               >
                 <HugeiconsIcon icon={File01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 {files.length} / {effectiveBatchMax} files
               </motion.span>
               <motion.span
                 layout
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${chipClass}`}
+                className={`inline-flex items-center gap-1.5 rounded-sm border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide shadow-sm backdrop-blur-md ${chipClass}`}
               >
                 {formatBytes(totalBytes)} selected
               </motion.span>
               <motion.span
                 layout
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${chipClass}`}
+                className={`inline-flex items-center gap-1.5 rounded-sm border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide shadow-sm backdrop-blur-md ${chipClass}`}
               >
                 <HugeiconsIcon icon={Shield01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 Private local processing
@@ -1714,7 +1849,7 @@ export function ToolWorkspace({
             className="flex justify-center px-2 py-0.5"
           >
             <div
-              className={`flex w-full max-w-2xl flex-wrap items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm backdrop-blur-md sm:flex-nowrap sm:gap-2.5 ${chipClass}`}
+              className={`flex w-full max-w-2xl flex-wrap items-center gap-2 rounded-sm border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-[11px] text-muted-foreground shadow-sm backdrop-blur-md sm:flex-nowrap sm:gap-2.5 ${chipClass}`}
             >
               <p className="min-w-0 flex-1 leading-snug">{duplicatePrompt.message}</p>
               <div className="flex shrink-0 gap-1.5">
@@ -1743,11 +1878,35 @@ export function ToolWorkspace({
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={spring}
-          className="mobile-studio-glass glass relative z-0 flex min-h-0 flex-col gap-3 overflow-x-visible rounded-3xl p-5 sm:p-6 max-md:overflow-hidden max-md:rounded-[1.75rem] max-md:p-3 max-md:pb-safe"
+          className={clsx(
+            'relative z-0 flex min-h-0 w-full flex-col overflow-x-visible max-md:pb-safe',
+            studioChrome
+              ? 'gap-0 bg-transparent p-0'
+              : 'gap-3 rounded-sm border border-[hsl(var(--brand-copper)/0.15)] bg-[#0b0b0b] p-5 sm:p-6 max-md:overflow-hidden max-md:p-3'
+          )}
         >
-          <div className="flex min-h-0 w-full flex-col gap-3 px-2 sm:px-3 max-md:overflow-x-hidden max-md:px-0">
-            <div className="grid w-full items-stretch gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)] lg:min-h-0 max-md:grid-cols-1 max-md:gap-4">
-              <div className="relative flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-x-visible rounded-2xl border border-border/40 bg-[#f4f5f7] p-4 sm:p-6 dark:bg-muted/25 mobile-preview-shell max-md:rounded-[1.75rem] max-md:min-h-[min(58vh,28rem)] max-md:overflow-hidden max-md:p-3 max-md:pb-14">
+          <div
+            className={clsx(
+              'flex min-h-0 w-full flex-col max-md:overflow-x-hidden',
+              studioChrome ? 'gap-0' : 'gap-3 px-2 sm:px-3 max-md:px-0'
+            )}
+          >
+            <div
+              className={clsx(
+                'grid w-full items-stretch lg:min-h-0 max-md:grid-cols-1 max-md:gap-4',
+                studioChrome
+                  ? 'gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:gap-8 xl:grid-cols-[minmax(0,1.85fr)_360px] xl:gap-10'
+                  : 'gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)]'
+              )}
+            >
+              <div
+                className={clsx(
+                  'mobile-preview-shell relative flex h-full min-h-0 min-w-0 flex-col overflow-x-visible max-md:min-h-[min(58vh,28rem)] max-md:overflow-hidden max-md:pb-14',
+                  studioChrome
+                    ? 'gap-3 py-1 sm:py-2 lg:min-h-[min(32rem,72vh)]'
+                    : 'studio-shell-panel gap-4 rounded-sm border p-4 sm:p-6 max-md:p-3'
+                )}
+              >
                 {config.allowMultiple ? (
                   <StudioFabStack
                     fileCount={files.length}
@@ -1773,17 +1932,21 @@ export function ToolWorkspace({
               </div>
               <aside
                 className={clsx(
-                  'flex h-full w-full min-h-0 min-w-0 flex-col overflow-visible rounded-2xl border border-border/50 bg-gradient-to-b from-white/75 to-white/60 px-4 py-4 shadow-sm backdrop-blur-md sm:px-5 sm:py-5 dark:from-zinc-950/50 dark:to-zinc-950/35',
+                  'flex h-full w-full min-h-0 min-w-0 flex-col overflow-visible',
+                  studioChrome
+                    ? 'studio-shell-aside-divider gap-5 py-1 sm:py-2 lg:border-l lg:pl-8'
+                    : 'studio-shell-panel rounded-sm border px-4 py-4 sm:px-5 sm:py-5',
                   pageGridPanelVisible && 'lg:sticky lg:top-36',
                   mobileActionsInRail && 'max-md:hidden'
                 )}
               >
-                <div className="mx-auto flex w-full min-w-0 max-w-sm flex-col gap-5">
+                <div className="flex w-full min-w-0 flex-col gap-5">
                 {config.studioHint ? (
                   <div
                     className={clsx(
-                      'flex min-w-0 shrink-0 gap-3 rounded-2xl p-4 text-[11px] leading-relaxed shadow-sm',
-                      studioInfoPillClass
+                      'flex min-w-0 shrink-0 gap-2 font-mono text-[11px] leading-relaxed text-muted-foreground',
+                      !studioChrome && studioInfoPillClass,
+                      studioChrome && clsx('studio-shell-pill p-3 font-mono text-[11px] text-muted-foreground')
                     )}
                   >
                     <HugeiconsIcon
@@ -1853,7 +2016,7 @@ export function ToolWorkspace({
             exit={{ opacity: 0, y: 12 }}
             transition={chipMotion}
             className={clsx(
-              'fixed bottom-5 right-5 z-50 rounded-2xl border px-4 py-3 text-sm font-semibold shadow-lg backdrop-blur-xl',
+              'fixed bottom-5 right-5 z-50 rounded-sm border border-[hsl(var(--brand-copper)/0.25)] bg-[#0a0a0a]/95 px-4 py-3 text-sm font-semibold shadow-lg backdrop-blur-md',
               toast.kind === 'success'
                 ? 'border-emerald-200 bg-emerald-50/90 text-emerald-800'
                 : 'border-rose-200 bg-rose-50/90 text-rose-800'

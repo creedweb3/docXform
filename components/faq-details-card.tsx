@@ -32,10 +32,10 @@ export function FaqDetailsCard({
   return (
     <details
       className={cn(
-        'group overflow-hidden transition-colors',
+        'faq-details group overflow-hidden transition-[background-color,border-color,box-shadow] duration-200',
         isTerminal
-          ? 'rounded-sm border border-[hsl(var(--brand-copper)/0.18)] bg-black/35'
-          : 'rounded-sm border border-border/70 bg-card/40',
+          ? 'rounded-sm border border-[hsl(var(--brand-copper)/0.18)] bg-black/35 hover:border-[hsl(var(--brand-copper)/0.32)] hover:bg-black/45'
+          : 'rounded-sm border border-border/70 bg-card/40 hover:border-[hsl(var(--brand-copper)/0.22)] hover:bg-card/52',
         open &&
           (isTerminal
             ? 'border-[hsl(var(--brand-copper)/0.38)] shadow-[inset_0_0_24px_hsl(var(--brand-copper)/0.04)]'
@@ -53,7 +53,15 @@ export function FaqDetailsCard({
         setOpen((o) => !o);
       }}
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 sm:px-6 sm:py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/15 [&::-webkit-details-marker]:hidden">
+      <summary
+        className={cn(
+          'flex cursor-pointer list-none items-center justify-between gap-4 transition-colors duration-200',
+          'hover:bg-[hsl(var(--brand-copper)/0.06)]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-copper)/0.35)] focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          '[&::-webkit-details-marker]:hidden',
+          isTerminal ? 'px-5 py-5 sm:px-6 sm:py-6' : 'px-5 py-4 sm:px-6 sm:py-5'
+        )}
+      >
         <span
           className={cn(
             'min-w-0 flex-1 text-left leading-snug',
@@ -67,7 +75,8 @@ export function FaqDetailsCard({
         {showExpander ? (
           <span
             className={cn(
-              'flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border text-muted-foreground transition-colors',
+              'faq-expander flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border text-muted-foreground transition-colors duration-200',
+              'group-hover:border-[hsl(var(--brand-copper)/0.35)] group-hover:text-foreground/90',
               isTerminal
                 ? 'border-[hsl(var(--brand-copper)/0.2)] bg-black/40 font-mono text-[10px]'
                 : 'border-border/70 bg-card/50',
@@ -81,14 +90,18 @@ export function FaqDetailsCard({
       </summary>
       <div
         className={cn(
-          'border-t px-5 pb-5 pt-0 sm:px-6 sm:pb-6',
-          isTerminal ? 'border-[hsl(var(--brand-copper)/0.12)]' : 'border-border/60'
+          'border-t',
+          isTerminal
+            ? 'border-[hsl(var(--brand-copper)/0.12)] px-5 py-5 sm:px-6 sm:py-6'
+            : 'border-border/60 px-5 pb-5 pt-0 sm:px-6 sm:pb-6'
         )}
       >
         <p
           className={cn(
-            'pt-4 leading-relaxed',
-            isTerminal ? 'font-mono text-[11px] text-muted-foreground' : 'text-sm text-muted-foreground'
+            'leading-relaxed',
+            isTerminal
+              ? 'font-mono text-[11px] text-muted-foreground'
+              : 'pt-4 text-sm text-muted-foreground'
           )}
         >
           {answer}

@@ -1,5 +1,5 @@
 import { SiteShell } from '@/components/site/site-shell';
-import { HackerPage, HackerPageBody, TermProse } from '@/components/site/console/console-ui';
+import { HackerPage, TermProse } from '@/components/site/console/console-ui';
 import { ContactForm } from '@/components/contact-form';
 import { JsonLd } from '@/components/json-ld';
 import {
@@ -45,8 +45,7 @@ export default function ContactPage() {
           path="/contact"
           title="Contact"
           description="For business, partnership, or press inquiries. This form sends a message only — it does not convert documents."
-        />
-        <HackerPageBody className="!pt-10 pb-24">
+        >
           <div className="w-full max-w-xl">
             <div className="rounded-sm border border-border/70 bg-card/40 p-5 sm:p-6">
               <TermProse className="mb-5">
@@ -58,7 +57,7 @@ export default function ContactPage() {
               <ContactForm />
             </div>
           </div>
-        </HackerPageBody>
+        </HackerPage>
       </SiteShell>
     </>
   );

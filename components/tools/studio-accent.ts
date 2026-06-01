@@ -1,6 +1,6 @@
 import type { ToneKey } from '@/components/tools/tone-styles';
 
-/** Pastel studio controls (segments, range badges, page selection outline). */
+/** Studio controls tinted by file-type tone (terminal / Imprint). */
 export type StudioAccent = {
   segmentActive: string;
   segmentFocus: string;
@@ -10,48 +10,51 @@ export type StudioAccent = {
   pageSelectOutline: string;
 };
 
+const copperFocus = 'focus-visible:ring-[hsl(var(--brand-copper)/0.4)]';
+
 const rose: StudioAccent = {
-  segmentActive: 'bg-rose-100/90 text-rose-950 dark:bg-rose-900/45 dark:text-rose-50',
-  segmentFocus: 'focus-visible:ring-rose-400/35',
+  segmentActive:
+    'border border-rose-500/22 bg-rose-500/[0.06] text-rose-300/90',
+  segmentFocus: 'focus-visible:ring-rose-400/25',
   rangeIndexBadge:
-    'flex h-7 w-7 shrink-0 flex-none items-center justify-center rounded-lg max-md:rounded-full bg-rose-100/90 text-[11px] font-bold tabular-nums leading-none text-rose-950 dark:bg-rose-900/50 dark:text-rose-50',
+    'studio-shell-badge flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border font-mono text-[11px] font-bold tabular-nums text-rose-300/90',
   addRangeButton:
-    'w-full shrink-0 rounded-lg max-md:rounded-2xl bg-rose-500/14 py-2 max-md:py-2.5 text-[11px] font-semibold text-rose-950 ring-1 ring-inset ring-rose-600/20 transition hover:bg-rose-500/22 dark:bg-rose-500/12 dark:text-rose-50 dark:ring-rose-400/25',
-  tabBadge: 'text-rose-700 dark:text-rose-300',
-  pageSelectOutline: 'outline outline-2 outline-offset-2 outline-rose-500',
+    'studio-shell-input w-full shrink-0 rounded-sm border py-2 font-mono text-[11px] font-semibold uppercase tracking-wide text-foreground transition hover:bg-black/30',
+  tabBadge: 'text-muted-foreground',
+  pageSelectOutline: 'outline outline-2 outline-offset-2 outline-rose-500/45',
 };
 
 const blue: StudioAccent = {
-  segmentActive: 'bg-blue-100/90 text-blue-950 dark:bg-blue-900/45 dark:text-blue-50',
-  segmentFocus: 'focus-visible:ring-blue-400/35',
-  rangeIndexBadge:
-    'flex h-7 w-7 shrink-0 flex-none items-center justify-center rounded-lg max-md:rounded-full bg-blue-100/90 text-[11px] font-bold tabular-nums leading-none text-blue-950 dark:bg-blue-900/50 dark:text-blue-50',
-  addRangeButton:
-    'w-full shrink-0 rounded-lg max-md:rounded-2xl bg-blue-500/14 py-2 max-md:py-2.5 text-[11px] font-semibold text-blue-950 ring-1 ring-inset ring-blue-600/20 transition hover:bg-blue-500/22 dark:bg-blue-500/12 dark:text-blue-50 dark:ring-blue-400/25',
-  tabBadge: 'text-blue-700 dark:text-blue-300',
-  pageSelectOutline: 'outline outline-2 outline-offset-2 outline-blue-500',
+  ...rose,
+  segmentActive: 'border border-blue-500/22 bg-blue-500/[0.06] text-blue-300/90',
+  segmentFocus: 'focus-visible:ring-blue-400/25',
+  pageSelectOutline: 'outline outline-2 outline-offset-2 outline-blue-500/45',
 };
 
 const purple: StudioAccent = {
-  segmentActive: 'bg-purple-100/90 text-purple-950 dark:bg-purple-900/45 dark:text-purple-50',
-  segmentFocus: 'focus-visible:ring-purple-400/35',
-  rangeIndexBadge:
-    'flex h-7 w-7 shrink-0 flex-none items-center justify-center rounded-lg max-md:rounded-full bg-purple-100/90 text-[11px] font-bold tabular-nums leading-none text-purple-950 dark:bg-purple-900/50 dark:text-purple-50',
-  addRangeButton:
-    'w-full shrink-0 rounded-lg max-md:rounded-2xl bg-purple-500/14 py-2 max-md:py-2.5 text-[11px] font-semibold text-purple-950 ring-1 ring-inset ring-purple-600/20 transition hover:bg-purple-500/22 dark:bg-purple-500/12 dark:text-purple-50 dark:ring-purple-400/25',
-  tabBadge: 'text-purple-700 dark:text-purple-300',
-  pageSelectOutline: 'outline outline-2 outline-offset-2 outline-purple-500',
+  ...rose,
+  segmentActive: 'border border-purple-500/22 bg-purple-500/[0.06] text-purple-300/90',
+  segmentFocus: 'focus-visible:ring-purple-400/25',
+  pageSelectOutline: 'outline outline-2 outline-offset-2 outline-purple-500/45',
 };
 
 const orange: StudioAccent = {
-  segmentActive: 'bg-orange-100/90 text-orange-950 dark:bg-orange-900/45 dark:text-orange-50',
-  segmentFocus: 'focus-visible:ring-orange-400/35',
+  segmentActive:
+    'border border-[hsl(var(--brand-copper)/0.28)] bg-[hsl(var(--brand-copper)/0.06)] text-[hsl(var(--brand-copper))]',
+  segmentFocus: copperFocus,
   rangeIndexBadge:
-    'flex h-7 w-7 shrink-0 flex-none items-center justify-center rounded-lg max-md:rounded-full bg-orange-100/90 text-[11px] font-bold tabular-nums leading-none text-orange-950 dark:bg-orange-900/50 dark:text-orange-50',
+    'studio-shell-badge flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border font-mono text-[11px] font-bold tabular-nums text-[hsl(var(--brand-copper))]',
   addRangeButton:
-    'w-full shrink-0 rounded-lg max-md:rounded-2xl bg-orange-500/14 py-2 max-md:py-2.5 text-[11px] font-semibold text-orange-950 ring-1 ring-inset ring-orange-600/20 transition hover:bg-orange-500/22 dark:bg-orange-500/12 dark:text-orange-50 dark:ring-orange-400/25',
-  tabBadge: 'text-orange-700 dark:text-orange-300',
-  pageSelectOutline: 'outline outline-2 outline-offset-2 outline-orange-500',
+    'studio-shell-input w-full shrink-0 rounded-sm border py-2 font-mono text-[11px] font-semibold uppercase tracking-wide text-foreground transition hover:bg-black/30',
+  tabBadge: 'text-muted-foreground',
+  pageSelectOutline: 'outline outline-2 outline-offset-2 outline-[hsl(var(--brand-copper)/0.45)]',
+};
+
+const slate: StudioAccent = {
+  ...orange,
+  segmentActive: 'border border-border/80 bg-[#0b0b0b] text-foreground',
+  rangeIndexBadge:
+    'flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-black/40 font-mono text-[11px] font-bold tabular-nums text-foreground',
 };
 
 const BY_TONE: Partial<Record<ToneKey, StudioAccent>> = {
@@ -59,8 +62,19 @@ const BY_TONE: Partial<Record<ToneKey, StudioAccent>> = {
   blue,
   purple,
   orange,
+  slate,
+  emerald: orange,
+  amber: orange,
+  teal: orange,
+  cyan: blue,
+  indigo: purple,
+  sky: blue,
+  violet: purple,
+  lime: orange,
+  fuchsia: rose,
 };
 
+/** Studio chrome follows legacy per-tool / format tone. */
 export function getStudioAccent(tone: ToneKey | undefined): StudioAccent {
-  return (tone && BY_TONE[tone]) ?? rose;
+  return (tone && BY_TONE[tone]) ?? orange;
 }

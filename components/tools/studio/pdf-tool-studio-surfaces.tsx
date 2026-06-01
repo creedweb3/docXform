@@ -16,6 +16,23 @@ import {
   pairSingleWideIndices,
   rangeCardGridColSpan,
 } from '@/lib/pdf-split-range-layout';
+import {
+  STUDIO_CARD,
+  STUDIO_CARD_DRAG,
+  STUDIO_CARD_INNER,
+  STUDIO_EMPTY_STATE,
+  STUDIO_INDEX_BADGE,
+  STUDIO_INFO_STRIP,
+  STUDIO_LABEL,
+  STUDIO_RANGE_CARD,
+  STUDIO_RANGE_CARD_GRID,
+  STUDIO_RANGE_CARD_GRID_PAIR,
+  STUDIO_RANGE_OUTLINE,
+  STUDIO_PAGE_THUMB_IMG,
+  STUDIO_PAGE_THUMB_SHELL,
+  STUDIO_THUMB_AREA,
+  STUDIO_SHELL_PILL,
+} from '@/components/tools/studio/studio-theme';
 
 export function PdfMergeStudioSurface({ api }: { api: WorkspaceSurfaceApi }) {
   const { files, busy, draggedFileId, setDraggedFileId, reorderFilesInQueue, config } = api;
@@ -24,7 +41,7 @@ export function PdfMergeStudioSurface({ api }: { api: WorkspaceSurfaceApi }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Merge order</p>
+        <p className={STUDIO_LABEL}>Merge order</p>
         <HugeiconsIcon icon={GitMergeIcon} size={16} strokeWidth={2} className={config.iconClass} />
       </div>
       <div className="flex min-h-[200px] flex-1 flex-wrap content-start items-stretch justify-center gap-3 sm:justify-start">
@@ -37,12 +54,13 @@ export function PdfMergeStudioSurface({ api }: { api: WorkspaceSurfaceApi }) {
             onDrop={() => isReorderable && reorderFilesInQueue(item.id)}
             onDragEnd={() => setDraggedFileId(null)}
             className={clsx(
-              'flex w-[min(100%,11rem)] shrink-0 flex-col overflow-hidden rounded-2xl border-2 border-dashed border-border/50 bg-card/40 shadow-sm transition',
+              STUDIO_CARD,
+              'w-[min(100%,11rem)] shrink-0',
               draggedFileId === item.id && 'opacity-50',
-              isReorderable && 'cursor-grab active:cursor-grabbing hover:border-border'
+              isReorderable && STUDIO_CARD_DRAG
             )}
           >
-            <div className="relative aspect-[3/4] w-full bg-muted/30">
+            <div className={STUDIO_THUMB_AREA}>
               {item.preview?.status === 'ready' && item.preview.thumbUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -56,11 +74,9 @@ export function PdfMergeStudioSurface({ api }: { api: WorkspaceSurfaceApi }) {
                   Preview…
                 </div>
               )}
-              <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-xs font-bold text-white shadow">
-                {index + 1}
-              </span>
+              <span className={STUDIO_INDEX_BADGE}>{index + 1}</span>
             </div>
-            <div className="border-t border-border/40 px-2 py-2">
+            <div className={clsx(STUDIO_CARD_INNER, 'px-2 py-2')}>
               <p className="truncate text-center text-[11px] font-medium text-foreground" title={item.file.name}>
                 {item.file.name}
               </p>
@@ -87,9 +103,15 @@ function splitGroupsForBar(mode: SplitMode, pageCount: number): number[][] {
 
 function thumbForPage(
   st: WorkspaceSurfaceApi['gridByFileId'][string] | undefined,
-  pageNum: number
+  pageNum: number,
+  coverPreview?: { thumbUrl?: string; status?: string }
 ) {
-  return st?.thumbs.find((t) => t.pageNumber === pageNum);
+  const fromGrid = st?.thumbs.find((t) => t.pageNumber === pageNum);
+  if (fromGrid?.status === 'ready' && fromGrid.thumbUrl) return fromGrid;
+  if (pageNum === 1 && coverPreview?.thumbUrl) {
+    return { status: 'ready' as const, thumbUrl: coverPreview.thumbUrl };
+  }
+  return fromGrid;
 }
 
 function PageThumbCard({
@@ -116,8 +138,14 @@ function PageThumbCard({
   captionTop?: boolean;
 }) {
   const sm = size === 'sm';
-  /** Tight inset so object-contain has maximum room; avoids corner clipping vs heavy outer radius. */
-  const pad = sm ? 'p-0.5' : 'p-1';
+  const imgBounds = fillCellHeight
+    ? 'max-h-[min(12rem,42vh)] max-w-[min(9.5rem,100%)]'
+    : sm
+      ? 'max-h-28 max-w-[4.25rem]'
+      : inlineInGroup
+        ? 'max-h-36 max-w-[6.75rem]'
+        : 'max-h-44 max-w-[9.5rem] max-md:max-h-40 max-md:max-w-[4.25rem]';
+
   const caption = (
     <p
       className={clsx(
@@ -135,74 +163,68 @@ function PageThumbCard({
         'flex min-w-0 flex-col gap-0.5',
         captionTop && 'gap-1',
         inlineInGroup
-          ? clsx('shrink-0', sm ? 'w-[4.25rem]' : 'w-[6.75rem]', 'max-md:w-[4.25rem]')
+          ? 'mx-auto w-fit max-w-full shrink-0'
           : clsx(
-              'mx-auto flex',
-              sm ? 'w-[4.25rem] max-w-[4.25rem] shrink-0' : 'w-full min-w-0 max-w-[6.75rem]',
-              fillCellHeight && 'h-full min-h-0'
+              'mx-auto flex w-fit max-w-full',
+              sm && 'shrink-0'
             )
       )}
     >
       {captionTop ? caption : null}
-      <div
+      <span
         className={clsx(
-          'relative flex w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border/50 bg-white shadow-sm',
-          fillCellHeight
-            ? 'min-h-[4.5rem] flex-1'
-            : clsx(
-                sm ? 'h-28' : 'h-40',
-                'max-md:h-auto max-md:w-full max-md:max-w-[4.25rem] max-md:shrink-0 max-md:aspect-[85/110] max-md:mx-auto'
-              ),
+          STUDIO_PAGE_THUMB_SHELL,
+          fillCellHeight && 'self-center',
           highlight === 'select' && selectOutlineClass,
-          highlight === 'out' &&
-            'border-dashed border-muted-foreground/50 bg-muted/20 ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]'
+          highlight === 'out' && 'opacity-75 ring-dashed ring-muted-foreground/40'
         )}
       >
-        <div
-          className={clsx(
-            'box-border flex min-h-0 w-full flex-1 items-center justify-center',
-            pad,
-            fillCellHeight && 'min-h-0 flex-1'
-          )}
-        >
-          {thumb?.status === 'ready' && thumb.thumbUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={thumb.thumbUrl}
-              alt=""
-              className={clsx(
-                'h-auto w-auto max-h-full max-w-full object-contain object-center',
-                highlight === 'out' && 'opacity-[0.88]'
-              )}
-              loading="lazy"
-            />
-          ) : thumb?.status === 'loading' || !thumb ? (
-            <div className="h-full min-h-[4rem] w-full animate-pulse rounded-sm bg-muted/40" />
-          ) : (
-            <span className="px-1 text-center text-[9px] text-rose-600">{thumb.error ?? 'Preview failed'}</span>
-          )}
-        </div>
-      </div>
+        {thumb?.status === 'ready' && thumb.thumbUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={thumb.thumbUrl}
+            alt=""
+            className={clsx(STUDIO_PAGE_THUMB_IMG, imgBounds, highlight === 'out' && 'opacity-90')}
+            loading="lazy"
+          />
+        ) : thumb?.status === 'loading' || !thumb ? (
+          <span
+            className={clsx(
+              'block aspect-[85/110] animate-pulse bg-muted/40',
+              imgBounds,
+              'w-[5.5rem] max-w-full'
+            )}
+            aria-hidden
+          />
+        ) : (
+          <span
+            className={clsx(
+              'flex items-center justify-center bg-white px-2 py-6 text-center text-[9px] text-rose-600 dark:bg-zinc-50',
+              imgBounds,
+              'w-[5.5rem] max-w-full'
+            )}
+          >
+            {thumb.error ?? 'Preview failed'}
+          </span>
+        )}
+      </span>
       {!captionTop ? caption : null}
     </div>
   );
 }
 
 /** Range preview dashed cards: single-page groups (grid col-span set per card). */
-const PDF_SPLIT_RANGE_CARD_CLASS =
-  'flex h-full min-h-0 w-full min-w-0 flex-col gap-2 rounded-xl border-2 border-dashed border-zinc-400/65 bg-card/40 px-3 pb-2 pt-2 shadow-sm dark:border-zinc-500/60 dark:bg-muted/20';
+const PDF_SPLIT_RANGE_CARD_CLASS = clsx(STUDIO_RANGE_OUTLINE, STUDIO_RANGE_CARD);
 
 /** Full-row multi on 6-column grid. */
-const PDF_SPLIT_RANGE_CARD_ALONE_MULTI_CLASS =
-  'col-span-6 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-card/40 px-0 pb-2 pt-2 shadow-sm gap-y-2 dark:border-zinc-500/60 dark:bg-muted/20';
+const PDF_SPLIT_RANGE_CARD_ALONE_MULTI_CLASS = clsx(STUDIO_RANGE_OUTLINE, STUDIO_RANGE_CARD_GRID);
 
 /** Multi paired with single on one row (4 of 6 cols). */
-const PDF_SPLIT_RANGE_CARD_PAIR_MULTI_CLASS =
-  'col-span-4 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-card/40 px-0 pb-2 pt-2 shadow-sm gap-y-2 dark:border-zinc-500/60 dark:bg-muted/20';
+const PDF_SPLIT_RANGE_CARD_PAIR_MULTI_CLASS = clsx(STUDIO_RANGE_OUTLINE, STUDIO_RANGE_CARD_GRID_PAIR);
 
 /** Two equal halves; each thumb centered in its half (1.5+1.5 style positioning). */
 const PDF_SPLIT_RANGE_MULTI_THUMBS_CLASS =
-  'relative grid min-h-0 min-w-0 grid-cols-2 items-center gap-x-3 sm:gap-x-4';
+  'relative grid min-w-0 grid-cols-2 items-start justify-items-center gap-x-3 sm:gap-x-4';
 
 const RANGE_GRID_COL_SPAN: Record<2 | 3 | 4 | 6, string> = {
   2: 'col-span-2',
@@ -231,9 +253,8 @@ export function PdfSplitStudioSurface({
   const file = api.files[0];
   const preview = file?.preview;
   const pageCount = preview?.pageCount ?? 0;
-  /** Queue has a file but PDF.js preview has not returned page count yet (or is in flight). */
-  const previewPending =
-    !!file && pageCount <= 0 && preview?.status !== 'error' && preview?.status !== 'ready';
+  /** Waiting for page count (pdf-lib probe) before range / page previews can render. */
+  const previewPending = !!file && pageCount <= 0 && preview?.status === 'loading';
   const previewFailed = preview?.status === 'error';
   const st = file ? api.gridByFileId[file.id] : undefined;
   const order =
@@ -287,10 +308,12 @@ export function PdfSplitStudioSurface({
         } as CSSProperties)
       : undefined;
 
-  const studioPillClass =
-    toneKey && TONE_STYLES[toneKey]?.studioInfoPill
-      ? TONE_STYLES[toneKey].studioInfoPill
-      : 'border-border/50 bg-muted/35 text-foreground ring-1 ring-border/40';
+  const studioPillClass = clsx(STUDIO_SHELL_PILL, 'font-mono text-[11px] text-muted-foreground');
+  /** Full-width hint strip — same horizontal span as the preview grid below. */
+  const studioInfoStripClass = clsx(
+    studioPillClass,
+    'block w-full min-w-0 rounded-sm border px-3 py-2 text-left leading-snug'
+  );
   const studioPillIconClass =
     toneKey && TONE_STYLES[toneKey]?.iconText ? TONE_STYLES[toneKey].iconText : 'text-muted-foreground';
 
@@ -332,7 +355,7 @@ export function PdfSplitStudioSurface({
 
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-2 basis-0 min-h-0 max-md:basis-auto max-md:gap-2.5">
-      <div className="flex min-w-0 shrink-0 items-center justify-between gap-2 px-3 pr-2 max-md:px-2.5 max-md:pr-2">
+      <div className="flex min-w-0 shrink-0 items-center justify-between gap-2 max-md:px-0.5">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground max-md:text-xs">
           {splitTab === 'range' ? 'Split preview' : splitTab === 'pages' ? 'Page previews' : 'By size'}
         </p>
@@ -346,7 +369,7 @@ export function PdfSplitStudioSurface({
                 api.selectAllPagesForFile(file.id);
               }}
               className={clsx(
-                'inline-flex min-h-8 shrink-0 items-center justify-center rounded-full px-3.5 py-1.5 text-[11px] font-medium shadow-sm transition hover:brightness-[0.97] active:scale-[0.99]',
+                'studio-shell-pill inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-wide transition hover:bg-black/25',
                 studioPillClass
               )}
             >
@@ -368,7 +391,7 @@ export function PdfSplitStudioSurface({
             </button>
             <span
               className={clsx(
-                'inline-flex shrink-0 items-center rounded-full px-2.5 py-1 tabular-nums text-[11px] font-medium shadow-sm max-md:min-h-7 max-md:px-3',
+                'studio-shell-pill inline-flex shrink-0 items-center rounded-sm border px-2.5 py-1 font-mono tabular-nums text-[10px] font-semibold max-md:min-h-7 max-md:px-3',
                 studioPillClass
               )}
             >
@@ -422,8 +445,8 @@ export function PdfSplitStudioSurface({
         !previewPending &&
         splitTab === 'range' &&
         groups.length > 0 ? (
-          <div className="mb-1.5 min-w-0 shrink-0 px-3 pr-2 max-md:mb-1 max-md:px-2">
-            <details className={clsx('rounded-2xl shadow-sm md:hidden', studioPillClass)}>
+          <div className="mb-1.5 w-full min-w-0 shrink-0 max-md:mb-1">
+            <details className={clsx('w-full rounded-sm border md:hidden', studioPillClass)}>
               <summary className="cursor-pointer list-none px-3 py-2.5 text-[11px] font-semibold leading-snug marker:content-none min-h-11 flex items-center [&::-webkit-details-marker]:hidden">
                 {rangeOutputPdfCount} PDF{rangeOutputPdfCount === 1 ? '' : 's'} · tap for details
               </summary>
@@ -433,12 +456,7 @@ export function PdfSplitStudioSurface({
                   : 'Each dashed box is one output file.'}
               </p>
             </details>
-            <p
-              className={clsx(
-                'hidden w-full rounded-2xl px-3 py-2 text-left text-[11px] leading-snug shadow-sm md:block',
-                studioPillClass
-              )}
-            >
+            <p className={clsx(studioInfoStripClass, 'hidden md:block')}>
               {mergeRangeOutputs
                 ? `Preview shows each range group; they merge into one ordered PDF · ${rangeOutputPdfCount} PDF${rangeOutputPdfCount === 1 ? '' : 's'} will be created`
                 : `Dashed boxes are output groups · ${rangeOutputPdfCount} PDF${rangeOutputPdfCount === 1 ? '' : 's'} will be created`}
@@ -450,13 +468,8 @@ export function PdfSplitStudioSurface({
         !previewFailed &&
         !previewPending &&
         splitTab === 'pages' ? (
-          <div className="mb-1.5 min-w-0 shrink-0 px-3 pr-2">
-            <p
-              className={clsx(
-                'w-full rounded-2xl px-3 py-2 text-left text-[11px] leading-snug shadow-sm',
-                studioPillClass
-              )}
-            >
+          <div className="mb-1.5 w-full min-w-0 shrink-0">
+            <p className={studioInfoStripClass}>
               {selectThumbMode
                 ? `Highlighted outline = included; dimmed = skipped. Click a page to toggle.${
                     reorderThumbs ? ' Drag the preview or the “Drag” row below to reorder.' : ''
@@ -468,32 +481,28 @@ export function PdfSplitStudioSurface({
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       {splitTab === 'size' ? (
-        <p className="rounded-xl border border-border/50 bg-muted/20 px-3 py-4 text-center text-sm text-muted-foreground">
+        <p className={STUDIO_EMPTY_STATE}>
           Splitting by target file size is not available in this version.
         </p>
       ) : !file ? (
-        <p className="rounded-xl border border-dashed border-border/50 bg-card/30 px-3 py-10 text-center text-sm text-muted-foreground">
-          Add a PDF to preview every page and how outputs group.
-        </p>
+        <p className={STUDIO_EMPTY_STATE}>Add a PDF to preview every page and how outputs group.</p>
       ) : previewFailed ? (
-        <p className="rounded-xl border border-dashed border-rose-200/80 bg-rose-50/80 px-3 py-10 text-center text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200">
+        <p className={clsx(STUDIO_EMPTY_STATE, 'border-rose-500/30 text-rose-200/90')}>
           {preview?.error ?? 'Could not load a preview of this PDF.'}
         </p>
       ) : previewPending ? (
-        <p className="rounded-xl border border-dashed border-border/50 bg-card/30 px-3 py-10 text-center text-sm text-muted-foreground animate-pulse">
-          Loading PDF preview…
-        </p>
+        <p className={clsx(STUDIO_EMPTY_STATE, 'animate-pulse')}>Loading PDF preview…</p>
       ) : pageCount <= 0 ? (
-        <p className="rounded-xl border border-dashed border-border/50 bg-card/30 px-3 py-10 text-center text-sm text-muted-foreground">
+        <p className={STUDIO_EMPTY_STATE}>
           This PDF has no readable pages, or the preview did not finish loading.
         </p>
       ) : splitTab === 'range' && groups.length > 0 ? (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div
-            className="queue-list-scrollbar min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain px-3 py-1.5 pr-2"
+            className="queue-list-scrollbar min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain py-1"
             style={scrollThumbStyle}
           >
-            <div className="grid min-w-0 grid-cols-6 items-stretch gap-x-3 gap-y-3 sm:gap-x-4 max-md:grid-cols-2 max-md:items-start max-md:gap-2">
+            <div className="grid min-w-0 grid-cols-6 items-start gap-x-4 gap-y-4 sm:gap-x-6 max-md:grid-cols-2 max-md:gap-3">
               {groups.map((pages, gi) => {
                 const lo = Math.min(...pages);
                 const hi = Math.max(...pages);
@@ -514,12 +523,8 @@ export function PdfSplitStudioSurface({
                       Range {gi + 1}
                     </p>
                     <div className={clsx(PDF_SPLIT_RANGE_MULTI_THUMBS_CLASS, 'col-span-6 px-1 sm:px-2')}>
-                      <div className="flex min-w-0 justify-center">
-                        <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo)} highlight="none" inlineInGroup />
-                      </div>
-                      <div className="flex min-w-0 justify-center">
-                        <PageThumbCard pageNum={hi} thumb={thumbForPage(st, hi)} highlight="none" inlineInGroup />
-                      </div>
+                      <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo, preview)} highlight="none" inlineInGroup />
+                      <PageThumbCard pageNum={hi} thumb={thumbForPage(st, hi, preview)} highlight="none" inlineInGroup />
                       <span
                         aria-hidden
                         className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center text-lg font-medium leading-none text-muted-foreground"
@@ -540,12 +545,8 @@ export function PdfSplitStudioSurface({
                       Range {gi + 1}
                     </p>
                     <div className={clsx(PDF_SPLIT_RANGE_MULTI_THUMBS_CLASS, 'col-span-4 px-1 sm:px-2')}>
-                      <div className="flex min-w-0 justify-center">
-                        <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo)} highlight="none" inlineInGroup />
-                      </div>
-                      <div className="flex min-w-0 justify-center">
-                        <PageThumbCard pageNum={hi} thumb={thumbForPage(st, hi)} highlight="none" inlineInGroup />
-                      </div>
+                      <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo, preview)} highlight="none" inlineInGroup />
+                      <PageThumbCard pageNum={hi} thumb={thumbForPage(st, hi, preview)} highlight="none" inlineInGroup />
                       <span
                         aria-hidden
                         className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center text-lg font-medium leading-none text-muted-foreground"
@@ -560,15 +561,15 @@ export function PdfSplitStudioSurface({
                     className={clsx(
                       PDF_SPLIT_RANGE_CARD_CLASS,
                       gridSpanClass,
-                      'max-md:h-auto max-md:items-center max-md:justify-center max-md:gap-2 max-md:py-2.5 mobile-range-card',
+                      'max-md:gap-1.5 mobile-range-card',
                       mobileSpan === 2 ? 'max-md:col-span-2' : 'max-md:col-span-1'
                     )}
                   >
                     <p className="shrink-0 text-center text-[11px] font-semibold text-foreground max-md:text-xs">
                       Range {gi + 1}
                     </p>
-                    <div className="flex w-full min-w-0 flex-col items-center justify-center max-md:flex-none">
-                      <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo)} highlight="none" inlineInGroup />
+                    <div className="flex w-full min-w-0 justify-center">
+                      <PageThumbCard pageNum={lo} thumb={thumbForPage(st, lo, preview)} highlight="none" inlineInGroup />
                     </div>
                   </div>
                 );
@@ -579,7 +580,7 @@ export function PdfSplitStudioSurface({
       ) : (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div
-            className="queue-list-scrollbar min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain px-3 py-1.5 pr-2"
+            className="queue-list-scrollbar min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain py-1"
             style={scrollThumbStyle}
           >
             <div
@@ -587,7 +588,7 @@ export function PdfSplitStudioSurface({
               className="grid min-w-0 grid-cols-3 items-start justify-items-center gap-x-2 gap-y-3 sm:gap-x-3 max-md:grid-cols-2"
             >
               {order.map((pageNum, index) => {
-                const thumb = thumbForPage(st, pageNum);
+                const thumb = thumbForPage(st, pageNum, preview);
                 const highlight = selectThumbMode
                   ? selectedSet.has(pageNum)
                     ? 'select'
@@ -682,7 +683,7 @@ export function PdfRotateStudioSurface({ api, angle }: { api: WorkspaceSurfaceAp
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 py-2">
       <div
-        className="relative aspect-[3/4] w-[min(100%,14rem)] overflow-hidden rounded-2xl border border-border/50 bg-muted/20 shadow-md"
+        className={clsx(STUDIO_THUMB_AREA, 'w-[min(100%,14rem)]')}
         style={{ perspective: '800px' }}
       >
         <div
@@ -718,7 +719,7 @@ export function PdfWatermarkStudioSurface({
 
   return (
     <div className="flex flex-1 flex-col items-center gap-3 py-2">
-      <div className="relative aspect-[3/4] w-full max-w-sm overflow-hidden rounded-2xl border border-border/70 bg-card/40 shadow-inner">
+      <div className={clsx(STUDIO_THUMB_AREA, 'w-full max-w-sm')}>
         {file?.preview?.status === 'ready' && file.preview.thumbUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img src={file.preview.thumbUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -768,35 +769,47 @@ export function PdfOrganizeStudioSurface({ api, order }: { api: WorkspaceSurface
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="rounded-xl border border-border/50 bg-card/40 px-3 py-2 text-center">
+      <div className={STUDIO_INFO_STRIP}>
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Output page order</p>
         <p className="mt-1 break-words font-mono text-xs text-foreground">{orderStr}</p>
       </div>
       <div className="flex flex-wrap justify-center gap-2">
         {thumbs.length > 0
           ? thumbs.map((t) => (
-              <div
-                key={t.id}
-                className="relative h-16 w-12 overflow-hidden rounded-lg border border-border/40 bg-muted/30"
-              >
+              <span key={t.id} className={clsx(STUDIO_PAGE_THUMB_SHELL, 'relative shrink-0')}>
                 {t.thumbUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={t.thumbUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  <img
+                    src={t.thumbUrl}
+                    alt=""
+                    className={clsx(STUDIO_PAGE_THUMB_IMG, 'max-h-16 max-w-12')}
+                    loading="lazy"
+                  />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-[9px] text-muted-foreground">
+                  <span
+                    className={clsx(
+                      STUDIO_PAGE_THUMB_IMG,
+                      'flex max-h-16 w-12 items-center justify-center text-[9px] text-muted-foreground'
+                    )}
+                  >
                     {t.pageNumber}
-                  </div>
+                  </span>
                 )}
                 <span className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[8px] font-bold text-white">
                   {t.pageNumber}
                 </span>
-              </div>
+              </span>
             ))
           : file?.preview?.status === 'ready' && file.preview.thumbUrl ? (
-              <div className="relative h-28 w-20 overflow-hidden rounded-xl border border-border/50 shadow-sm">
+              <span className={STUDIO_PAGE_THUMB_SHELL}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={file.preview.thumbUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-              </div>
+                <img
+                  src={file.preview.thumbUrl}
+                  alt=""
+                  className={clsx(STUDIO_PAGE_THUMB_IMG, 'max-h-28 max-w-20')}
+                  loading="lazy"
+                />
+              </span>
             ) : (
               <p className="text-xs text-muted-foreground">Page previews load here once the PDF is ready.</p>
             )}
@@ -819,28 +832,40 @@ export function PdfToImagesStudioSurface({ api }: { api: WorkspaceSurfaceApi }) 
       <div className="flex min-h-[120px] gap-2 overflow-x-auto pb-1 pt-1 [scrollbar-width:thin]">
         {thumbs.length > 0 ? (
           thumbs.map((t) => (
-            <div
-              key={t.id}
-              className="relative h-28 w-20 shrink-0 overflow-hidden rounded-xl border border-border/50 bg-white shadow-sm"
-            >
+            <span key={t.id} className={clsx(STUDIO_PAGE_THUMB_SHELL, 'relative shrink-0')}>
               {t.thumbUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={t.thumbUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                <img
+                  src={t.thumbUrl}
+                  alt=""
+                  className={clsx(STUDIO_PAGE_THUMB_IMG, 'max-h-28 max-w-20')}
+                  loading="lazy"
+                />
               ) : (
-                <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">
+                <span
+                  className={clsx(
+                    STUDIO_PAGE_THUMB_IMG,
+                    'flex max-h-28 w-20 items-center justify-center text-[10px] text-muted-foreground'
+                  )}
+                >
                   {t.pageNumber}
-                </div>
+                </span>
               )}
               <span className="absolute bottom-1 left-1 rounded bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold text-white">
                 {t.pageNumber}
               </span>
-            </div>
+            </span>
           ))
         ) : file?.preview?.status === 'ready' && file.preview.thumbUrl ? (
-          <div className="relative h-28 w-20 shrink-0 overflow-hidden rounded-xl border border-border/50">
+          <span className={clsx(STUDIO_PAGE_THUMB_SHELL, 'shrink-0')}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={file.preview.thumbUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-          </div>
+            <img
+              src={file.preview.thumbUrl}
+              alt=""
+              className={clsx(STUDIO_PAGE_THUMB_IMG, 'max-h-28 max-w-20')}
+              loading="lazy"
+            />
+          </span>
         ) : (
           <p className="self-center text-xs text-muted-foreground">Add a PDF — page previews appear here.</p>
         )}

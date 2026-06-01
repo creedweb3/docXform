@@ -24,6 +24,14 @@ import { getToolBySlug } from '@/lib/tools';
 import { generatePdfPreview } from '@/lib/client-previews';
 import { getStudioAccent } from '@/components/tools/studio-accent';
 import { StudioInfoBanner, StudioSegmentRow, StudioTabBar } from '@/components/tools/studio/studio-ui';
+import {
+  STUDIO_CHECK_ROW,
+  STUDIO_FIELD_ROW,
+  STUDIO_FULL_INPUT,
+  STUDIO_HINT,
+  STUDIO_NUM_INPUT,
+  STUDIO_SECONDARY_BTN,
+} from '@/components/tools/studio/studio-theme';
 import { TONE_STYLES } from '@/components/tools/tone-styles';
 
 const tool = getToolBySlug('pdf-split')!;
@@ -276,7 +284,7 @@ export function PdfSplitTool() {
       return (
         <div className="flex w-full min-w-0 flex-col gap-5 text-xs text-muted-foreground max-md:gap-4">
           <section
-            className="min-w-0 w-full shrink-0 overflow-x-visible rounded-2xl border border-border/30 bg-white/95 px-4 pb-5 pt-4 shadow-md ring-1 ring-black/[0.04] sm:px-5 sm:pb-6 dark:border-white/[0.08] dark:bg-zinc-950/50 dark:ring-white/[0.06] max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:px-0 max-md:pb-0 max-md:pt-0 max-md:shadow-none max-md:ring-0"
+            className="min-w-0 w-full shrink-0 space-y-4 overflow-x-visible"
             aria-label="PDF split options"
           >
             <div className="mb-1 shrink-0">
@@ -338,7 +346,7 @@ export function PdfSplitTool() {
                             <div
                               key={`range-${idx}-${from}-${to}`}
                               aria-label={`Range ${idx + 1}`}
-                              className="flex shrink-0 min-h-[1.75rem] min-w-0 flex-nowrap items-center gap-2 rounded-lg max-md:rounded-2xl bg-muted/40 px-2 py-2 max-md:px-3 dark:bg-white/[0.06]"
+                              className={clsx(STUDIO_FIELD_ROW, 'max-md:px-3')}
                             >
                               <div className={studioAccent.rangeIndexBadge} aria-hidden>
                                 {idx + 1}
@@ -354,7 +362,7 @@ export function PdfSplitTool() {
                                     min={1}
                                     max={n > 0 ? n : undefined}
                                     disabled={rangeRowsLocked}
-                                    className="box-border h-7 w-11 shrink-0 rounded-lg max-md:rounded-2xl max-md:h-9 border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] disabled:cursor-default disabled:opacity-60 dark:bg-zinc-900/80 dark:ring-white/10"
+                                    className={clsx(STUDIO_NUM_INPUT, 'max-md:h-9')}
                                     value={from}
                                     onChange={(e) =>
                                       patchCustomRange(idx, 'from', Math.max(1, Number(e.target.value) || 1))
@@ -370,7 +378,7 @@ export function PdfSplitTool() {
                                     min={1}
                                     max={n > 0 ? n : undefined}
                                     disabled={rangeRowsLocked}
-                                    className="box-border h-7 w-11 shrink-0 rounded-lg max-md:rounded-2xl max-md:h-9 border-0 bg-white/90 px-1 text-center text-xs font-medium tabular-nums leading-none text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] disabled:cursor-default disabled:opacity-60 dark:bg-zinc-900/80 dark:ring-white/10"
+                                    className={clsx(STUDIO_NUM_INPUT, 'max-md:h-9')}
                                     value={to}
                                     onChange={(e) =>
                                       patchCustomRange(idx, 'to', Math.max(1, Number(e.target.value) || 1))
@@ -409,7 +417,7 @@ export function PdfSplitTool() {
                       <button
                         type="button"
                         onClick={() => api.prepareForResplit()}
-                        className="w-full shrink-0 rounded-lg max-md:rounded-2xl border border-border/50 bg-white/80 px-3 py-2.5 text-[11px] font-semibold text-foreground shadow-sm ring-1 ring-inset ring-black/[0.04] transition hover:bg-white dark:bg-zinc-900/70 dark:ring-white/[0.06] dark:hover:bg-zinc-900"
+                        className={clsx(STUDIO_SECONDARY_BTN, 'max-md:py-3')}
                       >
                         Edit ranges
                       </button>
@@ -420,8 +428,8 @@ export function PdfSplitTool() {
                     )}
                     <label
                       className={clsx(
-                        'flex shrink-0 items-start gap-2.5 rounded-lg max-md:rounded-2xl bg-muted/40 px-3 py-3 max-md:py-3.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]',
-                        rangeSettingsLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                        STUDIO_CHECK_ROW,
+                        rangeSettingsLocked ? 'cursor-not-allowed opacity-60' : undefined
                       )}
                     >
                       <input
@@ -441,7 +449,7 @@ export function PdfSplitTool() {
                     <label className="block space-y-1.5">
                       <span className="text-[11px] font-semibold text-foreground">Split into page ranges of</span>
                       <input
-                        className="w-full rounded-lg max-md:rounded-2xl border-0 bg-white/90 px-3 py-3 text-sm text-foreground shadow-sm ring-1 ring-inset ring-black/[0.06] disabled:cursor-default disabled:opacity-60 dark:bg-zinc-900/80 dark:ring-white/10"
+                        className={clsx(STUDIO_FULL_INPUT, 'max-md:py-3.5')}
                         type="number"
                         min={1}
                         disabled={rangeSettingsLocked}
@@ -455,7 +463,7 @@ export function PdfSplitTool() {
                     </label>
                   </div>
                 ) : (
-                  <p className="shrink-0 rounded-lg max-md:rounded-2xl bg-muted/35 px-3 py-3.5 text-[11px] ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
+                  <p className={clsx(STUDIO_HINT, 'max-md:py-3.5')}>
                     Smart split is not available yet.
                   </p>
                 )}
@@ -475,7 +483,7 @@ export function PdfSplitTool() {
                     if (id === 'all' && file) api.selectAllPagesForFile(file.id);
                   }}
                 />
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg max-md:rounded-2xl bg-muted/40 px-3 py-3.5 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.05] dark:ring-white/[0.06]">
+                <label className={clsx(STUDIO_CHECK_ROW, 'max-md:py-3.5')}>
                   <input
                     type="checkbox"
                     className="mt-0.5"

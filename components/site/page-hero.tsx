@@ -2,6 +2,7 @@ import { Eyebrow } from '@/components/site/ui/eyebrow';
 import { BrandRule } from '@/components/site/ui/brand-rule';
 import { Container } from '@/components/site/ui/container';
 import { CreativeReveal } from '@/components/creative/CreativeReveal';
+import { ZONE_GAP_AFTER, ZONE_NAV_TOP } from '@/lib/marketing-layout';
 import { cn } from '@/lib/utils';
 
 type PageHeroProps = {
@@ -22,7 +23,10 @@ export function PageHero({
   const centered = align === 'center';
 
   return (
-    <section className={cn('border-b border-border/80 pt-16 pb-12 sm:pt-20 sm:pb-14', className)}>
+    <section
+      className={cn(ZONE_NAV_TOP, ZONE_GAP_AFTER, className)}
+      data-marketing-zone="hero"
+    >
       <Container size="lg" className={cn(centered && 'text-center')}>
         <CreativeReveal>
           <BrandRule className={cn('mb-5', centered && 'mx-auto')} />

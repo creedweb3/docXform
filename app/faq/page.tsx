@@ -1,6 +1,5 @@
 import { SiteShell } from '@/components/site/site-shell';
-import { HackerPage, HackerPageBody } from '@/components/site/console/console-ui';
-import { Button } from '@/components/site/ui/button';
+import { HackerPage, HackerPageBody, TermInquiryCta } from '@/components/site/console/console-ui';
 import { FAQSchema } from '@/components/faq-schema';
 import { AdSlot } from '@/components/ad-slot';
 import { FaqDetailsCard } from '@/components/faq-details-card';
@@ -14,7 +13,7 @@ import {
   webPageJsonLd,
 } from '@/lib/seo';
 import { JsonLd } from '@/components/json-ld';
-import { CONTENT_SIDE_GRID, SECTION_BODY_GAP } from '@/lib/marketing-layout';
+import { BODY_BLOCK_STACK, CONTENT_SIDE_GRID } from '@/lib/marketing-layout';
 import { cn } from '@/lib/utils';
 
 const title = 'FAQ - Private Word and PDF Conversion Questions | docXform';
@@ -47,8 +46,9 @@ export default function FaqPage() {
           path="/faq"
           title="Frequently asked questions"
           description="Privacy, supported formats, file limits, output quality, and what to expect from in-browser conversion."
+          separatorAfter
         >
-          <div className="space-y-2">
+          <div className="term-list-stack">
             {SITE_FAQS.map((faq, index) => (
               <FaqDetailsCard
                 key={faq.question}
@@ -60,27 +60,22 @@ export default function FaqPage() {
           </div>
         </HackerPage>
 
-        <HackerPageBody className="!pt-10">
-          <div className={cn(CONTENT_SIDE_GRID, SECTION_BODY_GAP)}>
-            <aside className="hidden xl:block xl:col-start-1 xl:row-start-1 xl:sticky xl:top-24 self-start">
-              <AdSlot variant="content" />
-            </aside>
-            <div className="min-w-0 xl:col-start-2">
-              <div className="w-full rounded-sm border border-border/70 bg-card/40 px-5 py-6 text-center sm:px-6">
-                <p className="text-sm text-muted-foreground">
-                  Business, partnership, or press inquiry?
-                </p>
-                <Button href="/contact" variant="primary" className="mt-4">
-                  Contact docXform
-                </Button>
+        <HackerPageBody>
+          <div className={BODY_BLOCK_STACK}>
+            <div className={CONTENT_SIDE_GRID}>
+              <aside className="hidden xl:block xl:col-start-1 xl:row-start-1 xl:sticky xl:top-24 self-start">
+                <AdSlot variant="content" />
+              </aside>
+              <div className="min-w-0 xl:col-start-2">
+                <TermInquiryCta />
               </div>
+              <aside className="hidden xl:block xl:col-start-3 xl:row-start-1 xl:sticky xl:top-24 self-start">
+                <AdSlot variant="content" />
+              </aside>
             </div>
-            <aside className="hidden xl:block xl:col-start-3 xl:row-start-1 xl:sticky xl:top-24 self-start">
+            <div className="flex justify-center xl:hidden">
               <AdSlot variant="content" />
-            </aside>
-          </div>
-          <div className="mt-8 flex justify-center xl:hidden">
-            <AdSlot variant="content" />
+            </div>
           </div>
         </HackerPageBody>
       </SiteShell>

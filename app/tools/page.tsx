@@ -8,7 +8,7 @@ import {
 } from '@/lib/seo';
 import { JsonLd } from '@/components/json-ld';
 import { SiteShell } from '@/components/site/site-shell';
-import { HackerPage, HackerPageBody } from '@/components/site/console/console-ui';
+import { HackerPage } from '@/components/site/console/console-ui';
 import { ToolsIndexClient } from '@/components/tools/tools-index-client';
 import { toolDefinitions } from '@/lib/tools';
 
@@ -58,10 +58,9 @@ export default function ToolsPage() {
           path="/tools"
           title="All tools"
           description={`${toolDefinitions.length} browser-based utilities for PDF and Office files. Filter by file type or job, then open a tool.`}
-        />
-        <HackerPageBody>
+        >
           <ToolsIndexClient />
-        </HackerPageBody>
+        </HackerPage>
       </SiteShell>
     </>
   );

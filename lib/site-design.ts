@@ -2,7 +2,25 @@
 
 import { BTN_PRIMARY, SHEET, SHEET_HOVER } from '@/lib/brand';
 
-export { SECTION_PY, SECTION_BODY_GAP, SECTION_STACK, CATALOG_GROUP_GAP } from '@/lib/marketing-layout';
+export {
+  SECTION_PY,
+  SECTION_BODY_GAP,
+  SECTION_TITLE_GAP,
+  SECTION_STACK,
+  BLOCK_STACK,
+  BODY_BLOCK_STACK,
+  TERM_MODULE_GRID,
+  TERM_LIST_STACK,
+  MARKETING_MAIN,
+  MARKETING_PAGE,
+  ZONE_BODY,
+  ZONE_FOOTER_INNER,
+  ZONE_GAP_AFTER,
+  ZONE_GAP_BEFORE,
+  ZONE_NAV_TOP,
+  ZONE_TOP,
+  CATALOG_GROUP_GAP,
+} from '@/lib/marketing-layout';
 
 export const WORKSPACE_PRIMARY_CTA = BTN_PRIMARY;
 
@@ -25,5 +43,6 @@ export const SURFACE_HOVER = SHEET_HOVER;
 export const CATALOG_ROW =
   'group relative flex min-h-[3.25rem] items-center gap-3 sm:gap-4 px-5 py-4 sm:px-6 sm:min-h-[3.5rem] transition-[background-color,box-shadow,color] duration-200 hover:bg-[hsl(var(--brand-copper)/0.08)] hover:shadow-[inset_3px_0_0_0_hsl(var(--brand-copper))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-copper)/0.25)]';
 
+/** Sticky filter bar below catalog header — spacing from {@link BODY_BLOCK_STACK} above. */
 export const STICKY_BAR =
-  'sticky z-20 top-[calc(3.5rem+0.5rem)] -mx-4 border-b border-border/80 bg-background/90 px-4 py-4 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8';
+  'sticky z-20 top-[calc(3.5rem+0.5rem)] bg-background/90 py-0 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80';

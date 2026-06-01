@@ -87,7 +87,7 @@ export function HackerTerminal({
       </div>
 
       {header ? (
-        <div className="relative space-y-2 border-b border-[hsl(var(--brand-copper)/0.12)] bg-[#0b0b0b] px-4 py-4 sm:px-5 sm:py-5">
+        <div className="relative space-y-3 border-b border-[hsl(var(--brand-copper)/0.12)] bg-[#0b0b0b] px-4 py-5 sm:px-6 sm:py-6">
           {header}
         </div>
       ) : null}
@@ -121,7 +121,14 @@ export function HackerTerminal({
       ) : null}
 
       {activeContent ? (
-        <div className="relative space-y-3 bg-[#0b0b0b] p-4 sm:p-6">{activeContent}</div>
+        <div
+          className={cn(
+            'relative flex flex-col bg-[#0b0b0b] p-5 sm:p-8',
+            mode === 'product' ? 'gap-6' : 'gap-5'
+          )}
+        >
+          {activeContent}
+        </div>
       ) : null}
 
       {mode === 'product' ? (

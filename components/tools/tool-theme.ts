@@ -96,7 +96,7 @@ export function buildWorkspaceConfig(
 export type FlagshipConverterMode = 'word-to-pdf' | 'pdf-to-word';
 
 export function flagshipConverterTheme(mode: FlagshipConverterMode) {
-  const tone: ToneKey = mode === 'word-to-pdf' ? 'blue' : 'rose';
+  const tone: ToneKey = mode === 'word-to-pdf' ? 'orange' : 'slate';
   const s = TONE_STYLES[tone];
   return {
     cardClass: s.mainCard,

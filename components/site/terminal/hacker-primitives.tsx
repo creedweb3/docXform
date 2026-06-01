@@ -14,8 +14,23 @@ export function TermCmd({ children, className }: { children: React.ReactNode; cl
   );
 }
 
-export function TermComment({ children }: { children: React.ReactNode }) {
-  return <p className="font-mono text-[11px] leading-relaxed text-muted-foreground/90"># {children}</p>;
+export function TermComment({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <p
+      className={cn(
+        'font-mono text-[11px] leading-relaxed text-muted-foreground/90',
+        className
+      )}
+    >
+      # {children}
+    </p>
+  );
 }
 
 export function TermOut({
@@ -101,10 +116,32 @@ export function TermKeyRow({
   status?: 'ok' | 'warn' | 'block';
 }) {
   return (
-    <div className="grid grid-cols-[7rem_1fr_auto] items-baseline gap-2 border-b border-[hsl(var(--brand-copper)/0.08)] py-2 font-mono text-[11px] last:border-0">
+    <div className="grid grid-cols-[7rem_1fr_auto] items-baseline gap-3 border-b border-[hsl(var(--brand-copper)/0.08)] py-3 font-mono text-[11px] last:border-0">
       <span className="text-[hsl(var(--brand-copper))]">{keyName}</span>
       <span className="text-foreground/85">{value}</span>
       {status ? <TermBadge tone={status}>{status === 'ok' ? 'OK' : status === 'block' ? 'DENY' : 'WARN'}</TermBadge> : null}
+    </div>
+  );
+}
+
+/** Grouped key rows — single bordered panel with consistent internal padding. */
+export function TermKeyGroup({
+  children,
+  className,
+  ...rest
+}: {
+  children: React.ReactNode;
+  className?: string;
+} & React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn(
+        'overflow-hidden rounded-sm border border-[hsl(var(--brand-copper)/0.15)] bg-black/25 px-4 py-1 sm:px-5',
+        className
+      )}
+      {...rest}
+    >
+      {children}
     </div>
   );
 }
@@ -119,15 +156,26 @@ export function TermModule({
   detail: string;
 }) {
   return (
-    <div className="rounded-sm border border-[hsl(var(--brand-copper)/0.2)] bg-black/40 p-3 font-mono text-[11px]">
-      <div className="flex items-center justify-between gap-2">
+    <div className="rounded-sm border border-[hsl(var(--brand-copper)/0.2)] bg-black/40 p-4 font-mono text-[11px] sm:p-5">
+      <div className="flex items-center justify-between gap-3">
         <span className="text-[hsl(var(--brand-copper))]">[{id}]</span>
         <TermBadge tone="ok">loaded</TermBadge>
       </div>
-      <p className="mt-2 text-foreground/90">{title}</p>
-      <p className="mt-1 text-muted-foreground">{detail}</p>
+      <p className="mt-3 text-sm leading-snug text-foreground/90">{title}</p>
+      <p className="mt-2 leading-relaxed text-muted-foreground">{detail}</p>
     </div>
   );
+}
+
+/** Wrap multiple {@link TermSection} blocks — spacing via `.term-section-stack` in globals.css. */
+export function TermSectionStack({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <div className={cn('term-section-stack', className)}>{children}</div>;
 }
 
 /** Labeled block inside a terminal — path + optional `#` hint (comment style). */
@@ -143,14 +191,21 @@ export function TermSection({
   className?: string;
 }) {
   return (
-    <section className={cn('space-y-3', className)}>
-      <header className="space-y-1 border-b border-[hsl(var(--brand-copper)/0.12)] pb-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[hsl(var(--brand-copper))]">
+    <section className={cn('flex flex-col', className)}>
+      <header className="mb-5 sm:mb-6">
+        <p className="font-mono text-[10px] uppercase leading-normal tracking-[0.16em] text-[hsl(var(--brand-copper))]">
           ./{path}
         </p>
-        {hint ? <TermComment>{hint}</TermComment> : null}
+        {hint ? (
+          <p className="mt-3 max-w-2xl font-mono text-[11px] leading-relaxed text-muted-foreground">
+            <span className="text-muted-foreground/55" aria-hidden>
+              #{' '}
+            </span>
+            {hint}
+          </p>
+        ) : null}
       </header>
-      <div className="space-y-2.5">{children}</div>
+      <div className="flex flex-col gap-4">{children}</div>
     </section>
   );
 }
@@ -197,7 +252,7 @@ export function TermFrame({
       )}
     >
       {label ? (
-        <p className="mb-3 font-mono text-[9px] uppercase tracking-[0.2em] text-[hsl(var(--brand-copper))]">
+        <p className="mb-4 font-mono text-[9px] uppercase tracking-[0.2em] text-[hsl(var(--brand-copper))]">
           {label}
         </p>
       ) : null}
@@ -234,7 +289,10 @@ export function TermProse({
 
 export function TermAsciiDivider({ label }: { label?: string }) {
   return (
-    <div className="my-4 flex items-center gap-3 font-mono text-[10px] text-muted-foreground/70">
+    <div
+      className="flex items-center gap-3 py-2 font-mono text-[10px] text-muted-foreground/70"
+      role="separator"
+    >
       <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[hsl(var(--brand-copper)/0.35)] to-transparent" />
       {label ? <span className="shrink-0 uppercase tracking-[0.2em]">{label}</span> : null}
       <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[hsl(var(--brand-copper)/0.35)] to-transparent" />

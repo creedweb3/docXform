@@ -21,8 +21,14 @@ import { isToolPageAvailable } from '@/lib/tool-availability';
 import { ToolIcon } from '@/components/tools/tool-icon';
 import { FILTER_PILL_ACTIVE, FILTER_PILL_IDLE, getFormatTone } from '@/components/tools/tool-theme';
 import { SegmentedControl } from '@/components/site/ui/segmented-control';
+import { ZoneSeparator } from '@/components/site/ui/zone-separator';
 import { CATALOG_ROW, STICKY_BAR, SURFACE, SURFACE_HOVER } from '@/lib/site-design';
-import { CATALOG_GROUP_GAP, SECTION_BODY_GAP, SECTION_STACK } from '@/lib/marketing-layout';
+import {
+  CATALOG_GROUP_GAP,
+  SECTION_STACK,
+  ZONE_GAP_AFTER,
+  ZONE_GAP_BEFORE,
+} from '@/lib/marketing-layout';
 import { cn } from '@/lib/utils';
 
 type FormatFilter = 'all' | ToolFormat;
@@ -289,12 +295,12 @@ export function ToolsIndexClient() {
   );
 
   return (
-    <div className="w-full">
-      <section aria-labelledby="core-converters-heading">
-        <h2 id="core-converters-heading" className="label-mono">
+    <div className="flex w-full flex-col">
+      <section className={ZONE_GAP_AFTER} aria-labelledby="core-converters-heading">
+        <h2 id="core-converters-heading" className="label-mono mb-5">
           Flagship converters
         </h2>
-        <div className={cn(SURFACE, 'mt-5 overflow-hidden divide-y divide-border')}>
+        <div className={cn(SURFACE, 'overflow-hidden divide-y divide-border')}>
           {CORE_CONVERTERS.map((converter) => (
             <Link
               key={converter.href}
@@ -321,7 +327,10 @@ export function ToolsIndexClient() {
         </div>
       </section>
 
-      <nav className={cn(STICKY_BAR, SECTION_BODY_GAP)} aria-label="Filter tools">
+      <ZoneSeparator />
+
+      <div className={cn('flex flex-col gap-6', ZONE_GAP_BEFORE, ZONE_GAP_AFTER)}>
+      <nav className={STICKY_BAR} aria-label="Filter tools">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <SegmentedControl
@@ -360,42 +369,47 @@ export function ToolsIndexClient() {
               ) : null}
             </div>
           </div>
-          <div
-            role="tablist"
-            aria-label={filterMode === 'format' ? 'Filter by file type' : 'Filter by job'}
-            className="flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {filterMode === 'format'
-              ? FORMAT_ORDER.map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    role="tab"
-                    aria-selected={formatFilter === key}
-                    onClick={() => setFormatFilter(key)}
-                    className={filterPillClass(formatFilter === key)}
-                  >
-                    {FORMAT_LABEL[key]}
-                    <span className={countBadgeClass(formatFilter === key)}>{formatCounts[key]}</span>
-                  </button>
-                ))
-              : INTENT_ORDER.map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    role="tab"
-                    aria-selected={intentFilter === key}
-                    onClick={() => setIntentFilter(key)}
-                    className={filterPillClass(intentFilter === key)}
-                  >
-                    {INTENT_LABEL[key]}
-                    <span className={countBadgeClass(intentFilter === key)}>{intentCounts[key]}</span>
-                  </button>
-                ))}
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <div
+              role="tablist"
+              aria-label={filterMode === 'format' ? 'Filter by file type' : 'Filter by job'}
+              className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {filterMode === 'format'
+                ? FORMAT_ORDER.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      role="tab"
+                      aria-selected={formatFilter === key}
+                      onClick={() => setFormatFilter(key)}
+                      className={filterPillClass(formatFilter === key)}
+                    >
+                      {FORMAT_LABEL[key]}
+                      <span className={countBadgeClass(formatFilter === key)}>{formatCounts[key]}</span>
+                    </button>
+                  ))
+                : INTENT_ORDER.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      role="tab"
+                      aria-selected={intentFilter === key}
+                      onClick={() => setIntentFilter(key)}
+                      className={filterPillClass(intentFilter === key)}
+                    >
+                      {INTENT_LABEL[key]}
+                      <span className={countBadgeClass(intentFilter === key)}>{intentCounts[key]}</span>
+                    </button>
+                  ))}
+            </div>
+            <p
+              className="shrink-0 text-xs text-muted-foreground tabular-nums"
+              aria-live="polite"
+            >
+              {filtered.length} {filtered.length === 1 ? 'tool' : 'tools'}
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground tabular-nums" aria-live="polite">
-            {filtered.length} {filtered.length === 1 ? 'tool' : 'tools'}
-          </p>
         </div>
       </nav>
 
@@ -407,7 +421,7 @@ export function ToolsIndexClient() {
           </p>
         </div>
       ) : groupByFormat ? (
-        <div className={cn(SECTION_STACK, SECTION_BODY_GAP)}>
+        <div className={SECTION_STACK}>
           {formatGroups.map(({ format, tools }) => (
             <section key={format} className={CATALOG_GROUP_GAP} aria-labelledby={`tools-group-${format}`}>
               <h3 id={`tools-group-${format}`} className="label-mono">
@@ -419,7 +433,7 @@ export function ToolsIndexClient() {
           ))}
         </div>
       ) : groupByIntent ? (
-        <div className={cn(SECTION_STACK, SECTION_BODY_GAP)}>
+        <div className={SECTION_STACK}>
           {intentGroups.map(({ intent, tools }) => (
             <section key={intent} className={CATALOG_GROUP_GAP} aria-labelledby={`tools-job-group-${intent}`}>
               <h3 id={`tools-job-group-${intent}`} className="label-mono">
@@ -431,7 +445,6 @@ export function ToolsIndexClient() {
           ))}
         </div>
       ) : (
-        <div className={SECTION_BODY_GAP}>
         <ToolCatalogList
           tools={filtered.slice().sort((a, b) => {
             const formatDelta =
@@ -442,8 +455,8 @@ export function ToolsIndexClient() {
           showFormatChip
           showIntentChip
         />
-        </div>
       )}
+      </div>
     </div>
   );
 }

@@ -48,8 +48,9 @@ export default function ArticlesPage() {
           path="/articles"
           title="Articles and guides"
           description="Longer reads on DOCX structure, PDF workflows, privacy, and getting reliable results from browser-based tools."
+          separatorAfter
         />
-        <HackerPageBody className="!pt-10">
+        <HackerPageBody>
           <ArticlesShowcase variant="page" />
         </HackerPageBody>
       </SiteShell>
