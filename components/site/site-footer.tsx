@@ -35,7 +35,7 @@ export function SiteFooter() {
 
   return (
     <footer className="relative border-t border-border">
-      <div className="mx-auto max-w-[76rem] px-4 py-14 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[72rem] px-5 py-16 sm:px-8 lg:px-10 lg:py-20">
         <BrandRule className="mb-8" />
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
@@ -64,7 +64,7 @@ export function SiteFooter() {
           ))}
         </div>
 
-        <p className="mt-12 border-t border-border pt-6 font-mono text-[10px] text-muted-foreground">
+        <p className="mt-12 pt-2 font-mono text-[10px] text-muted-foreground">
           © {year} docXform · imprint system
         </p>
       </div>

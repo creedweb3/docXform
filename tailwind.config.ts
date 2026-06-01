@@ -14,14 +14,22 @@ const config: Config = {
         display: ['var(--font-display)', 'Georgia', 'serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+      spacing: {
+        'fluid-xs': 'clamp(0.5rem, 1.2vw, 0.75rem)',
+        'fluid-sm': 'clamp(0.75rem, 1.8vw, 1.125rem)',
+        'fluid-md': 'clamp(1rem, 2.5vw, 1.75rem)',
+        'fluid-lg': 'clamp(1.5rem, 4vw, 3rem)',
+        'fluid-xl': 'clamp(2rem, 6vw, 5rem)',
       },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+      letterSpacing: {
+        'ultra-tight': '-0.05em',
+        'museum': '0.28em',
+        'dramatic': '0.42em',
+      },
+      transitionTimingFunction: {
+        'dramatic-ease': 'cubic-bezier(0.76, 0, 0.24, 1)',
+        'mask-exit': 'cubic-bezier(0.85, 0, 0.15, 1)',
+        'exhibit': 'cubic-bezier(0.22, 1, 0.36, 1)',
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -69,6 +77,27 @@ const config: Config = {
           blue: 'hsl(var(--brand-blue))',
           sage: 'hsl(var(--brand-sage))',
         },
+        exhibit: {
+          void: '#0a0a0a',
+          ink: '#111111',
+          paper: '#f5f5f7',
+          mute: '#8a8a8e',
+          copper: 'hsl(26 72% 48%)',
+        },
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+      },
+      borderRadius: {
+        none: '0',
+        sm: 'var(--radius)',
+        DEFAULT: 'var(--radius)',
+        md: 'var(--radius)',
+        lg: 'var(--radius)',
+        xl: 'var(--radius)',
+        '2xl': 'var(--radius)',
+        full: '9999px',
       },
       keyframes: {
         'accordion-down': {
@@ -79,7 +108,7 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
-        'float': {
+        float: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-6px)' },
         },
@@ -98,4 +127,5 @@ const config: Config = {
   },
   plugins: [require('tailwindcss-animate')],
 };
+
 export default config;

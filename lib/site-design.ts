@@ -2,6 +2,8 @@
 
 import { BTN_PRIMARY, SHEET, SHEET_HOVER } from '@/lib/brand';
 
+export { SECTION_PY, SECTION_BODY_GAP, SECTION_STACK, CATALOG_GROUP_GAP } from '@/lib/marketing-layout';
+
 export const WORKSPACE_PRIMARY_CTA = BTN_PRIMARY;
 
 export const WORKSPACE_SECONDARY_SURFACE =
@@ -21,7 +23,7 @@ export const SURFACE = SHEET;
 export const SURFACE_HOVER = SHEET_HOVER;
 
 export const CATALOG_ROW =
-  'group flex items-center gap-3 sm:gap-4 px-4 py-3.5 sm:px-5 sm:py-4 transition-colors hover:bg-[hsl(var(--brand-copper)/0.04)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-copper)/0.25)]';
+  'group relative flex min-h-[3.25rem] items-center gap-3 sm:gap-4 px-5 py-4 sm:px-6 sm:min-h-[3.5rem] transition-[background-color,box-shadow,color] duration-200 hover:bg-[hsl(var(--brand-copper)/0.08)] hover:shadow-[inset_3px_0_0_0_hsl(var(--brand-copper))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-copper)/0.25)]';
 
 export const STICKY_BAR =
-  'sticky z-20 top-[calc(3.5rem+0.5rem)] rounded-sm border border-border bg-card/90 p-3 sm:p-4 backdrop-blur-sm supports-[backdrop-filter]:bg-card/85';
+  'sticky z-20 top-[calc(3.5rem+0.5rem)] -mx-4 border-b border-border/80 bg-background/90 px-4 py-4 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8';

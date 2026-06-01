@@ -38,7 +38,11 @@ export default function PrivacyPage() {
           ]),
         ])}
       />
-      <ContentPage title="Privacy Policy" eyebrow="Legal" description="Last updated: May 1, 2026">
+      <ContentPage
+        path="/privacy"
+        title="Privacy Policy"
+        description="Last updated May 1, 2026. How we handle data, conversions, contact messages, and advertising."
+      >
               <div className="space-y-5">
                 <h2 className="text-lg font-semibold text-foreground pt-2">Core Principle</h2>
                 <p>Document conversion is performed in your browser using WebAssembly. Files selected for conversion are not uploaded to, stored on, or transmitted through a docXform conversion server.</p>

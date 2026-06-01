@@ -38,7 +38,11 @@ export default function TermsPage() {
           ]),
         ])}
       />
-      <ContentPage title="Terms of Service" eyebrow="Legal" description="Last updated: May 1, 2026">
+      <ContentPage
+        path="/terms"
+        title="Terms of Service"
+        description="Last updated May 1, 2026. Rules for using docXform and its browser-based tools."
+      >
               <div className="space-y-5">
               <h2 className="text-lg font-semibold text-foreground pt-2">Acceptance</h2>
               <p>By using docXform, you agree to these terms. If you disagree, do not use the service.</p>

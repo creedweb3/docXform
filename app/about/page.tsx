@@ -1,12 +1,8 @@
 import { SiteShell } from '@/components/site/site-shell';
-import { PageHero } from '@/components/site/page-hero';
-import { Container } from '@/components/site/ui/container';
-import { SectionHeader } from '@/components/site/ui/section-header';
-import { Card } from '@/components/site/ui/card';
+import { HackerPage, TermProse } from '@/components/site/console/console-ui';
 import { JsonLd } from '@/components/json-ld';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { CpuIcon, EyeIcon, LockKeyIcon, Shield01Icon } from '@hugeicons/core-free-icons';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import {
   breadcrumbJsonLd,
   createPageMetadata,
@@ -26,31 +22,6 @@ export const metadata: Metadata = createPageMetadata({
   image: OG_IMAGES.about,
 });
 
-const featureSurface = 'text-muted-foreground border border-border/70 bg-card/40';
-
-const features = [
-  {
-    icon: Shield01Icon,
-    label: 'No server-side conversion',
-    desc: 'Your file is processed in-browser — not uploaded for conversion.',
-  },
-  {
-    icon: CpuIcon,
-    label: 'WebAssembly engine',
-    desc: 'A compiled conversion stack with practical desktop-like speed.',
-  },
-  {
-    icon: EyeIcon,
-    label: 'Verifiable workflow',
-    desc: 'Open DevTools and confirm conversion traffic stays local.',
-  },
-  {
-    icon: LockKeyIcon,
-    label: 'No account required',
-    desc: 'Convert without sign-up or linking cloud storage.',
-  },
-];
-
 export default function AboutPage() {
   return (
     <>
@@ -65,47 +36,94 @@ export default function AboutPage() {
         ])}
       />
       <SiteShell>
-        <PageHero
-          eyebrow="About"
-          title="Documents stay on your device"
-          description="docXform exists to make everyday Word and PDF conversion private by default — with the engine running in your browser, not on remote servers."
-        />
-        <section className="pb-20">
-          <Container size="lg">
-            <div className="prose-width mx-auto max-w-2xl space-y-5 text-sm sm:text-base text-muted-foreground leading-relaxed">
-              <p>
-                Traditional online converters usually require uploading files to remote
-                infrastructure. docXform takes a different approach: conversion runs
-                directly where you work — in the browser tab.
-              </p>
-              <p>
-                Using WebAssembly, docXform ships a document engine to your device. You
-                select a file, convert locally, and download the output without sending
-                the document to docXform for processing.
-              </p>
-            </div>
+        <HackerPage
+          path="/about"
+          title="About docXform"
+          description="Browser-based Word and PDF tools built for privacy and everyday document work."
+        >
+          <TermProse>
+            <p>
+              docXform is a collection of document utilities that run in your web browser. The goal
+              is simple: help you convert, edit, and prepare Word and PDF files without handing them
+              to a remote conversion server.
+            </p>
+            <p>
+              When you use our Word to PDF or PDF to Word converters, processing happens on your
+              device. We ship LibreOffice compiled to WebAssembly so the engine loads into the tab,
+              reads your file locally, and produces a download from there. No account is required for
+              the core tools.
+            </p>
 
-            <div className="mt-16">
-              <SectionHeader
-                eyebrow="Principles"
-                title="Built for private browser workflows"
-              />
-              <div className="mt-10 grid gap-4 sm:grid-cols-2">
-                {features.map((f) => (
-                  <Card key={f.label} hover>
-                    <div
-                      className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${featureSurface}`}
-                    >
-                      <HugeiconsIcon icon={f.icon} size={22} strokeWidth={1.5} />
-                    </div>
-                    <h3 className="font-semibold text-foreground">{f.label}</h3>
-                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </Container>
-        </section>
+            <h2>How we are different</h2>
+            <p>
+              Most online converters work by uploading your file to their infrastructure, converting
+              it on their servers, and sending the result back. That model is convenient, but it
+              means your document leaves your machine. docXform is built for people who want the
+              conversion step to stay local.
+            </p>
+            <p>
+              You can open your browser&apos;s developer tools during a conversion and confirm that
+              the file is not being posted to a docXform conversion endpoint. Site assets,
+              analytics, and advertising still load over the network like any other website, but the
+              document itself is not part of that upload path.
+            </p>
+
+            <h2>What you can do here</h2>
+            <p>
+              Beyond the flagship Word and PDF converters, docXform includes tools to merge and split
+              PDFs, compress files, rotate pages, extract text, scrub DOCX metadata, convert images
+              to PDF, and more. Each tool page explains what it does and whether it runs entirely in
+              the browser.
+            </p>
+            <p>
+              We add utilities when they fit the same local-first model. If a job truly requires a
+              server, we say so on the tool page rather than implying it runs locally.
+            </p>
+
+            <h2>What we prioritize</h2>
+            <ul>
+              <li>
+                <strong>Privacy</strong> — keep conversion on your device whenever the tool supports
+                it.
+              </li>
+              <li>
+                <strong>Clarity</strong> — plain language about what happens to your files and what
+                still uses the network.
+              </li>
+              <li>
+                <strong>Utility</strong> — practical tools for real document work, not a single
+                one-off converter buried in ads.
+              </li>
+              <li>
+                <strong>Access</strong> — no sign-up wall for everyday use of the core converters.
+              </li>
+            </ul>
+
+            <h2>Limits and expectations</h2>
+            <p>
+              Browser-based conversion depends on your device, browser, and file complexity. Very
+              large files, unusual fonts, scanned PDFs, or intricate layouts may need manual
+              cleanup after export. We publish file-size limits and format notes on the{' '}
+              <Link href="/faq">FAQ</Link> so you know what to expect before you start.
+            </p>
+            <p>
+              The first visit in a browser profile downloads the WebAssembly engine, which can take a
+              moment on slower connections. Later visits in the same profile reuse the cached binary.
+            </p>
+
+            <h2>How we sustain the project</h2>
+            <p>
+              docXform is independent and supported by advertising on some pages. We do not sell the
+              contents of files you convert. The contact form is for business and partnership
+              inquiries only; it does not process documents.
+            </p>
+            <p>
+              If you have questions about privacy, formats, or output quality, the FAQ is the best
+              place to start. For business or press inquiries, use the{' '}
+              <Link href="/contact">contact page</Link>.
+            </p>
+          </TermProse>
+        </HackerPage>
       </SiteShell>
     </>
   );

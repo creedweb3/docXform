@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowRight02Icon, Cancel01Icon, Menu01Icon } from '@hugeicons/core-free-icons';
+import { Cancel01Icon, Menu01Icon } from '@hugeicons/core-free-icons';
 import { BrandLogo } from '@/components/site/brand-logo';
 import { Button } from '@/components/site/ui/button';
 import { cn } from '@/lib/utils';
@@ -52,7 +52,7 @@ export function SiteHeader() {
           scrolled ? 'border-border bg-background/85 backdrop-blur-sm' : 'border-transparent bg-transparent'
         )}
       >
-        <div className="mx-auto flex h-14 max-w-[76rem] items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-14 max-w-[72rem] items-center justify-between gap-6 px-5 sm:px-8 lg:px-10">
           <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-90">
             <Image
               src="/brand/docxform-logo-icon-64.webp"
@@ -65,7 +65,7 @@ export function SiteHeader() {
             <BrandLogo size="sm" />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8" aria-label="Main">
+          <nav className="hidden md:flex items-center gap-7" aria-label="Main">
             <NavLink href="/" active={pathname === '/'}>
               Home
             </NavLink>
@@ -78,11 +78,10 @@ export function SiteHeader() {
 
           <div className="hidden sm:flex items-center gap-2">
             <Button href="/pdf-to-word" variant="ghost" size="sm" className="hidden lg:inline-flex font-mono text-[11px]">
-              pdf→docx
+              PDF to Word
             </Button>
             <Button href="/word-to-pdf" variant="primary" size="sm">
-              Convert
-              <HugeiconsIcon icon={ArrowRight02Icon} size={14} strokeWidth={2.5} />
+              Word to PDF
             </Button>
           </div>
 
@@ -100,7 +99,7 @@ export function SiteHeader() {
 
       {open ? (
         <div className="fixed inset-x-0 top-14 z-50 border-b border-border bg-background md:hidden">
-          <div className="mx-auto max-w-[76rem] px-4 py-4 sm:px-6">
+          <div className="mx-auto max-w-[72rem] px-5 py-4 sm:px-8 lg:px-10">
             <nav className="sheet-inset divide-y divide-border overflow-hidden">
               <MobileLink href="/">Home</MobileLink>
               {links.map((link) => (
@@ -111,10 +110,10 @@ export function SiteHeader() {
             </nav>
             <div className="mt-4 flex gap-2">
               <Button href="/pdf-to-word" variant="outline" size="sm" className="flex-1 justify-center">
-                PDF → Word
+                PDF to Word
               </Button>
               <Button href="/word-to-pdf" variant="primary" size="sm" className="flex-1 justify-center">
-                Convert
+                Word to PDF
               </Button>
             </div>
           </div>
@@ -137,7 +136,7 @@ function NavLink({
     <Link
       href={href}
       className={cn(
-        'text-[13px] font-medium transition-colors',
+        'interactive-trigger text-[13px] font-medium tracking-[-0.01em] transition-colors',
         active
           ? 'text-foreground underline decoration-[hsl(var(--brand-copper))] decoration-2 underline-offset-[6px]'
           : 'text-muted-foreground hover:text-foreground'
@@ -152,7 +151,7 @@ function MobileLink({ href, children }: { href: string; children: React.ReactNod
   return (
     <Link
       href={href}
-      className="block px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-[hsl(var(--brand-copper)/0.05)] hover:text-foreground"
+      className="interactive-trigger block px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-[hsl(var(--brand-copper)/0.05)] hover:text-foreground"
     >
       {children}
     </Link>

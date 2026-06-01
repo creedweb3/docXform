@@ -43,7 +43,7 @@ export function Button({
 }: ButtonProps) {
   const resolved = variant === 'gradient' ? 'primary' : variant;
   const classes = cn(
-    'inline-flex items-center justify-center gap-2 font-medium transition-colors duration-200',
+    'interactive-trigger inline-flex items-center justify-center gap-2 font-medium transition-colors duration-200',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-copper)/0.45)] focus-visible:ring-offset-2 focus-visible:ring-offset-background',
     variants[resolved],
     sizes[size],

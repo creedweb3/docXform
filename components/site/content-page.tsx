@@ -1,25 +1,22 @@
 import { SiteShell } from '@/components/site/site-shell';
-import { PageHero } from '@/components/site/page-hero';
-import { Container } from '@/components/site/ui/container';
+import { HackerPage, HackerPageBody } from '@/components/site/console/console-ui';
 
 type ContentPageProps = {
   title: string;
   description?: string;
-  eyebrow?: string;
+  path?: string;
   children: React.ReactNode;
 };
 
-export function ContentPage({ title, description, eyebrow, children }: ContentPageProps) {
+export function ContentPage({ title, description, path = '/legal', children }: ContentPageProps) {
   return (
     <SiteShell>
-      <PageHero eyebrow={eyebrow} title={title} description={description} />
-      <section className="pb-20">
-        <Container size="md">
-          <div className="prose-site text-sm sm:text-base text-muted-foreground leading-relaxed space-y-4">
-            {children}
-          </div>
-        </Container>
-      </section>
+      <HackerPage path={path} title={title} description={description} />
+      <HackerPageBody>
+        <div className="prose prose-invert prose-sm max-w-none text-foreground/90 [&_a]:text-[hsl(var(--brand-copper))] [&_h2]:font-display [&_h2]:text-foreground">
+          {children}
+        </div>
+      </HackerPageBody>
     </SiteShell>
   );
 }

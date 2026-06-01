@@ -1,7 +1,5 @@
 import { SiteShell } from '@/components/site/site-shell';
-import { PageHero } from '@/components/site/page-hero';
-import { Container } from '@/components/site/ui/container';
-import { Card } from '@/components/site/ui/card';
+import { HackerPage, HackerPageBody, TermProse } from '@/components/site/console/console-ui';
 import { ContactForm } from '@/components/contact-form';
 import { JsonLd } from '@/components/json-ld';
 import {
@@ -43,18 +41,24 @@ export default function ContactPage() {
         ])}
       />
       <SiteShell>
-        <PageHero
-          eyebrow="Contact"
-          title="Get in touch"
-          description="Business inquiries only. Document conversion happens in your browser — this form only sends the message you write."
+        <HackerPage
+          path="/contact"
+          title="Contact"
+          description="For business, partnership, or press inquiries. This form sends a message only — it does not convert documents."
         />
-        <section className="pb-20">
-          <Container size="md">
-            <Card padding="lg">
+        <HackerPageBody className="!pt-10 pb-24">
+          <div className="w-full max-w-xl">
+            <div className="rounded-sm border border-border/70 bg-card/40 p-5 sm:p-6">
+              <TermProse className="mb-5">
+                <p className="!text-sm">
+                  Use this form for non-technical inquiries. If you have a question about how a
+                  tool works, check the FAQ first.
+                </p>
+              </TermProse>
               <ContactForm />
-            </Card>
-          </Container>
-        </section>
+            </div>
+          </div>
+        </HackerPageBody>
       </SiteShell>
     </>
   );

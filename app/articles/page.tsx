@@ -1,6 +1,6 @@
 import { SiteShell } from '@/components/site/site-shell';
 import { ArticlesShowcase } from '@/components/articles-showcase';
-import { Container } from '@/components/site/ui/container';
+import { HackerPage, HackerPageBody } from '@/components/site/console/console-ui';
 import { JsonLd } from '@/components/json-ld';
 import {
   articlesCollectionJsonLd,
@@ -44,11 +44,14 @@ export default function ArticlesPage() {
         ])}
       />
       <SiteShell>
-        <section className="py-12 sm:py-20">
-          <Container size="lg">
-            <ArticlesShowcase variant="page" />
-          </Container>
-        </section>
+        <HackerPage
+          path="/articles"
+          title="Articles and guides"
+          description="Longer reads on DOCX structure, PDF workflows, privacy, and getting reliable results from browser-based tools."
+        />
+        <HackerPageBody className="!pt-10">
+          <ArticlesShowcase variant="page" />
+        </HackerPageBody>
       </SiteShell>
     </>
   );

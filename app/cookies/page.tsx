@@ -38,7 +38,11 @@ export default function CookiesPage() {
           ]),
         ])}
       />
-      <ContentPage title="Cookie Policy" eyebrow="Legal" description="Last updated: May 1, 2026">
+      <ContentPage
+        path="/cookies"
+        title="Cookie Policy"
+        description="Last updated May 1, 2026. How we use essential, advertising, and analytics cookies."
+      >
               <div className="space-y-5">
               <h2 className="text-lg font-semibold text-foreground pt-2">What Are Cookies</h2>
               <p>Cookies are small text files stored on your device when you visit a website. They can be persistent (until expiry or deletion) or session-based (deleted when you close your browser).</p>

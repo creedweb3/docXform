@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowRight02Icon } from '@hugeicons/core-free-icons';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ParticleField } from '@/components/site/effects/particle-field';
 import { BrandRule } from '@/components/site/ui/brand-rule';
 import { Button } from '@/components/site/ui/button';
@@ -12,69 +11,112 @@ import { HomeWasmProof } from '@/components/site/home-wasm-proof';
 import { MAX_CONVERSION_FILE_SIZE_LABEL } from '@/lib/conversion-limits';
 import { cn } from '@/lib/utils';
 
+const REVEAL = [0.22, 1, 0.36, 1] as const;
+
 export function HomeHero() {
+  const reducedMotion = useReducedMotion();
+
   return (
-    <section className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-hidden">
-      <div className="relative min-h-[min(86vh,50rem)]">
+    <section className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-x-hidden">
+      <div className="relative min-h-[min(76vh,46rem)] lg:min-h-[min(82vh,48rem)]">
         <ParticleField density="hero" className="absolute inset-0" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-background/30 to-background" />
 
-        <Container size="full" className="relative z-[1] flex min-h-[min(86vh,50rem)] flex-col justify-center py-14 sm:py-16">
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,1.2fr)_19rem] lg:items-end lg:gap-10">
-            <div className="max-w-xl">
-              <BrandRule className="mb-6" />
-              <p className="label-mono">Imprint · local conversion</p>
+        <Container
+          size="lg"
+          className="relative z-[1] flex min-h-[min(76vh,46rem)] flex-col justify-center py-16 sm:py-20 lg:min-h-[min(82vh,48rem)]"
+        >
+          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-14 xl:grid-cols-[minmax(0,1fr)_23rem]">
+            <div className="max-w-[36rem]">
+              <motion.div
+                initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: REVEAL }}
+              >
+                <BrandRule className="mb-5" />
+                <p className="label-mono">Imprint · local conversion</p>
+              </motion.div>
 
-              <h1 className="display-hero mt-4 text-[2.4rem] leading-[1.04] sm:text-[2.9rem] lg:text-[3.2rem]">
-                Convert documents where they already live — your browser
-              </h1>
+              <motion.h1
+                className="kinetic-display mt-6"
+                initial={reducedMotion ? false : { opacity: 0, y: 36, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 0.95, delay: 0.12, ease: REVEAL }}
+              >
+                Convert documents where they already live: your browser
+              </motion.h1>
 
-              <p className="mt-6 text-[15px] leading-[1.7] text-muted-foreground sm:text-base">
+              <motion.p
+                className="type-lead mt-6 max-w-[32rem]"
+                initial={reducedMotion ? false : { opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.85, delay: 0.22, ease: REVEAL }}
+              >
                 LibreOffice ships as WebAssembly. Pick a file, run the engine in-tab, download the
-                result. The conversion payload does not go to our servers — your security team can
-                confirm in the Network panel.
-              </p>
+                result. The conversion payload does not go to our servers.
+              </motion.p>
 
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <motion.div
+                className="mt-9 flex flex-wrap items-center gap-3"
+                initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.75, delay: 0.34, ease: REVEAL }}
+              >
                 <Button href="/word-to-pdf" variant="primary" size="lg">
                   Word to PDF
-                  <HugeiconsIcon icon={ArrowRight02Icon} size={16} strokeWidth={2.5} />
                 </Button>
                 <Button href="/pdf-to-word" variant="secondary" size="lg">
                   PDF to Word
                 </Button>
-              </div>
+              </motion.div>
 
-              <p className="mt-8 font-mono text-[11px] leading-relaxed text-muted-foreground/90">
-                <span className="text-foreground">limit</span> {MAX_CONVERSION_FILE_SIZE_LABEL}
-                <span className="text-muted-foreground/50"> · </span>
-                <span className="text-foreground">uploads</span> 0
-                <span className="text-muted-foreground/50"> · </span>
-                <span className="text-foreground">account</span> none
-              </p>
+              <motion.dl
+                className="mt-10 grid grid-cols-3 gap-4 border-t border-border/80 pt-6 sm:max-w-md"
+                initial={reducedMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.7, delay: 0.45, ease: REVEAL }}
+              >
+                <div>
+                  <dt className="label-mono">Limit</dt>
+                  <dd className="type-caption mt-1.5 text-foreground">{MAX_CONVERSION_FILE_SIZE_LABEL}</dd>
+                </div>
+                <div>
+                  <dt className="label-mono">Uploads</dt>
+                  <dd className="type-caption mt-1.5 text-foreground">0</dd>
+                </div>
+                <div>
+                  <dt className="label-mono">Account</dt>
+                  <dd className="type-caption mt-1.5 text-foreground">None</dd>
+                </div>
+              </motion.dl>
             </div>
 
-            <Sheet padding="md" className="lg:mb-2">
-              <p className="label-mono">Converters</p>
-              <ul className="mt-4 divide-y divide-border">
-                <ConverterLink href="/word-to-pdf" title="Word to PDF" code="docx→pdf" />
-                <ConverterLink href="/pdf-to-word" title="PDF to Word" code="pdf→docx" />
-              </ul>
-              <div className="mt-5 border-t border-border pt-4">
-                <HomeWasmProof />
-              </div>
-              <Link
-                href="/tools"
-                className="mt-4 block font-mono text-[11px] text-[hsl(var(--brand-copper))] hover:text-foreground transition-colors"
+            <motion.div
+              initial={reducedMotion ? false : { opacity: 0, y: 48, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 1, delay: 0.28, ease: REVEAL }}
+            >
+              <Sheet
+                padding="md"
+                className="lg:sticky lg:top-[calc(3.5rem+1.25rem)] shadow-[0_32px_100px_-48px_rgba(0,0,0,0.9)]"
               >
-                + 15 more tools →
-              </Link>
-            </Sheet>
+                <p className="label-mono">Converters</p>
+                <ul className="mt-4 divide-y divide-border">
+                  <ConverterLink href="/word-to-pdf" title="Word to PDF" code="docx / pdf" />
+                  <ConverterLink href="/pdf-to-word" title="PDF to Word" code="pdf / docx" />
+                </ul>
+                <div className="mt-6 border-t border-border/80 pt-6">
+                  <HomeWasmProof />
+                </div>
+                <Link
+                  href="/tools"
+                  className="interactive-trigger mt-5 inline-block text-sm font-medium text-[hsl(var(--brand-copper))] transition-colors hover:text-foreground"
+                >
+                  Browse all 15 tools
+                </Link>
+              </Sheet>
+            </motion.div>
           </div>
-
-          <p className="mt-14 hidden font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground/60 sm:block">
-            docXform — browser-native document tools
-          </p>
         </Container>
       </div>
     </section>
@@ -87,12 +129,12 @@ function ConverterLink({ href, title, code }: { href: string; title: string; cod
       <Link
         href={href}
         className={cn(
-          'flex items-baseline justify-between gap-4 py-3.5',
-          'transition-colors hover:bg-[hsl(var(--brand-copper)/0.05)] -mx-2 px-2 rounded-sm'
+          'interactive-trigger flex items-center justify-between gap-4 py-3.5',
+          'transition-colors hover:bg-[hsl(var(--brand-copper)/0.05)] -mx-1.5 rounded-sm px-1.5'
         )}
       >
-        <span className="font-medium text-foreground">{title}</span>
-        <span className="font-mono text-[10px] text-muted-foreground">{code}</span>
+        <span className="text-sm font-medium text-foreground">{title}</span>
+        <span className="font-mono text-[10px] tracking-wide text-muted-foreground">{code}</span>
       </Link>
     </li>
   );

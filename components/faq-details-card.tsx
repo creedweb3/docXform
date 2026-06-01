@@ -9,23 +9,37 @@ type FaqDetailsCardProps = {
   question: string;
   answer: string;
   defaultOpen?: boolean;
-  variant?: 'glass';
+  variant?: 'glass' | 'terminal';
   showExpander?: boolean;
 };
+
+function formatQuestion(question: string) {
+  const trimmed = question.trim();
+  return trimmed.endsWith('?') ? trimmed : `${trimmed}?`;
+}
 
 export function FaqDetailsCard({
   question,
   answer,
   defaultOpen = false,
+  variant,
   showExpander = true,
 }: FaqDetailsCardProps) {
+  const isTerminal = variant === 'terminal';
   const [open, setOpen] = useState(defaultOpen);
+  const displayQuestion = formatQuestion(question);
 
   return (
     <details
       className={cn(
-        'group rounded-xl border border-border/70 bg-card/40 overflow-hidden transition-colors',
-        open && 'border-foreground/12 bg-card/55'
+        'group overflow-hidden transition-colors',
+        isTerminal
+          ? 'rounded-sm border border-[hsl(var(--brand-copper)/0.18)] bg-black/35'
+          : 'rounded-sm border border-border/70 bg-card/40',
+        open &&
+          (isTerminal
+            ? 'border-[hsl(var(--brand-copper)/0.38)] shadow-[inset_0_0_24px_hsl(var(--brand-copper)/0.04)]'
+            : 'border-foreground/12 bg-card/55')
       )}
       open={open}
       onToggle={(e) => setOpen(e.currentTarget.open)}
@@ -40,14 +54,24 @@ export function FaqDetailsCard({
       }}
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 sm:px-6 sm:py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/15 [&::-webkit-details-marker]:hidden">
-        <span className="min-w-0 text-left text-sm sm:text-[15px] font-medium text-foreground leading-snug">
-          {question}
+        <span
+          className={cn(
+            'min-w-0 flex-1 text-left leading-snug',
+            isTerminal
+              ? 'font-mono text-[11px] text-foreground/90'
+              : 'text-sm sm:text-[15px] font-medium text-foreground'
+          )}
+        >
+          {displayQuestion}
         </span>
         {showExpander ? (
           <span
             className={cn(
-              'flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-card/50 text-muted-foreground transition-colors',
-              open && 'border-foreground/15 text-foreground'
+              'flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border text-muted-foreground transition-colors',
+              isTerminal
+                ? 'border-[hsl(var(--brand-copper)/0.2)] bg-black/40 font-mono text-[10px]'
+                : 'border-border/70 bg-card/50',
+              open && (isTerminal ? 'text-[hsl(var(--brand-copper))]' : 'border-foreground/15 text-foreground')
             )}
             aria-hidden
           >
@@ -55,8 +79,20 @@ export function FaqDetailsCard({
           </span>
         ) : null}
       </summary>
-      <div className="border-t border-border/60 px-5 pb-5 sm:px-6 sm:pb-6">
-        <p className="text-sm text-muted-foreground leading-relaxed">{answer}</p>
+      <div
+        className={cn(
+          'border-t px-5 pb-5 pt-0 sm:px-6 sm:pb-6',
+          isTerminal ? 'border-[hsl(var(--brand-copper)/0.12)]' : 'border-border/60'
+        )}
+      >
+        <p
+          className={cn(
+            'pt-4 leading-relaxed',
+            isTerminal ? 'font-mono text-[11px] text-muted-foreground' : 'text-sm text-muted-foreground'
+          )}
+        >
+          {answer}
+        </p>
       </div>
     </details>
   );

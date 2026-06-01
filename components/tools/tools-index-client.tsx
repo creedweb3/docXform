@@ -19,17 +19,11 @@ import {
 } from '@/lib/tools';
 import { isToolPageAvailable } from '@/lib/tool-availability';
 import { ToolIcon } from '@/components/tools/tool-icon';
-import {
-  FILTER_PILL_ACTIVE,
-  FILTER_PILL_IDLE,
-  getFormatTone,
-  toolsIndexCoreCardClass,
-  toolsIndexLinkClass,
-} from '@/components/tools/tool-theme';
+import { FILTER_PILL_ACTIVE, FILTER_PILL_IDLE, getFormatTone } from '@/components/tools/tool-theme';
 import { SegmentedControl } from '@/components/site/ui/segmented-control';
 import { CATALOG_ROW, STICKY_BAR, SURFACE, SURFACE_HOVER } from '@/lib/site-design';
+import { CATALOG_GROUP_GAP, SECTION_BODY_GAP, SECTION_STACK } from '@/lib/marketing-layout';
 import { cn } from '@/lib/utils';
-import { ArrowRight02Icon } from '@hugeicons/core-free-icons';
 
 type FormatFilter = 'all' | ToolFormat;
 type IntentFilter = 'all' | ToolIntent;
@@ -143,7 +137,7 @@ function groupToolsByIntent(tools: ToolDefinition[]) {
 }
 
 const CHIP =
-  'inline-flex items-center rounded-md border border-border/70 bg-card/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground';
+  'inline-flex items-center rounded-sm border border-border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground';
 
 function ToolListRow({
   tool,
@@ -166,19 +160,19 @@ function ToolListRow({
 
   const inner = (
     <>
-      <ToolIcon pair={tool.iconPair} tone={formatTone} label={`${tool.name} icon`} className="h-10 w-10 shrink-0 rounded-lg" />
+      <ToolIcon pair={tool.iconPair} tone={formatTone} label={`${tool.name} icon`} className="h-10 w-10 shrink-0 rounded-sm" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
           {showFormatChip ? <span className={CHIP}>{FORMAT_LABEL[tool.format]}</span> : null}
           {showIntentChip ? <span className={CHIP}>{INTENT_LABEL[primaryIntent]}</span> : null}
           {!available ? (
-            <span className="inline-flex items-center rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-200/90">
+            <span className="inline-flex items-center rounded-sm border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-200/90">
               Coming soon
             </span>
           ) : null}
         </div>
-        <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">{tool.description}</p>
+        <p className="type-body mt-0.5 line-clamp-1">{tool.description}</p>
       </div>
       <div className="hidden lg:flex items-center gap-2 shrink-0">
         {caps.slice(0, 2).map((cap) => (
@@ -193,13 +187,7 @@ function ToolListRow({
           Local
         </span>
         {available ? (
-          <HugeiconsIcon
-            icon={ArrowRight02Icon}
-            size={16}
-            strokeWidth={2}
-            className="text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
-            aria-hidden
-          />
+          <span className="font-mono text-[10px] text-muted-foreground group-hover:text-foreground">open</span>
         ) : null}
       </div>
     </>
@@ -301,52 +289,40 @@ export function ToolsIndexClient() {
   );
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      <section className="mb-10" aria-labelledby="core-converters-heading">
-        <h2 id="core-converters-heading" className="sr-only">
-          Core converters
+    <div className="w-full">
+      <section aria-labelledby="core-converters-heading">
+        <h2 id="core-converters-heading" className="label-mono">
+          Flagship converters
         </h2>
-        <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          Start here
-        </p>
-        <div className={cn(SURFACE, 'p-3 sm:p-4')}>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={cn(SURFACE, 'mt-5 overflow-hidden divide-y divide-border')}>
           {CORE_CONVERTERS.map((converter) => (
-              <Link
-                key={converter.href}
-                href={converter.href}
-                className={toolsIndexCoreCardClass(converter.tone)}
-                aria-label={`${converter.name} - ${converter.description}`}
-              >
-                <div className="flex items-start gap-3">
-                  <ToolIcon pair={converter.iconPair} tone={converter.tone} label={`${converter.name} icon`} />
-                  <div className="min-w-0 flex-1 pt-1">
-                    <h3 className="text-base font-semibold tracking-tight text-foreground">{converter.name}</h3>
-                    <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-border/70 bg-card/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      Converter
-                    </span>
-                  </div>
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed flex-1">
-                  {converter.description}
-                </p>
-                <div className="flex items-center justify-between gap-2 pt-1">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-                    <HugeiconsIcon icon={Shield01Icon} size={11} strokeWidth={2} className="text-emerald-500/80" />
-                    Local-only
-                  </span>
-                  <span className={toolsIndexLinkClass()}>
-                    Open converter <span aria-hidden>→</span>
-                  </span>
-                </div>
-              </Link>
-            ))}
-        </div>
+            <Link
+              key={converter.href}
+              href={converter.href}
+              className={cn(CATALOG_ROW, 'group')}
+              aria-label={`${converter.name} - ${converter.description}`}
+            >
+              <ToolIcon
+                pair={converter.iconPair}
+                tone={converter.tone}
+                label={`${converter.name} icon`}
+                className="h-10 w-10 shrink-0 rounded-sm"
+              />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-medium text-foreground">{converter.name}</h3>
+                <p className="type-body mt-0.5 line-clamp-1">{converter.description}</p>
+              </div>
+              <span className="hidden items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:inline-flex">
+                <HugeiconsIcon icon={Shield01Icon} size={11} strokeWidth={2} className="text-emerald-500/80" />
+                local
+              </span>
+            </Link>
+          ))}
         </div>
       </section>
 
-      <nav className={cn(STICKY_BAR, 'mb-8')} aria-label="Filter tools">
-        <div className="flex flex-col gap-3">
+      <nav className={cn(STICKY_BAR, SECTION_BODY_GAP)} aria-label="Filter tools">
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <SegmentedControl
               aria-label="Choose filter category"
@@ -370,7 +346,7 @@ export function ToolsIndexClient() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search tools…"
                 aria-label="Search tools"
-                className="h-9 w-full rounded-lg border border-border/70 bg-card/30 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/10"
+                className="h-9 w-full rounded-sm border border-border bg-background pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-copper)/0.35)]"
               />
               {query ? (
                 <button
@@ -424,20 +400,17 @@ export function ToolsIndexClient() {
       </nav>
 
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-border/70 bg-card/40 p-10 text-center">
+        <div className="rounded-sm border border-border p-10 text-center">
           <p className="text-sm font-medium text-foreground">No tools match that filter</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Try a different keyword or switch the file type / job filter above.
           </p>
         </div>
       ) : groupByFormat ? (
-        <div className="space-y-10">
+        <div className={cn(SECTION_STACK, SECTION_BODY_GAP)}>
           {formatGroups.map(({ format, tools }) => (
-            <section key={format} aria-labelledby={`tools-group-${format}`}>
-              <h3
-                id={`tools-group-${format}`}
-                className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground"
-              >
+            <section key={format} className={CATALOG_GROUP_GAP} aria-labelledby={`tools-group-${format}`}>
+              <h3 id={`tools-group-${format}`} className="label-mono">
                 {FORMAT_LABEL[format]} tools
                 <span className="ml-1.5 tabular-nums opacity-80">{tools.length}</span>
               </h3>
@@ -446,13 +419,10 @@ export function ToolsIndexClient() {
           ))}
         </div>
       ) : groupByIntent ? (
-        <div className="space-y-10">
+        <div className={cn(SECTION_STACK, SECTION_BODY_GAP)}>
           {intentGroups.map(({ intent, tools }) => (
-            <section key={intent} aria-labelledby={`tools-job-group-${intent}`}>
-              <h3
-                id={`tools-job-group-${intent}`}
-                className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground"
-              >
+            <section key={intent} className={CATALOG_GROUP_GAP} aria-labelledby={`tools-job-group-${intent}`}>
+              <h3 id={`tools-job-group-${intent}`} className="label-mono">
                 {INTENT_LABEL[intent]}
                 <span className="ml-1.5 tabular-nums opacity-80">{tools.length}</span>
               </h3>
@@ -461,6 +431,7 @@ export function ToolsIndexClient() {
           ))}
         </div>
       ) : (
+        <div className={SECTION_BODY_GAP}>
         <ToolCatalogList
           tools={filtered.slice().sort((a, b) => {
             const formatDelta =
@@ -471,6 +442,7 @@ export function ToolsIndexClient() {
           showFormatChip
           showIntentChip
         />
+        </div>
       )}
     </div>
   );

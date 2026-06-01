@@ -8,8 +8,7 @@ import {
 } from '@/lib/seo';
 import { JsonLd } from '@/components/json-ld';
 import { SiteShell } from '@/components/site/site-shell';
-import { PageHero } from '@/components/site/page-hero';
-import { Container } from '@/components/site/ui/container';
+import { HackerPage, HackerPageBody } from '@/components/site/console/console-ui';
 import { ToolsIndexClient } from '@/components/tools/tools-index-client';
 import { toolDefinitions } from '@/lib/tools';
 
@@ -54,17 +53,15 @@ export default function ToolsPage() {
           ),
         ])}
       />
-      <SiteShell plain>
-        <PageHero
-          eyebrow="Toolkit"
-          title="Every tool runs in your browser"
-          description="Search, filter, and open PDF & Office utilities — same local-only architecture as our flagship converters."
+      <SiteShell>
+        <HackerPage
+          path="/tools"
+          title="All tools"
+          description={`${toolDefinitions.length} browser-based utilities for PDF and Office files. Filter by file type or job, then open a tool.`}
         />
-        <section className="pb-20">
-          <Container size="full">
-            <ToolsIndexClient />
-          </Container>
-        </section>
+        <HackerPageBody>
+          <ToolsIndexClient />
+        </HackerPageBody>
       </SiteShell>
     </>
   );

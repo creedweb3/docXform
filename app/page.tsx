@@ -1,11 +1,5 @@
+import { CreativeHome } from '@/components/creative/CreativeHome';
 import { SiteShell } from '@/components/site/site-shell';
-import { HomeHero } from '@/components/site/home-hero';
-import {
-  HomeCta,
-  HomeFeatures,
-  HomeToolsTeaser,
-  HomeWorkflow,
-} from '@/components/site/home-sections';
 import { JsonLd } from '@/components/json-ld';
 import type { Metadata } from 'next';
 import {
@@ -48,12 +42,8 @@ export default function Home() {
           webApplicationJsonLd(),
         ])}
       />
-      <SiteShell>
-        <HomeHero />
-        <HomeToolsTeaser />
-        <HomeFeatures />
-        <HomeWorkflow />
-        <HomeCta />
+      <SiteShell boot="full">
+        <CreativeHome />
       </SiteShell>
     </>
   );
