@@ -51,6 +51,7 @@ import {
 import { DefaultBatchStudioSurface } from '@/components/tools/studio/default-batch-studio-surface';
 import { StudioFlowAsideInfo } from '@/components/tools/studio/studio-flow-aside-info';
 import { STUDIO_DESKTOP_GRID, STUDIO_FLOW_GRID } from '@/components/tools/studio/studio-theme';
+import { CONVERSION_FLOW_DROP_TARGET } from '@/lib/conversion-flow-surfaces';
 import { probePdfPageCount, renderPdfPageThumbnails, revokePdfThumbUrls } from '@/lib/client-previews';
 import {
   WORKSPACE_CTA_BASE,
@@ -1854,9 +1855,7 @@ export function ToolWorkspace({
         <div
           className={clsx(
             `${config.cardClass} rounded-sm transition-all duration-300`,
-            flowActive &&
-              flowStage === 'pick' &&
-              'conversion-flow-drop-target flex min-h-0 flex-1 flex-col justify-center border border-[hsl(var(--brand-copper)/0.14)] bg-black/30 p-6 sm:p-8',
+            flowActive && flowStage === 'pick' && CONVERSION_FLOW_DROP_TARGET,
             (!flowActive || flowStage !== 'pick') && 'p-6 sm:p-7',
             dragOver && config.dragClass,
             busy ? 'cursor-default opacity-85' : 'cursor-pointer'
@@ -2044,7 +2043,7 @@ export function ToolWorkspace({
             flowActive && 'h-full min-h-0 flex-1',
             studioChrome
               ? 'gap-0 bg-transparent p-0'
-              : 'gap-3 rounded-sm border border-[hsl(var(--brand-copper)/0.15)] bg-[#0b0b0b] p-5 sm:p-6 max-md:overflow-hidden max-md:p-3'
+              : 'gap-3 rounded-sm border border-[hsl(var(--brand-copper)/0.15)] bg-[#080808] p-5 sm:p-6 max-md:overflow-hidden max-md:p-3'
           )}
         >
           <div
@@ -2269,7 +2268,7 @@ export function ToolWorkspace({
             exit={{ opacity: 0, y: 12 }}
             transition={chipMotion}
             className={clsx(
-              'fixed bottom-5 right-5 z-50 rounded-sm border border-[hsl(var(--brand-copper)/0.25)] bg-[#0a0a0a]/95 px-4 py-3 text-sm font-semibold shadow-lg backdrop-blur-md',
+              'fixed bottom-5 right-5 z-50 rounded-sm border border-[hsl(var(--brand-copper)/0.25)] bg-[#080808]/95 px-4 py-3 text-sm font-semibold shadow-lg backdrop-blur-md',
               toast.kind === 'success'
                 ? 'border-emerald-200 bg-emerald-50/90 text-emerald-800'
                 : 'border-rose-200 bg-rose-50/90 text-rose-800'

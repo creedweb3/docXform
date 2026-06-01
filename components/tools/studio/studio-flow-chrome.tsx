@@ -2,7 +2,6 @@
 
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
-import { TermFrame } from '@/components/site/console/console-ui';
 import { STUDIO_LABEL } from '@/components/tools/studio/studio-theme';
 import { WORKSPACE_TOOLBAR_BTN, WORKSPACE_TOOLBAR_BTN_PRIMARY } from '@/lib/site-design';
 
@@ -133,7 +132,7 @@ export function StudioFlowAsideLayout({
   );
 }
 
-/** Duplicate-file banner — matches flow output {@link TermFrame} styling. */
+/** Duplicate-file banner — studio panel (matches flow output). */
 export function StudioFlowDuplicatePrompt({
   message,
   onSkip,
@@ -146,7 +145,13 @@ export function StudioFlowDuplicatePrompt({
   className?: string;
 }) {
   return (
-    <TermFrame label="duplicate.detected" className={clsx('w-full shrink-0', className)}>
+    <section
+      className={clsx(
+        'studio-shell-panel w-full shrink-0 rounded-sm border p-4 sm:p-5',
+        className
+      )}
+    >
+      <p className={clsx(STUDIO_LABEL, 'mb-3 text-[hsl(var(--brand-copper))]')}>duplicate.detected</p>
       <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-3">
         <p className="min-w-0 flex-1 font-mono text-[11px] normal-case leading-snug text-muted-foreground">
           {message}
@@ -164,6 +169,6 @@ export function StudioFlowDuplicatePrompt({
           </button>
         </div>
       </div>
-    </TermFrame>
+    </section>
   );
 }

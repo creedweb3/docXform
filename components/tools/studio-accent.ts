@@ -52,7 +52,7 @@ const orange: StudioAccent = {
 
 const slate: StudioAccent = {
   ...orange,
-  segmentActive: 'border border-border/80 bg-[#0b0b0b] text-foreground',
+  segmentActive: 'border border-border/80 bg-[#080808] text-foreground',
   rangeIndexBadge:
     'flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-black/40 font-mono text-[11px] font-bold tabular-nums text-foreground',
 };

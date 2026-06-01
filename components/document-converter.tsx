@@ -51,6 +51,7 @@ import { reportConverterMetric } from '@/lib/converter-metrics-client';
 import clsx from 'clsx';
 import { flagshipConverterTheme } from '@/components/tools/tool-theme';
 import { ConversionFlowStudioGrid } from '@/components/tools/studio/conversion-flow-studio-grid';
+import { CONVERSION_FLOW_DROP_TARGET } from '@/lib/conversion-flow-surfaces';
 import { FlowBatchPreview } from '@/components/tools/studio/flow-batch-preview';
 import {
   STUDIO_FLOW_CTA_STRETCH_COL,
@@ -821,9 +822,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
         <div
           className={clsx(
             `${config.cardClass} rounded-sm transition-all duration-300`,
-            flowActive &&
-              flowStage === 'pick' &&
-              'conversion-flow-drop-target flex min-h-0 flex-1 flex-col justify-center border border-[hsl(var(--brand-copper)/0.14)] bg-black/30 p-6 sm:p-8',
+            flowActive && flowStage === 'pick' && CONVERSION_FLOW_DROP_TARGET,
             (!flowActive || flowStage !== 'pick') && 'p-7 sm:p-8',
             dragOver && config.dragClass,
             isConverting ? 'cursor-default opacity-85' : 'cursor-pointer'
@@ -977,7 +976,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
             isFlowStudioView
               ? 'h-full min-h-0 flex-1 gap-0 overflow-hidden bg-transparent p-0'
               : clsx(
-                  'gap-3 rounded-sm border border-[hsl(var(--brand-copper)/0.18)] bg-black/30 p-5 sm:p-6',
+                  'studio-shell-panel gap-3 rounded-sm border p-5 sm:p-6',
                   flowActive && 'h-full min-h-0 flex-1'
                 )
           )}

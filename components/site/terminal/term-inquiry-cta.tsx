@@ -29,7 +29,7 @@ export function TermInquiryCta({
       )}
       aria-label="Contact for business inquiries"
     >
-      <div className="border-b border-[hsl(var(--brand-copper)/0.12)] bg-[#0a0a0a] px-4 py-2 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
+      <div className="border-b border-[hsl(var(--brand-copper)/0.12)] bg-[#080808] px-4 py-2 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
         <span className="text-[hsl(var(--brand-copper))]">docxform</span>
         <span className="opacity-40"> / </span>
         <span>{path}</span>

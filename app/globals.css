@@ -294,6 +294,7 @@
     cursor: none !important;
   }
   .term-shell {
+    background: #080808;
     border: 1px solid hsl(var(--brand-copper) / 0.22);
     border-radius: 2px;
     box-shadow:
@@ -491,11 +492,11 @@
     --studio-dash: hsl(var(--studio-h) var(--studio-s) var(--studio-l) / 0.26);
   }
 
-  .term-shell .tool-workspace--studio .studio-shell-panel {
+  .term-shell :where(.tool-workspace--studio, .conversion-flow-output) .studio-shell-panel {
     background: hsl(0 0% 0% / 0.28);
     border-color: hsl(var(--brand-copper) / 0.14);
   }
-  .term-shell .tool-workspace--studio .studio-shell-divider {
+  .term-shell :where(.tool-workspace--studio, .conversion-flow-output) .studio-shell-divider {
     border-color: hsl(var(--brand-copper) / 0.1);
   }
   .term-shell .tool-workspace--studio .studio-shell-track {
@@ -579,7 +580,9 @@
     --queue-scrollbar-thumb: hsl(var(--brand-copper) / 0.42);
     --queue-scrollbar-thumb-hover: hsl(var(--brand-copper) / 0.68);
   }
-  .term-shell .tool-workspace--flow-studio .studio-flow-queue-row:hover:not(:disabled) {
+  .term-shell
+    :where(.tool-workspace--flow-studio, .conversion-flow-output)
+    .studio-flow-queue-row:hover:not(:disabled) {
     border-color: hsl(var(--brand-copper) / 0.32);
     background: hsl(0 0% 0% / 0.38);
   }
@@ -608,7 +611,7 @@
   .conversion-flow-vp .term-shell {
     height: 100%;
     min-height: 0;
-    background: #0a0a0a;
+    background: #080808;
     border: 1px solid hsl(var(--brand-copper) / 0.22);
     border-radius: 2px;
     box-shadow:

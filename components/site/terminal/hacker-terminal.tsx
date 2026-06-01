@@ -108,7 +108,7 @@ export function HackerTerminal({
       </div>
 
       {header ? (
-        <div className="relative space-y-3 border-b border-[hsl(var(--brand-copper)/0.12)] bg-[#0b0b0b] px-4 py-5 sm:px-6 sm:py-6">
+        <div className="relative space-y-3 border-b border-[hsl(var(--brand-copper)/0.12)] bg-[#080808] px-4 py-5 sm:px-6 sm:py-6">
           {header}
         </div>
       ) : null}
@@ -130,7 +130,7 @@ export function HackerTerminal({
                 className={cn(
                   'interactive-trigger -mb-px border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors',
                   isActive
-                    ? 'border-[hsl(var(--brand-copper)/0.45)] border-b-[#0b0b0b] bg-[#0b0b0b] text-[hsl(var(--brand-copper))]'
+                    ? 'border-[hsl(var(--brand-copper)/0.45)] border-b-[#080808] bg-[#080808] text-[hsl(var(--brand-copper))]'
                     : 'border-transparent bg-transparent text-muted-foreground hover:text-foreground'
                 )}
               >
@@ -144,7 +144,7 @@ export function HackerTerminal({
       {activeContent ? (
         <div
           className={cn(
-            'relative flex flex-col bg-[#0b0b0b]',
+            'relative flex flex-col bg-[#080808]',
             fillHeight ? 'min-h-0 flex-1 gap-4 overflow-hidden p-4 sm:p-5' : 'p-5 sm:p-8',
             !fillHeight && (mode === 'product' ? 'gap-6' : 'gap-5'),
             bodyClassName

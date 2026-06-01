@@ -247,7 +247,7 @@ export function TermFrame({
   return (
     <div
       className={cn(
-        'rounded-sm border border-[hsl(var(--brand-copper)/0.18)] bg-black/35 p-4 sm:p-5',
+        'studio-shell-panel rounded-sm border border-[hsl(var(--brand-copper)/0.18)] p-4 sm:p-5',
         className
       )}
     >
