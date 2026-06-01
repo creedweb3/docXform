@@ -2065,7 +2065,7 @@ export function ToolWorkspace({
                 className={clsx(
                   'mobile-preview-shell relative flex min-w-0 flex-col',
                   isFlowStudio
-                    ? 'h-full min-h-0 overflow-hidden border-r border-[hsl(var(--brand-copper)/0.12)] bg-[hsl(0_0%_3.5%/0.65)] p-4 sm:p-5'
+                    ? 'h-full min-h-0 overflow-hidden border-r border-[hsl(var(--brand-copper)/0.12)] bg-[#080808] p-4 sm:p-5'
                     : 'h-full min-h-0 overflow-x-visible max-md:min-h-[min(58vh,28rem)] max-md:overflow-hidden max-md:pb-14',
                   studioChrome &&
                     !isFlowStudio &&
@@ -2122,7 +2122,7 @@ export function ToolWorkspace({
                 className={clsx(
                   'flex h-full w-full min-h-0 min-w-0 flex-col',
                   isFlowStudio
-                    ? 'overflow-hidden bg-[hsl(0_0%_2%/0.5)] px-4 py-4 sm:px-5 sm:py-5'
+                    ? 'overflow-hidden bg-[#080808] px-4 py-4 sm:px-5 sm:py-5'
                     : 'overflow-visible',
                   studioChrome && !isFlowStudio
                     ? 'studio-shell-aside-divider gap-5 py-1 sm:py-2 lg:border-l lg:pl-6 xl:pl-8'

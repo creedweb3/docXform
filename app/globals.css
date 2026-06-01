@@ -685,6 +685,17 @@
     align-self: stretch;
   }
 
+  /* Flow preview: flat studio canvas — card panels use legacy card wash, not stacked black overlays */
+  .conversion-flow-vp .tool-workspace--flow-studio .mobile-preview-shell .studio-shell-panel {
+    background: hsl(var(--card) / 0.4);
+  }
+  .conversion-flow-vp .tool-workspace--flow-studio .mobile-preview-shell .studio-shell-thumb {
+    background: hsl(var(--card) / 0.4);
+  }
+  .conversion-flow-vp .tool-workspace--flow-studio .mobile-preview-shell .studio-shell-badge {
+    background: hsl(var(--card) / 0.5);
+  }
+
   /* Converter / marketing section rhythm — plain CSS so spacing survives Tailwind content scans */
   .term-section-stack {
     display: flex;

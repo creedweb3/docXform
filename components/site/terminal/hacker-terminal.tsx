@@ -80,7 +80,7 @@ export function HackerTerminal({
     >
       <div className="term-scanlines pointer-events-none absolute inset-0" aria-hidden />
 
-      <div className="relative border-b border-[hsl(var(--brand-copper)/0.2)] bg-[#0a0a0a] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.14em]">
+      <div className="relative border-b border-[hsl(var(--brand-copper)/0.2)] bg-[#080808] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.14em]">
         {presentation === 'page' ? (
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
             <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 normal-case tracking-normal">

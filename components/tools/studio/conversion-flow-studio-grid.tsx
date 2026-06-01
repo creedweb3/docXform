@@ -25,10 +25,10 @@ export function ConversionFlowStudioGrid({
       )}
     >
       <div className={clsx(STUDIO_FLOW_GRID, 'min-h-0 flex-1')}>
-        <div className="mobile-preview-shell relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-r border-[hsl(var(--brand-copper)/0.12)] bg-[hsl(0_0%_3.5%/0.65)] p-4 sm:p-5">
+        <div className="mobile-preview-shell relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-r border-[hsl(var(--brand-copper)/0.12)] bg-[#080808] p-4 sm:p-5">
           {preview}
         </div>
-        <aside className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-[hsl(0_0%_2%/0.5)] px-4 py-4 sm:px-5 sm:py-5">
+        <aside className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#080808] px-4 py-4 sm:px-5 sm:py-5">
           {aside}
         </aside>
       </div>
