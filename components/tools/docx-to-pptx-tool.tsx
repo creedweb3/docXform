@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ToolWorkspace, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { ToolWorkspace, type WorkspaceFile, type WorkspaceSurfaceApi } from '@/components/tools/tool-workspace';
+import { StudioFlowAsideInfo } from '@/components/tools/studio/studio-flow-aside-info';
 import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { convertDocumentFile } from '@/lib/client-document-converter';
 import { validateDocxFiles } from '@/lib/tool-validations';
@@ -49,5 +50,24 @@ export function DocxToPptxTool() {
     []
   );
 
-  return <ToolWorkspace config={config} actions={{ processFiles, zipName: 'slides.zip', validateFiles }} />;
+  const footer = useCallback(
+    (api: WorkspaceSurfaceApi) =>
+      api.inFlowStudio ? (
+        <StudioFlowAsideInfo title="Output">
+          <p>
+            Each document becomes <strong className="text-foreground">PPTX</strong> locally. Layout is simplified —
+            complex Word formatting may not carry over.
+          </p>
+        </StudioFlowAsideInfo>
+      ) : null,
+    []
+  );
+
+  return (
+    <ToolWorkspace
+      config={config}
+      actions={{ processFiles, zipName: 'slides.zip', validateFiles }}
+      footer={footer}
+    />
+  );
 }

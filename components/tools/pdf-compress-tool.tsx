@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ToolWorkspace, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { ToolWorkspace, type WorkspaceFile, type WorkspaceSurfaceApi } from '@/components/tools/tool-workspace';
+import { StudioFlowAsideInfo } from '@/components/tools/studio/studio-flow-aside-info';
 import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { compressPdf } from '@/lib/tool-runs/pdf-compress';
 import { validatePdfFiles } from '@/lib/tool-validations';
@@ -34,20 +35,32 @@ type Preset = 'light' | 'balanced' | 'max';
 export function PdfCompressTool() {
   const [preset, setPreset] = useLocalSetting<Preset>('docxform:pdf-compress:preset', 'balanced');
 
-  const footer = (
-    <div className="rounded-xl border border-border/50 bg-card/50 p-3 space-y-3 text-xs text-muted-foreground">
-      <RadioGroup<Preset>
-        name="pdf-compress-preset"
-        label="Quality preset"
-        value={preset}
-        onChange={setPreset}
-        options={[
-          { value: 'light', label: 'Light', description: 'Smallest file, more image blur' },
-          { value: 'balanced', label: 'Balanced', description: 'Default balance of size and quality' },
-          { value: 'max', label: 'Max quality', description: 'Highest fidelity, smaller savings' },
-        ]}
-      />
-    </div>
+  const footer = useCallback(
+    (api: WorkspaceSurfaceApi) => {
+      const controls = (
+        <RadioGroup<Preset>
+          name="pdf-compress-preset"
+          label="Quality preset"
+          value={preset}
+          onChange={setPreset}
+          options={[
+            { value: 'light', label: 'Light', description: 'Smallest file, more image blur' },
+            { value: 'balanced', label: 'Balanced', description: 'Default balance of size and quality' },
+            { value: 'max', label: 'Max quality', description: 'Highest fidelity, smaller savings' },
+          ]}
+        />
+      );
+      return api.inFlowStudio ? (
+        <StudioFlowAsideInfo title="Compression" className="space-y-3">
+          {controls}
+        </StudioFlowAsideInfo>
+      ) : (
+        <div className="space-y-3 rounded-xl border border-border/50 bg-card/50 p-3 text-xs text-muted-foreground">
+          {controls}
+        </div>
+      );
+    },
+    [preset, setPreset]
   );
 
   const processFiles = useCallback(

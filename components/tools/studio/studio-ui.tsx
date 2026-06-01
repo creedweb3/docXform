@@ -1,16 +1,128 @@
 'use client';
 
 import clsx from 'clsx';
+import type { CSSProperties, ReactNode } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Add01Icon } from '@hugeicons/core-free-icons';
+import { useVerticalScrollOverflow } from '@/components/tools/studio/use-vertical-scroll-overflow';
 import { getStudioAccent } from '@/components/tools/studio-accent';
 import { TONE_STYLES, type ToneKey } from '@/components/tools/tone-styles';
 import {
   STUDIO_INFO_BANNER,
+  STUDIO_NUM_STEPPER,
+  STUDIO_NUM_STEPPER_BTN,
+  STUDIO_NUM_STEPPER_BTNS,
+  STUDIO_NUM_STEPPER_INPUT,
   STUDIO_TAB_ACTIVE,
   STUDIO_TAB_IDLE,
   STUDIO_TAB_TRACK,
 } from '@/components/tools/studio/studio-theme';
+
+export function StudioScrollArea({
+  className,
+  style,
+  children,
+  measureKey,
+  'aria-label': ariaLabel,
+}: {
+  className?: string;
+  style?: CSSProperties;
+  children: ReactNode;
+  /** Remeasure when scrollable content changes (e.g. range count). */
+  measureKey?: string | number;
+  'aria-label'?: string;
+}) {
+  const { ref, overflows } = useVerticalScrollOverflow([measureKey]);
+  return (
+    <div
+      ref={ref}
+      className={clsx(
+        'queue-list-scrollbar min-h-0 min-w-0 overflow-x-clip overflow-y-auto overscroll-y-contain',
+        overflows && 'pe-2',
+        className
+      )}
+      style={style}
+      aria-label={ariaLabel}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function StudioNumStepper({
+  value,
+  min = 1,
+  max,
+  disabled,
+  onChange,
+  ariaLabel,
+  className,
+  fullWidth,
+}: {
+  value: number;
+  min?: number;
+  max?: number;
+  disabled?: boolean;
+  onChange: (value: number) => void;
+  ariaLabel: string;
+  className?: string;
+  /** Full rail width with h-9 — matches {@link STUDIO_FULL_INPUT} weight in aside panels. */
+  fullWidth?: boolean;
+}) {
+  const atMin = value <= min;
+  const atMax = max != null && value >= max;
+
+  const clamp = (raw: number) => {
+    let next = Math.max(min, Math.floor(raw) || min);
+    if (max != null) next = Math.min(max, next);
+    return next;
+  };
+
+  const bump = (delta: number) => onChange(clamp(value + delta));
+
+  return (
+    <div
+      className={clsx(
+        STUDIO_NUM_STEPPER,
+        fullWidth && '!w-full h-9 focus-within:ring-2 focus-within:ring-[hsl(var(--brand-copper)/0.35)]',
+        className
+      )}
+    >
+      <input
+        type="number"
+        min={min}
+        max={max}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        className={clsx(STUDIO_NUM_STEPPER_INPUT, fullWidth && 'text-sm')}
+        value={value}
+        onChange={(e) => onChange(clamp(Number(e.target.value)))}
+      />
+      <div className={clsx(STUDIO_NUM_STEPPER_BTNS, fullWidth && 'w-6')} aria-hidden={disabled}>
+        <button
+          type="button"
+          tabIndex={-1}
+          disabled={disabled || atMax}
+          aria-label={`Increase ${ariaLabel}`}
+          className={STUDIO_NUM_STEPPER_BTN}
+          onClick={() => bump(1)}
+        >
+          ▴
+        </button>
+        <button
+          type="button"
+          tabIndex={-1}
+          disabled={disabled || atMin}
+          aria-label={`Decrease ${ariaLabel}`}
+          className={STUDIO_NUM_STEPPER_BTN}
+          onClick={() => bump(-1)}
+        >
+          ▾
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function StudioFabStack({
   fileCount,

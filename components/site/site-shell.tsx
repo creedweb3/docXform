@@ -25,8 +25,10 @@ export function SiteShell({ children, className, plain, boot }: SiteShellProps) 
           <main className={cn(MARKETING_MAIN, plain && 'marketing-main')}>
             <div className={MARKETING_PAGE}>
               {children}
-              <ZoneSeparator />
-              <SiteFooter />
+              <div data-marketing-footer-zone>
+                <ZoneSeparator />
+                <SiteFooter />
+              </div>
             </div>
           </main>
         </div>

@@ -5,6 +5,8 @@ import { useCallback, useMemo, useState, type CSSProperties, type DragEvent } fr
 import { HugeiconsIcon } from '@hugeicons/react';
 import { DragDropVerticalIcon, GitMergeIcon, Image01Icon } from '@hugeicons/core-free-icons';
 import type { WorkspaceSurfaceApi } from '@/components/tools/tool-workspace';
+import { StudioFlowPreviewInfoRow } from '@/components/tools/studio/studio-flow-chrome';
+import { StudioScrollArea } from '@/components/tools/studio/studio-ui';
 import { getStudioAccent } from '@/components/tools/studio-accent';
 import { TONE_STYLES } from '@/components/tools/tone-styles';
 import type { SplitMode } from '@/lib/tool-runs/pdf-split';
@@ -353,13 +355,22 @@ export function PdfSplitStudioSurface({
     [api]
   );
 
+  const flowToolbar = api.inFlowStudio ? api.flowQueueToolbar : undefined;
+  const showRangeInfoStrip =
+    pageCount > 0 && Boolean(file) && !previewFailed && !previewPending && splitTab === 'range' && groups.length > 0;
+  const showPagesInfoStrip =
+    pageCount > 0 && Boolean(file) && !previewFailed && !previewPending && splitTab === 'pages';
+  const showPreviewInfoStrip = showRangeInfoStrip || showPagesInfoStrip;
+
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-2 basis-0 min-h-0 max-md:basis-auto max-md:gap-2.5">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-2 basis-0 max-md:basis-auto max-md:gap-2.5">
       <div className="flex min-w-0 shrink-0 items-center justify-between gap-2 max-md:px-0.5">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground max-md:text-xs">
           {splitTab === 'range' ? 'Split preview' : splitTab === 'pages' ? 'Page previews' : 'By size'}
         </p>
-        {selectThumbMode && file ? (
+        {flowToolbar && !showPreviewInfoStrip ? (
+          <div className="w-full max-w-[17.5rem] shrink-0">{flowToolbar}</div>
+        ) : selectThumbMode && file ? (
           <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
             <button
               type="button"
@@ -438,14 +449,14 @@ export function PdfSplitStudioSurface({
         ) : null}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col justify-start min-h-0 max-md:min-h-[min(56vh,26rem)]">
-        {pageCount > 0 &&
-        file &&
-        !previewFailed &&
-        !previewPending &&
-        splitTab === 'range' &&
-        groups.length > 0 ? (
-          <div className="mb-1.5 w-full min-w-0 shrink-0 max-md:mb-1">
+      <div
+        className={clsx(
+          'flex min-h-0 flex-1 flex-col',
+          api.inFlowStudio ? 'overflow-hidden' : 'max-md:min-h-[min(56vh,26rem)]'
+        )}
+      >
+        {showRangeInfoStrip ? (
+          <StudioFlowPreviewInfoRow toolbar={flowToolbar}>
             <details className={clsx('w-full rounded-sm border md:hidden', studioPillClass)}>
               <summary className="cursor-pointer list-none px-3 py-2.5 text-[11px] font-semibold leading-snug marker:content-none min-h-11 flex items-center [&::-webkit-details-marker]:hidden">
                 {rangeOutputPdfCount} PDF{rangeOutputPdfCount === 1 ? '' : 's'} · tap for details
@@ -461,14 +472,10 @@ export function PdfSplitStudioSurface({
                 ? `Preview shows each range group; they merge into one ordered PDF · ${rangeOutputPdfCount} PDF${rangeOutputPdfCount === 1 ? '' : 's'} will be created`
                 : `Dashed boxes are output groups · ${rangeOutputPdfCount} PDF${rangeOutputPdfCount === 1 ? '' : 's'} will be created`}
             </p>
-          </div>
+          </StudioFlowPreviewInfoRow>
         ) : null}
-        {pageCount > 0 &&
-        file &&
-        !previewFailed &&
-        !previewPending &&
-        splitTab === 'pages' ? (
-          <div className="mb-1.5 w-full min-w-0 shrink-0">
+        {showPagesInfoStrip ? (
+          <StudioFlowPreviewInfoRow toolbar={flowToolbar}>
             <p className={studioInfoStripClass}>
               {selectThumbMode
                 ? `Highlighted outline = included; dimmed = skipped. Click a page to toggle.${
@@ -476,7 +483,7 @@ export function PdfSplitStudioSurface({
                   }`
                 : 'All pages are included. Choose “Select pages” to pick a subset.'}
             </p>
-          </div>
+          </StudioFlowPreviewInfoRow>
         ) : null}
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -498,8 +505,9 @@ export function PdfSplitStudioSurface({
         </p>
       ) : splitTab === 'range' && groups.length > 0 ? (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <div
-            className="queue-list-scrollbar min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain py-1"
+          <StudioScrollArea
+            measureKey={groups.length}
+            className="flex-1 py-1"
             style={scrollThumbStyle}
           >
             <div className="grid min-w-0 grid-cols-6 items-start gap-x-4 gap-y-4 sm:gap-x-6 max-md:grid-cols-2 max-md:gap-3">
@@ -575,12 +583,13 @@ export function PdfSplitStudioSurface({
                 );
               })}
             </div>
-          </div>
+          </StudioScrollArea>
         </div>
       ) : (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <div
-            className="queue-list-scrollbar min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain py-1"
+          <StudioScrollArea
+            measureKey={pageCount}
+            className="flex-1 py-1"
             style={scrollThumbStyle}
           >
             <div
@@ -669,7 +678,7 @@ export function PdfSplitStudioSurface({
                 );
               })}
             </div>
-          </div>
+          </StudioScrollArea>
         </div>
       )}
         </div>

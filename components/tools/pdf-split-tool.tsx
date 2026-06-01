@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Delete02Icon, Download01Icon } from '@hugeicons/core-free-icons';
@@ -23,13 +23,12 @@ import { MAX_CONVERSION_BATCH_FILES, MAX_CONVERSION_FILE_SIZE_BYTES } from '@/li
 import { getToolBySlug } from '@/lib/tools';
 import { generatePdfPreview } from '@/lib/client-previews';
 import { getStudioAccent } from '@/components/tools/studio-accent';
-import { StudioInfoBanner, StudioSegmentRow, StudioTabBar } from '@/components/tools/studio/studio-ui';
+import { StudioNumStepper, StudioScrollArea, StudioSegmentRow, StudioTabBar } from '@/components/tools/studio/studio-ui';
 import {
   STUDIO_CHECK_ROW,
+  STUDIO_CHECKBOX,
   STUDIO_FIELD_ROW,
-  STUDIO_FULL_INPUT,
   STUDIO_HINT,
-  STUDIO_NUM_INPUT,
   STUDIO_SECONDARY_BTN,
 } from '@/components/tools/studio/studio-theme';
 import { TONE_STYLES } from '@/components/tools/tone-styles';
@@ -43,22 +42,44 @@ const PDF_SPLIT_RANGE_SCROLL_STYLE = {
 } as CSSProperties;
 
 /**
- * Up to this many ranges: list grows naturally. Beyond: rows scroll inside a fixed-height viewport.
+ * Legacy dropzone layout: up to this many ranges grow naturally; beyond that, fixed-height list scroll.
+ * Flow studio uses {@link CustomPageRangeListViewport} `flexConstrained` instead (no count threshold).
  */
 const RANGE_LIST_NATURAL_MAX_COUNT = 5;
 
-/** Fixed outer height (rem) — ~5 rows + gaps; does not grow when more ranges are added. */
 const RANGE_LIST_SCROLL_VIEWPORT_REM = 15.75;
 
 function CustomPageRangeListViewport({
+  flexConstrained,
   scroll,
   scrollStyle,
+  rowCount,
   children,
 }: {
-  scroll: boolean;
+  /** Fill remaining rail height and scroll when rows overflow (conversion-flow studio). */
+  flexConstrained?: boolean;
+  scroll?: boolean;
   scrollStyle?: CSSProperties;
+  rowCount?: number;
   children: ReactNode;
 }) {
+  const list = <div className="flex flex-col gap-1.5">{children}</div>;
+
+  if (flexConstrained) {
+    return (
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <StudioScrollArea
+          measureKey={rowCount}
+          aria-label="Custom page ranges"
+          className="box-border min-h-0 flex-1 py-1.5 ps-1 [-webkit-overflow-scrolling:touch]"
+          style={scrollStyle}
+        >
+          {list}
+        </StudioScrollArea>
+      </div>
+    );
+  }
+
   if (!scroll) {
     return (
       <div className="flex shrink-0 flex-col gap-1.5 overflow-x-clip px-1" aria-label="Custom page ranges">
@@ -68,13 +89,14 @@ function CustomPageRangeListViewport({
   }
   return (
     <div className="w-full min-w-0 shrink-0" style={{ height: `${RANGE_LIST_SCROLL_VIEWPORT_REM}rem` }}>
-      <div
-        className="queue-list-scrollbar box-border h-full min-h-0 overflow-y-auto overscroll-y-contain px-1 py-1.5 [-webkit-overflow-scrolling:touch]"
-        style={scrollStyle}
+      <StudioScrollArea
+        measureKey={rowCount}
         aria-label="Custom page ranges"
+        className="box-border h-full py-1.5 ps-1 [-webkit-overflow-scrolling:touch]"
+        style={scrollStyle}
       >
-        <div className="flex flex-col gap-1.5">{children}</div>
-      </div>
+        {list}
+      </StudioScrollArea>
     </div>
   );
 }
@@ -82,24 +104,6 @@ function CustomPageRangeListViewport({
 type SplitSidebarTab = 'range' | 'pages' | 'size';
 type RangeModeUi = 'custom' | 'fixed' | 'smart';
 type ExtractMode = 'all' | 'select';
-
-function orderedPagesFromGrid(
-  st: { order: number[]; selected: number[] } | undefined,
-  pageCount: number
-): number[] {
-  if (pageCount <= 0) return [];
-  const order =
-    st && st.order.length === pageCount && st.order.every((p) => p >= 1 && p <= pageCount)
-      ? st.order
-      : Array.from({ length: pageCount }, (_, i) => i + 1);
-  const selected =
-    st &&
-    (st.selected.length === 0 || st.selected.every((p) => p >= 1 && p <= pageCount))
-      ? st.selected
-      : Array.from({ length: pageCount }, (_, i) => i + 1);
-  const sel = new Set(selected);
-  return order.filter((p) => sel.has(p));
-}
 
 function splitGroupsForBar(mode: SplitMode, pageCount: number): number[][] {
   const n = Math.max(1, pageCount);
@@ -117,6 +121,23 @@ function splitGroupsForBar(mode: SplitMode, pageCount: number): number[][] {
 function fullDocumentRange(pageCount: number): number[] {
   const n = Math.max(1, pageCount);
   return Array.from({ length: n }, (_, i) => i + 1);
+}
+
+/** Clamps fixed-interval state when preview page count is known or shrinks. */
+function ClampSplitIntervalEffect({
+  pageCount,
+  interval,
+  onClamp,
+}: {
+  pageCount: number;
+  interval: number;
+  onClamp: (clamped: number) => void;
+}) {
+  useEffect(() => {
+    if (pageCount <= 0 || interval <= pageCount) return;
+    onClamp(pageCount);
+  }, [pageCount, interval, onClamp]);
+  return null;
 }
 
 function isFullPageSelection(
@@ -186,6 +207,11 @@ export function PdfSplitTool() {
     });
   }, []);
 
+  const clampIntervalToPageCount = useCallback((clamped: number) => {
+    setInterval(clamped);
+    setMode((m) => (m.kind === 'every' ? { kind: 'every', interval: clamped } : m));
+  }, []);
+
   const removeCustomRange = useCallback((index: number) => {
     setMode((prev) => {
       if (prev.kind !== 'ranges' || prev.ranges.length <= 1) return prev;
@@ -231,9 +257,6 @@ export function PdfSplitTool() {
       const file = api.files[0];
       const n = file?.preview?.pageCount ?? 0;
       pageCountRef.current = n;
-      const st = file ? api.gridByFileId[file.id] : undefined;
-      const ordered = orderedPagesFromGrid(st, n);
-      const groups = n > 0 && splitTab === 'range' ? splitGroupsForBar(mode, n) : [];
       const rangeSplitComplete =
         api.allDone &&
         splitTab === 'range' &&
@@ -251,40 +274,18 @@ export function PdfSplitTool() {
       const rangeSettingsLocked =
         api.allDone && splitTab === 'range' && file?.status === 'done';
 
-      let outputPdfCount = 0;
-      if (splitTab === 'range' && n) {
-        outputPdfCount = mergeRangeOutputs ? 1 : groups.length;
-      } else if (splitTab === 'pages' && n) {
-        if (mergeExtractedIntoOne) outputPdfCount = 1;
-        else if (extractMode === 'all') outputPdfCount = n;
-        else outputPdfCount = ordered.length;
-      }
-
-      const bannerText =
-        splitTab === 'size'
-          ? 'Choose Range or Pages to configure splitting.'
-          : splitTab === 'range'
-            ? n === 0
-              ? 'Add a PDF to see how many output files your ranges will create.'
-              : mergeRangeOutputs
-                ? `All range groups will be merged into a single PDF in order. 1 PDF will be created.`
-                : rangeModeUi === 'fixed' && mode.kind === 'every'
-                  ? `This PDF will be split into files of ${mode.interval} page${mode.interval === 1 ? '' : 's'}. ${outputPdfCount} PDF${outputPdfCount === 1 ? '' : 's'} will be created.`
-                  : `Range mode splits this file into separate PDFs by group. ${outputPdfCount} PDF${outputPdfCount === 1 ? '' : 's'} will be created.`
-            : mergeExtractedIntoOne
-              ? `Pages will be merged into one PDF. 1 PDF (${extractMode === 'all' ? n : ordered.length} page${
-                  (extractMode === 'all' ? n : ordered.length) === 1 ? '' : 's'
-                }).`
-              : extractMode === 'all'
-                ? `Each page becomes its own PDF unless merge is enabled. ${outputPdfCount} PDF${outputPdfCount === 1 ? '' : 's'} will be created.`
-                : ordered.length === 0
-                  ? 'Select at least one page in the preview area above.'
-                  : `Selected pages export as separate files. ${outputPdfCount} PDF${outputPdfCount === 1 ? '' : 's'} will be created.`;
-
       return (
-        <div className="flex w-full min-w-0 flex-col gap-5 text-xs text-muted-foreground max-md:gap-4">
+        <div
+          className={clsx(
+            'flex w-full min-w-0 flex-col gap-5 text-xs text-muted-foreground max-md:gap-4',
+            api.inFlowStudio && 'h-full min-h-0 overflow-hidden'
+          )}
+        >
           <section
-            className="min-w-0 w-full shrink-0 space-y-4 overflow-x-visible"
+            className={clsx(
+              'min-w-0 w-full space-y-4 overflow-x-visible',
+              api.inFlowStudio ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'shrink-0'
+            )}
             aria-label="PDF split options"
           >
             <div className="mb-1 shrink-0">
@@ -301,7 +302,12 @@ export function PdfSplitTool() {
             </div>
 
             {splitTab === 'range' ? (
-              <div className="mt-4 flex min-w-0 flex-col gap-4 border-t border-border/15 pt-4">
+              <div
+                className={clsx(
+                  'mt-4 flex min-w-0 flex-col gap-4 border-t border-border/15 pt-4',
+                  api.inFlowStudio && 'min-h-0 flex-1 overflow-hidden'
+                )}
+              >
                 <h3 className="shrink-0 text-xs font-semibold uppercase tracking-wide text-foreground">Range mode</h3>
                 <div className="shrink-0">
                   <StudioSegmentRow<RangeModeUi>
@@ -320,21 +326,30 @@ export function PdfSplitTool() {
                           prev.kind === 'ranges' ? prev : { kind: 'ranges', ranges: [[1]] }
                         );
                       } else if (id === 'fixed') {
-                        setMode({ kind: 'every', interval: Math.max(1, interval) });
+                        const cap = n > 0 ? n : undefined;
+                        const next =
+                          cap != null ? Math.min(Math.max(1, interval), cap) : Math.max(1, interval);
+                        setInterval(next);
+                        setMode({ kind: 'every', interval: next });
                       }
                     }}
                   />
                 </div>
                 {rangeModeUi === 'custom' ? (
-                  <div className="flex min-w-0 flex-col gap-3">
+                  <div
+                    className={clsx(
+                      'flex min-w-0 flex-col gap-3',
+                      api.inFlowStudio && mode.kind === 'ranges' && 'min-h-0 flex-1 overflow-hidden'
+                    )}
+                  >
                     {mode.kind === 'ranges' ? (
                       <CustomPageRangeListViewport
-                        scroll={mode.ranges.length > RANGE_LIST_NATURAL_MAX_COUNT}
-                        scrollStyle={
-                          mode.ranges.length > RANGE_LIST_NATURAL_MAX_COUNT
-                            ? PDF_SPLIT_RANGE_SCROLL_STYLE
-                            : undefined
+                        flexConstrained={api.inFlowStudio}
+                        rowCount={mode.ranges.length}
+                        scroll={
+                          !api.inFlowStudio && mode.ranges.length > RANGE_LIST_NATURAL_MAX_COUNT
                         }
+                        scrollStyle={PDF_SPLIT_RANGE_SCROLL_STYLE}
                       >
                         {mode.ranges.map((pages, idx) => {
                           const from = Math.min(...pages);
@@ -357,32 +372,28 @@ export function PdfSplitTool() {
                                   <span className="w-10 shrink-0 text-right text-xs font-semibold leading-tight text-foreground/85">
                                     From
                                   </span>
-                                  <input
-                                    type="number"
+                                  <StudioNumStepper
+                                    ariaLabel={`Range ${idx + 1} from page`}
                                     min={1}
                                     max={n > 0 ? n : undefined}
                                     disabled={rangeRowsLocked}
-                                    className={clsx(STUDIO_NUM_INPUT, 'max-md:h-9')}
+                                    className="max-md:h-9"
                                     value={from}
-                                    onChange={(e) =>
-                                      patchCustomRange(idx, 'from', Math.max(1, Number(e.target.value) || 1))
-                                    }
+                                    onChange={(v) => patchCustomRange(idx, 'from', v)}
                                   />
                                 </label>
                                 <label className="flex min-w-0 items-center justify-end gap-1.5">
                                   <span className="w-10 shrink-0 text-right text-xs font-semibold leading-tight text-foreground/85">
                                     To
                                   </span>
-                                  <input
-                                    type="number"
+                                  <StudioNumStepper
+                                    ariaLabel={`Range ${idx + 1} to page`}
                                     min={1}
                                     max={n > 0 ? n : undefined}
                                     disabled={rangeRowsLocked}
-                                    className={clsx(STUDIO_NUM_INPUT, 'max-md:h-9')}
+                                    className="max-md:h-9"
                                     value={to}
-                                    onChange={(e) =>
-                                      patchCustomRange(idx, 'to', Math.max(1, Number(e.target.value) || 1))
-                                    }
+                                    onChange={(v) => patchCustomRange(idx, 'to', v)}
                                   />
                                 </label>
                               </div>
@@ -417,24 +428,29 @@ export function PdfSplitTool() {
                       <button
                         type="button"
                         onClick={() => api.prepareForResplit()}
-                        className={clsx(STUDIO_SECONDARY_BTN, 'max-md:py-3')}
+                        className={clsx(STUDIO_SECONDARY_BTN, 'shrink-0 max-md:py-3')}
                       >
                         Edit ranges
                       </button>
                     ) : (
-                      <button type="button" onClick={addCustomRange} className={studioAccent.addRangeButton}>
+                      <button
+                        type="button"
+                        onClick={addCustomRange}
+                        className={clsx(studioAccent.addRangeButton, 'shrink-0')}
+                      >
                         + Add range
                       </button>
                     )}
                     <label
                       className={clsx(
                         STUDIO_CHECK_ROW,
+                        'shrink-0',
                         rangeSettingsLocked ? 'cursor-not-allowed opacity-60' : undefined
                       )}
                     >
                       <input
                         type="checkbox"
-                        className="mt-0.5"
+                        className={STUDIO_CHECKBOX}
                         checked={mergeRangeOutputs}
                         disabled={rangeSettingsLocked}
                         onChange={(e) => setMergeRangeOutputs(e.target.checked)}
@@ -445,22 +461,35 @@ export function PdfSplitTool() {
                     </label>
                   </div>
                 ) : rangeModeUi === 'fixed' ? (
-                  <div className="mt-1 shrink-0 space-y-2">
-                    <label className="block space-y-1.5">
-                      <span className="text-[11px] font-semibold text-foreground">Split into page ranges of</span>
-                      <input
-                        className={clsx(STUDIO_FULL_INPUT, 'max-md:py-3.5')}
-                        type="number"
-                        min={1}
-                        disabled={rangeSettingsLocked}
-                        value={interval}
-                        onChange={(e) => {
-                          const next = Math.max(1, Number(e.target.value) || 1);
-                          setInterval(next);
-                          setMode({ kind: 'every', interval: next });
-                        }}
+                  <div
+                    className={clsx(
+                      'studio-shell-panel mt-1 flex shrink-0 flex-col gap-2.5 rounded-sm border px-3 py-3',
+                      rangeSettingsLocked ? 'cursor-not-allowed opacity-60' : undefined
+                    )}
+                  >
+                    {n > 0 ? (
+                      <ClampSplitIntervalEffect
+                        pageCount={n}
+                        interval={interval}
+                        onClamp={clampIntervalToPageCount}
                       />
-                    </label>
+                    ) : null}
+                    <p className="select-none text-[11px] font-semibold leading-relaxed text-foreground">
+                      Split into page ranges of
+                    </p>
+                    <StudioNumStepper
+                      fullWidth
+                      ariaLabel="Pages per range"
+                      min={1}
+                      max={n > 0 ? n : undefined}
+                      disabled={rangeSettingsLocked}
+                      value={interval}
+                      onChange={(next) => {
+                        const capped = n > 0 ? Math.min(next, n) : next;
+                        setInterval(capped);
+                        setMode({ kind: 'every', interval: capped });
+                      }}
+                    />
                   </div>
                 ) : (
                   <p className={clsx(STUDIO_HINT, 'max-md:py-3.5')}>
@@ -486,7 +515,7 @@ export function PdfSplitTool() {
                 <label className={clsx(STUDIO_CHECK_ROW, 'max-md:py-3.5')}>
                   <input
                     type="checkbox"
-                    className="mt-0.5"
+                    className={STUDIO_CHECKBOX}
                     checked={mergeExtractedIntoOne}
                     onChange={(e) => setMergeExtractedIntoOne(e.target.checked)}
                   />
@@ -507,10 +536,6 @@ export function PdfSplitTool() {
               </p>
             )}
           </section>
-
-          <div className="shrink-0 max-md:mt-1">
-            <StudioInfoBanner tone={tool.tone}>{bannerText}</StudioInfoBanner>
-          </div>
         </div>
       );
     },
@@ -525,6 +550,7 @@ export function PdfSplitTool() {
       addCustomRange,
       removeCustomRange,
       patchCustomRange,
+      clampIntervalToPageCount,
     ]
   );
 

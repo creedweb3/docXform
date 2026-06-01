@@ -26,7 +26,12 @@ import {
   MAX_CONVERSION_BATCH_FILES,
   MAX_CONVERSION_FILE_SIZE_LABEL,
 } from '@/lib/conversion-limits';
-import { WORKSPACE_SECONDARY_SURFACE } from '@/lib/site-design';
+import {
+  WORKSPACE_CTA_IDLE,
+  WORKSPACE_CTA_PRIMARY,
+  WORKSPACE_CTA_SECONDARY,
+  WORKSPACE_TOOLBAR_BTN,
+} from '@/lib/site-design';
 import {
   formatBytes,
   getDynamicBatchLimitLabel,
@@ -43,7 +48,22 @@ import {
 } from '@/lib/converter-eligibility';
 import { getCachedPerfProfile, getMotionBudget, getWarmScheduling } from '@/lib/perf-profile';
 import { reportConverterMetric } from '@/lib/converter-metrics-client';
+import clsx from 'clsx';
 import { flagshipConverterTheme } from '@/components/tools/tool-theme';
+import { ConversionFlowStudioGrid } from '@/components/tools/studio/conversion-flow-studio-grid';
+import { FlowBatchPreview } from '@/components/tools/studio/flow-batch-preview';
+import {
+  STUDIO_FLOW_CTA_STRETCH_COL,
+  STUDIO_FLOW_QUEUE_ROW,
+  STUDIO_FLOW_QUEUE_ROW_SELECTED,
+  StudioFlowAsideLayout,
+  StudioFlowCtaRow,
+  StudioFlowDuplicatePrompt,
+  StudioFlowRailHeader,
+  StudioFlowRailToolbar,
+} from '@/components/tools/studio/studio-flow-chrome';
+import { StudioScrollArea } from '@/components/tools/studio/studio-ui';
+import { useWorkspaceConversionFlow } from '@/components/tools/use-workspace-conversion-flow';
 
 interface DocumentConverterProps {
   mode: ConversionMode;
@@ -182,6 +202,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queueListScrollRef = useRef<HTMLDivElement>(null);
   const [queueScrollbarPadPx, setQueueScrollbarPadPx] = useState(0);
+  const [focusedFileId, setFocusedFileId] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     if (!isConverterSessionReady()) return;
@@ -645,15 +666,12 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const downloadPrimary = allConvertedSuccessfully && !isConverting;
   const hasConvertedOutput = convertedItems.length > 0;
   const downloadReady = hasConvertedOutput && !isConverting;
-  const ctaFlexLayout =
-    'flex min-h-12 w-full min-w-0 select-none items-center justify-center gap-2 rounded-sm box-border px-4 py-3 text-center text-xs font-semibold leading-snug';
-
-  const primaryCtaClass = `${ctaFlexLayout} ${config.primaryButtonClass} transition-opacity disabled:cursor-not-allowed disabled:opacity-45`;
-  const secondaryCtaClass =
-    `${ctaFlexLayout} ${WORKSPACE_SECONDARY_SURFACE} disabled:cursor-not-allowed disabled:opacity-45`;
-  /** Disabled download slot: own surface so it is not overridden by secondaryCtaClass border/bg. */
-  const downloadIdleCtaClass =
-    `${ctaFlexLayout} border border-dashed border-border/80 bg-card/30 text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100`;
+  const primaryCtaClass = `flex w-full ${WORKSPACE_CTA_PRIMARY}`;
+  const secondaryCtaClass = `flex w-full ${WORKSPACE_CTA_SECONDARY}`;
+  const downloadIdleCtaClass = `flex w-full ${WORKSPACE_CTA_IDLE}`;
+  const flowPrimaryCtaClass = `${STUDIO_FLOW_CTA_STRETCH_COL} ${WORKSPACE_CTA_PRIMARY}`;
+  const flowSecondaryCtaClass = `${STUDIO_FLOW_CTA_STRETCH_COL} ${WORKSPACE_CTA_SECONDARY}`;
+  const flowDownloadIdleCtaClass = `${STUDIO_FLOW_CTA_STRETCH_COL} ${WORKSPACE_CTA_IDLE}`;
 
   const handleDownloadSingle = useCallback((file: ConvertedDocument) => {
     reportConverterMetric({ event: 'download', mode, count: 1 });
@@ -692,17 +710,124 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }, [config.zipName, convertedItems, handleDownloadSingle, mode]);
 
+  const flowFiles = useMemo(
+    () =>
+      items.map((item) => ({
+        id: item.id,
+        file: item.file,
+        status:
+          item.status === 'converted'
+            ? 'done'
+            : item.status === 'converting'
+              ? 'processing'
+              : item.status === 'failed'
+                ? 'failed'
+                : 'ready',
+        message: item.message,
+        outputs: item.output
+          ? [{ name: item.output.name, blob: item.output.blob }]
+          : undefined,
+      })),
+    [items]
+  );
+
+  const openFilePicker = useCallback(() => {
+    inputRef.current?.click();
+  }, []);
+
+  const { flowActive, stage: flowStage, showPick, showStudio, showOutput } =
+    useWorkspaceConversionFlow({
+      files: flowFiles,
+      allDone: allConvertedSuccessfully,
+      hasOutputs: convertedItems.length > 0,
+      busy: isConverting,
+      outputLabel: config.outputLabel,
+      zipName: config.zipName,
+      isBulkDownload: convertedItems.length > 1,
+      onDownloadAll: handleDownloadAll,
+      onDownloadFile: (output) =>
+        handleDownloadSingle({
+          name: output.name,
+          blob: output.blob,
+          originalName: output.name,
+        }),
+      onReset: handleClear,
+      allowAddMoreFiles: true,
+      onOpenFilePicker: openFilePicker,
+      duplicatePrompt: duplicatePrompt ? { message: duplicatePrompt.message } : null,
+      onSkipDuplicates: handleSkipDuplicates,
+      onAddDuplicates: handleAddDuplicates,
+    });
+
+  const inFlowStudio = flowActive && flowStage === 'studio';
+
+  useEffect(() => {
+    if (!inFlowStudio) return;
+    if (!items.length) {
+      setFocusedFileId(null);
+      return;
+    }
+    if (!focusedFileId || !items.some((item) => item.id === focusedFileId)) {
+      setFocusedFileId(items[0].id);
+    }
+  }, [items, focusedFileId, inFlowStudio]);
+
+  const renderDropZone = !flowActive || showPick;
+  const renderStudioBlock = flowActive ? items.length > 0 && !showPick : items.length > 0;
+  const showFlowPickChrome = !inFlowStudio;
+  const isFlowStudioView = inFlowStudio;
+
+  if (showOutput) {
+    return (
+      <input
+        ref={inputRef}
+        type="file"
+        accept={config.accept}
+        multiple
+        onChange={handleInputChange}
+        className="hidden"
+        disabled={isConverting}
+        aria-hidden
+      />
+    );
+  }
+
   return (
-    <div className="w-full space-y-4">
+    <div
+      className={clsx(
+        'w-full',
+        flowActive && 'flex h-full min-h-0 flex-col',
+        inFlowStudio && 'min-h-0 overflow-hidden',
+        !flowActive && 'space-y-4'
+      )}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept={config.accept}
+        multiple
+        onChange={handleInputChange}
+        className="hidden"
+        disabled={busy}
+        aria-hidden
+      />
+      {renderDropZone ? (
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={spring}
+        className={clsx(flowActive && showPick && 'flex min-h-0 flex-1 flex-col')}
       >
         <div
-          className={`${config.cardClass} rounded-sm p-7 sm:p-8 transition-all duration-300 ${
-            dragOver ? config.dragClass : ''
-          } ${busy ? 'cursor-default opacity-85' : 'cursor-pointer'}`}
+          className={clsx(
+            `${config.cardClass} rounded-sm transition-all duration-300`,
+            flowActive &&
+              flowStage === 'pick' &&
+              'conversion-flow-drop-target flex min-h-0 flex-1 flex-col justify-center border border-[hsl(var(--brand-copper)/0.14)] bg-black/30 p-6 sm:p-8',
+            (!flowActive || flowStage !== 'pick') && 'p-7 sm:p-8',
+            dragOver && config.dragClass,
+            isConverting ? 'cursor-default opacity-85' : 'cursor-pointer'
+          )}
           onDragOver={(event) => {
             event.preventDefault();
             startWarmConverter();
@@ -717,15 +842,6 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
             if (!busy) inputRef.current?.click();
           }}
         >
-          <input
-            ref={inputRef}
-            type="file"
-            accept={config.accept}
-            multiple
-            onChange={handleInputChange}
-            className="hidden"
-            disabled={busy}
-          />
           <div className="flex flex-col items-center gap-5">
             <motion.div
               className={`w-14 h-14 rounded-sm ${config.iconBoxClass} flex items-center justify-center`}
@@ -735,7 +851,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               <HugeiconsIcon icon={Upload04Icon} size={24} strokeWidth={1.5} className={config.iconClass} />
             </motion.div>
             <div className="text-center space-y-1.5">
-              <h2 className="text-base font-semibold text-foreground">{config.title}</h2>
+              <h2 className="text-base font-medium text-foreground">{config.title}</h2>
               <p className="text-xs text-muted-foreground">{config.hint}</p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground">
@@ -750,9 +866,10 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
           </div>
         </div>
       </motion.div>
+      ) : null}
 
       <AnimatePresence>
-        {showTopNoticeRow && (
+        {showTopNoticeRow && !flowActive && (
           <motion.div
             layout
             initial={{ opacity: 0, y: -4 }}
@@ -779,7 +896,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       </AnimatePresence>
 
       <AnimatePresence mode="popLayout">
-        {showQueueStatusRow && (
+        {showQueueStatusRow && showFlowPickChrome && (
           <motion.div
             layout
             initial={{ opacity: 0, y: -4 }}
@@ -831,7 +948,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {duplicatePrompt && (
+        {duplicatePrompt && !isFlowStudioView ? (
           <motion.div
             layout
             initial={{ opacity: 0, y: 6 }}
@@ -840,53 +957,292 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
             transition={chipMotion}
             className="flex justify-center px-2 py-0.5"
           >
-            <div
-              className={`flex w-full max-w-2xl flex-wrap items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm backdrop-blur-md sm:flex-nowrap sm:gap-2.5 ${config.chipClass}`}
-            >
-              <p className="min-w-0 flex-1 leading-snug">{duplicatePrompt.message}</p>
-              <div className="flex shrink-0 gap-1.5">
-                <button
-                  type="button"
-                  onClick={handleSkipDuplicates}
-                  className="rounded-full border border-border/70 bg-card/40 px-3 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-card/55"
-                >
-                  Skip
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddDuplicates}
-                  className={`rounded-full ${config.primaryButtonClass} px-3 py-1 text-[11px] font-medium transition-opacity`}
-                >
-                  Add again
-                </button>
-              </div>
-            </div>
+            <StudioFlowDuplicatePrompt
+              className="max-w-2xl"
+              message={duplicatePrompt.message}
+              onSkip={handleSkipDuplicates}
+              onAddAgain={handleAddDuplicates}
+            />
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
 
-      {items.length > 0 && (
+      {renderStudioBlock ? (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={spring}
-          className="flex flex-col gap-3 rounded-sm border border-[hsl(var(--brand-copper)/0.18)] bg-card/40 p-5 sm:p-6"
+          className={clsx(
+            'relative z-0 flex min-h-0 w-full flex-col',
+            isFlowStudioView
+              ? 'h-full min-h-0 flex-1 gap-0 overflow-hidden bg-transparent p-0'
+              : clsx(
+                  'gap-3 rounded-sm border border-[hsl(var(--brand-copper)/0.18)] bg-black/30 p-5 sm:p-6',
+                  flowActive && 'h-full min-h-0 flex-1'
+                )
+          )}
         >
+          {isFlowStudioView ? (
+            <ConversionFlowStudioGrid
+              preview={
+                <FlowBatchPreview
+                  title="File preview"
+                  topBanner={
+                    duplicatePrompt ? (
+                      <StudioFlowDuplicatePrompt
+                        message={duplicatePrompt.message}
+                        onSkip={handleSkipDuplicates}
+                        onAddAgain={handleAddDuplicates}
+                      />
+                    ) : undefined
+                  }
+                  items={items.map((item, index) => ({
+                    id: item.id,
+                    name: item.file.name,
+                    index,
+                    meta: formatBytes(item.file.size),
+                  }))}
+                  iconBoxClass={config.iconBoxClass}
+                  iconClass={config.iconClass}
+                  showIndex={items.length > 1}
+                  selectedId={focusedFileId}
+                  onSelect={setFocusedFileId}
+                />
+              }
+              aside={
+                <StudioFlowAsideLayout
+                  header={
+                    <StudioFlowRailHeader
+                      meta={
+                        <>
+                          {items.length} / {MAX_CONVERSION_BATCH_FILES} files · {formatBytes(totalBytes)}
+                        </>
+                      }
+                      actions={
+                        <StudioFlowRailToolbar>
+                          <button
+                            type="button"
+                            onClick={() => inputRef.current?.click()}
+                            disabled={busy || items.length >= MAX_CONVERSION_BATCH_FILES}
+                            className={WORKSPACE_TOOLBAR_BTN}
+                          >
+                            <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
+                            Add files
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleClear}
+                            disabled={busy}
+                            className={WORKSPACE_TOOLBAR_BTN}
+                          >
+                            <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
+                            Clear all
+                          </button>
+                        </StudioFlowRailToolbar>
+                      }
+                    />
+                  }
+                  footer={
+                    <StudioFlowCtaRow>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (allConvertedSuccessfully) {
+                            handleClear();
+                          } else {
+                            void handleConvert();
+                          }
+                        }}
+                        disabled={allConvertedSuccessfully ? busy : isConverting || !canConvert}
+                        className={downloadPrimary ? flowSecondaryCtaClass : flowPrimaryCtaClass}
+                      >
+                        <HugeiconsIcon
+                          icon={isConverting || allConvertedSuccessfully ? RefreshIcon : File01Icon}
+                          size={15}
+                          strokeWidth={2}
+                          className={`shrink-0 ${isConverting ? 'animate-spin' : ''}`}
+                        />
+                        {isConverting
+                          ? 'Converting...'
+                          : pendingCount > 0
+                            ? `Convert ${pendingCount} ${pendingCount === 1 ? 'file' : 'files'}`
+                            : allConvertedSuccessfully
+                              ? 'Start again'
+                              : 'All files converted'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDownloadAll()}
+                        disabled={!downloadReady}
+                        aria-busy={isConverting}
+                        className={
+                          downloadPrimary
+                            ? flowPrimaryCtaClass
+                            : downloadReady
+                              ? flowSecondaryCtaClass
+                              : flowDownloadIdleCtaClass
+                        }
+                      >
+                        {downloadReady ? (
+                          <HugeiconsIcon
+                            icon={isBulkDownload ? Archive01Icon : Download01Icon}
+                            size={15}
+                            strokeWidth={2}
+                            className="shrink-0"
+                          />
+                        ) : isConverting ? (
+                          <HugeiconsIcon
+                            icon={RefreshIcon}
+                            size={15}
+                            strokeWidth={2}
+                            className="shrink-0 animate-spin opacity-70"
+                          />
+                        ) : (
+                          <HugeiconsIcon icon={File01Icon} size={15} strokeWidth={2} className="shrink-0 opacity-60" />
+                        )}
+                        {isConverting
+                          ? `Your ${config.outputLabel} will appear here shortly`
+                          : hasConvertedOutput
+                            ? isBulkDownload
+                              ? 'Download converted ZIP'
+                              : `Download ${config.outputLabel}`
+                            : downloadSecondaryIdleHint}
+                      </button>
+                    </StudioFlowCtaRow>
+                  }
+                >
+                  <StudioScrollArea
+                    measureKey={items.length}
+                    className="min-h-0 flex-1"
+                    style={
+                      {
+                        '--queue-scrollbar-thumb': config.queueScrollbarThumb,
+                        '--queue-scrollbar-thumb-hover': config.queueScrollbarThumbHover,
+                      } as CSSProperties
+                    }
+                  >
+                    <div className="flex w-full min-w-0 flex-col gap-2 py-0.5">
+                      {items.map((item) => (
+                        <div
+                          key={item.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setFocusedFileId(item.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setFocusedFileId(item.id);
+                            }
+                          }}
+                          className={clsx(
+                            STUDIO_FLOW_QUEUE_ROW,
+                            'cursor-pointer text-left',
+                            focusedFileId === item.id && STUDIO_FLOW_QUEUE_ROW_SELECTED
+                          )}
+                        >
+                            <div className="flex w-full items-center gap-2.5">
+                              <div
+                                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${config.iconBoxClass}`}
+                              >
+                                <HugeiconsIcon
+                                  icon={
+                                    item.status === 'converted'
+                                      ? CheckmarkCircle01Icon
+                                      : item.status === 'converting'
+                                        ? RefreshIcon
+                                        : File01Icon
+                                  }
+                                  size={22}
+                                  strokeWidth={1.7}
+                                  className={`${config.iconClass} ${item.status === 'converting' ? 'animate-spin' : ''}`}
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p
+                                      className="truncate text-xs font-medium leading-tight text-foreground"
+                                      title={item.file.name}
+                                    >
+                                      {item.file.name}
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                                      {formatBytes(item.file.size)} · {statusLabel(item)}
+                                    </p>
+                                  </div>
+                                  <div className="flex shrink-0 items-center gap-1">
+                                    {item.output ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDownloadSingle(item.output as ConvertedDocument);
+                                        }}
+                                        className={`inline-flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium ${config.linkClass}`}
+                                      >
+                                        <HugeiconsIcon icon={Download01Icon} size={12} strokeWidth={2} />
+                                        Download
+                                      </button>
+                                    ) : null}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRemove(item.id);
+                                      }}
+                                      disabled={busy}
+                                      aria-label={`Remove ${item.file.name}`}
+                                      className="inline-flex items-center justify-center rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                                    >
+                                      <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
+                                    </button>
+                                  </div>
+                                </div>
+                                {item.status === 'converting' ? (
+                                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
+                                    <motion.div
+                                      className={`h-full rounded-full bg-gradient-to-r ${config.progressClass}`}
+                                      animate={{ width: `${Math.min(item.progress, 100)}%` }}
+                                      transition={rowExpand}
+                                    />
+                                  </div>
+                                ) : null}
+                                {item.error ? (
+                                  <p className="mt-2 text-[11px] leading-relaxed text-rose-600">{item.error}</p>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </StudioScrollArea>
+                </StudioFlowAsideLayout>
+              }
+            />
+          ) : (
           <div className="flex w-full flex-col gap-3 px-1">
-            <div className="flex w-full flex-col gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
+            <div
+              className={clsx(
+                'flex w-full shrink-0 flex-wrap items-center gap-2 border-b border-[hsl(var(--brand-copper)/0.12)] pb-3',
+                'flex-col gap-3 border-0 pb-0 text-center sm:flex-row sm:items-start sm:justify-between sm:border-b sm:border-[hsl(var(--brand-copper)/0.12)] sm:pb-3 sm:text-left'
+              )}
+            >
               <div className="min-w-0 w-full sm:w-auto sm:text-left">
-                <h3 className="text-sm font-semibold text-foreground">{config.queuedTitle}</h3>
-                <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-                  Queue: {items.length} of {MAX_CONVERSION_BATCH_FILES} files. Selected total: {formatBytes(totalBytes)} /{' '}
-                  {getDynamicBatchLimitLabel(items.length)} allowed for these {selectedFilesLabel(items.length)}.
+                <h3 className="font-mono text-xs font-medium uppercase tracking-wide text-foreground">
+                  {config.queuedTitle}
+                </h3>
+                <p className="mt-1 font-mono text-[10px] leading-relaxed text-muted-foreground">
+                  Queue: {items.length} of {MAX_CONVERSION_BATCH_FILES} files. Selected total:{' '}
+                  {formatBytes(totalBytes)} / {getDynamicBatchLimitLabel(items.length)} allowed for these{' '}
+                  {selectedFilesLabel(items.length)}.
                 </p>
               </div>
-              <div className="flex shrink-0 flex-wrap items-center justify-center gap-2">
+              <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 sm:justify-end">
                 <button
                   type="button"
                   onClick={() => inputRef.current?.click()}
                   disabled={busy || items.length >= MAX_CONVERSION_BATCH_FILES}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-sm border border-border/70 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:border-[hsl(var(--brand-copper)/0.3)] hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={WORKSPACE_TOOLBAR_BTN}
                 >
                   <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
                   Add files
@@ -895,7 +1251,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   type="button"
                   onClick={handleClear}
                   disabled={busy}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-sm border border-border/70 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:border-[hsl(var(--brand-copper)/0.3)] hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={WORKSPACE_TOOLBAR_BTN}
                 >
                   <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
                   Clear all
@@ -1067,8 +1423,9 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
             </div>
             </div>
           </div>
+          )}
         </motion.div>
-      )}
+      ) : null}
     </div>
   );
 }

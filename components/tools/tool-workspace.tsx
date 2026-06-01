@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
 } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -33,12 +34,30 @@ import {
 import { getCachedPerfProfile, getMotionBudget } from '@/lib/perf-profile';
 import { ToolIcon } from '@/components/tools/tool-icon';
 import { PageGrid, type PageThumb } from '@/components/tools/page-grid';
+import { useWorkspaceConversionFlow } from '@/components/tools/use-workspace-conversion-flow';
 import type { ToolDefinition } from '@/lib/tools';
 import { TONE_STYLES, type ToneKey } from '@/components/tools/tone-styles';
 import { MobileStudioRail } from '@/components/tools/studio/mobile-studio-rail';
-import { StudioFabStack } from '@/components/tools/studio/studio-ui';
+import { StudioFabStack, StudioScrollArea } from '@/components/tools/studio/studio-ui';
+import {
+  STUDIO_FLOW_QUEUE_ROW,
+  STUDIO_FLOW_QUEUE_ROW_SELECTED,
+  StudioFlowCtaRow,
+  StudioFlowDuplicatePrompt,
+  StudioFlowRailHeader,
+  StudioFlowRailToolbar,
+  STUDIO_FLOW_CTA_STRETCH_COL,
+} from '@/components/tools/studio/studio-flow-chrome';
 import { DefaultBatchStudioSurface } from '@/components/tools/studio/default-batch-studio-surface';
+import { StudioFlowAsideInfo } from '@/components/tools/studio/studio-flow-aside-info';
+import { STUDIO_DESKTOP_GRID, STUDIO_FLOW_GRID } from '@/components/tools/studio/studio-theme';
 import { probePdfPageCount, renderPdfPageThumbnails, revokePdfThumbUrls } from '@/lib/client-previews';
+import {
+  WORKSPACE_CTA_BASE,
+  WORKSPACE_CTA_IDLE,
+  WORKSPACE_CTA_SECONDARY,
+  WORKSPACE_TOOLBAR_BTN,
+} from '@/lib/site-design';
 
 type Status = 'idle' | 'validating' | 'ready' | 'processing' | 'done' | 'failed';
 
@@ -169,6 +188,15 @@ export type WorkspaceSurfaceApi = {
   downloadOutput: (output: { name: string; blob: Blob }) => void;
   /** Clears outputs and returns finished files to ready so settings can change and the tool can run again. */
   prepareForResplit: () => void;
+  /** Full-viewport conversion flow studio (70/30 shell). */
+  inFlowStudio: boolean;
+  /** Highlighted file in flow preview (synced with queue selection). */
+  focusedFileId: string | null;
+  setFocusedFileId: (id: string) => void;
+  /** Add / clear queue actions — rendered in flow preview (not the aside rail). */
+  flowQueueToolbar?: React.ReactNode;
+  /** Duplicate-file prompt — flow preview column (below preview header when using {@link FlowBatchPreview}). */
+  flowDuplicateBanner?: React.ReactNode;
 };
 
 type ToolWorkspaceProps = {
@@ -208,12 +236,9 @@ const DEFAULT_NOTICE_DURATION = 3500;
 /** File list gets its own scroll region (and themed scrollbar) after this many files. */
 const QUEUE_SCROLL_AFTER_FILE_COUNT = 4;
 
-const CTA_FLEX_LAYOUT =
-  'inline-flex min-h-12 min-w-0 flex-1 basis-0 select-none items-center justify-center gap-2 self-stretch rounded-xl box-border px-4 py-3 text-center text-xs font-semibold leading-snug';
-
 /** Full-width stacked CTAs in the phone settings rail (no dashed / nested card chrome). */
 const MOBILE_RAIL_CTA_BASE =
-  'flex w-full min-h-11 select-none items-center justify-center gap-2 rounded-full px-5 text-center text-xs font-semibold leading-snug';
+  'flex w-full min-h-11 select-none items-center justify-center gap-2 rounded-sm px-5 text-center font-mono text-xs font-medium uppercase tracking-[0.08em] leading-snug';
 
 function statusLabel(file: WorkspaceFile) {
   if (file.status === 'done') return 'Done';
@@ -305,6 +330,7 @@ export function ToolWorkspace({
   const [dragOver, setDragOver] = useState(false);
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
+  const [focusedFileId, setFocusedFileId] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [duplicatePrompt, setDuplicatePrompt] = useState<DuplicatePrompt | null>(null);
   const [toast, setToast] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
@@ -1203,6 +1229,67 @@ export function ToolWorkspace({
     );
   }, []);
 
+  const handleDownload = useCallback(async () => {
+    if (!outputs.length) return;
+    if (outputs.length === 1) {
+      handleDownloadSingle(outputs[0]);
+      return;
+    }
+
+    const zip = new JSZip();
+    outputs.forEach((out) => zip.file(out.name, out.blob));
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = actions.zipName || 'outputs.zip';
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, [actions.zipName, handleDownloadSingle, outputs]);
+
+  const { flowActive, stage: flowStage, showPick, showStudio, showOutput } =
+    useWorkspaceConversionFlow({
+      files,
+      allDone,
+      hasOutputs,
+      busy,
+      outputLabel: actions.zipName?.replace(/\.zip$/i, '') ?? config.title,
+      zipName: actions.zipName,
+      isBulkDownload,
+      onDownloadAll: handleDownload,
+      onDownloadFile: handleDownloadSingle,
+      onReset: handleReset,
+      allowAddMoreFiles: config.allowMultiple,
+      onOpenFilePicker: openFilePicker,
+      duplicatePrompt: duplicatePrompt ? { message: duplicatePrompt.message } : null,
+      onSkipDuplicates: handleSkipDuplicates,
+      onAddDuplicates: handleAddDuplicates,
+    });
+
+  const inFlowStudio = flowActive && flowStage === 'studio';
+
+  useEffect(() => {
+    if (!inFlowStudio) return;
+    if (!files.length) {
+      setFocusedFileId(null);
+      return;
+    }
+    if (!focusedFileId || !files.some((f) => f.id === focusedFileId)) {
+      setFocusedFileId(files[0].id);
+    }
+  }, [files, focusedFileId, inFlowStudio]);
+
+  const flowDuplicateBanner = useMemo(() => {
+    if (!inFlowStudio || !duplicatePrompt) return undefined;
+    return (
+      <StudioFlowDuplicatePrompt
+        message={duplicatePrompt.message}
+        onSkip={handleSkipDuplicates}
+        onAddAgain={handleAddDuplicates}
+      />
+    );
+  }, [inFlowStudio, duplicatePrompt, handleSkipDuplicates, handleAddDuplicates]);
+
   const surfaceApi: WorkspaceSurfaceApi = useMemo(
     () => ({
       files,
@@ -1228,6 +1315,10 @@ export function ToolWorkspace({
       allDone,
       downloadOutput: handleDownloadSingle,
       prepareForResplit,
+      inFlowStudio,
+      focusedFileId: inFlowStudio ? focusedFileId : null,
+      setFocusedFileId,
+      flowDuplicateBanner,
     }),
     [
       files,
@@ -1251,6 +1342,10 @@ export function ToolWorkspace({
       allDone,
       handleDownloadSingle,
       prepareForResplit,
+      inFlowStudio,
+      focusedFileId,
+      setFocusedFileId,
+      flowDuplicateBanner,
     ]
   );
 
@@ -1270,27 +1365,14 @@ export function ToolWorkspace({
     onPageGridStateChange?.(surfaceApiRef.current);
   }, [gridByFileId, onPageGridStateChange]);
 
-  const handleDownload = useCallback(async () => {
-    if (!outputs.length) return;
-    if (outputs.length === 1) {
-      handleDownloadSingle(outputs[0]);
-      return;
-    }
+  const renderDropZone = !flowActive || showPick;
+  const renderStudioBlock = flowActive ? hasFiles && !showPick : hasFiles;
+  const showFlowPickChrome = !inFlowStudio;
 
-    const zip = new JSZip();
-    outputs.forEach((out) => zip.file(out.name, out.blob));
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = actions.zipName || 'outputs.zip';
-    anchor.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, [actions.zipName, handleDownloadSingle, outputs]);
-
-  const primaryCtaClass = `${CTA_FLEX_LAYOUT} ${config.primaryButtonClass} transition-opacity disabled:cursor-not-allowed disabled:opacity-45`;
-  const secondaryCtaClass = `${CTA_FLEX_LAYOUT} border border-border/40 bg-card/40 text-foreground transition-colors hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-45`;
-  const downloadIdleCtaClass = `${CTA_FLEX_LAYOUT} border border-dashed border-slate-300/75 bg-slate-100 text-slate-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-100`;
+  const ctaStretch = inFlowStudio ? STUDIO_FLOW_CTA_STRETCH_COL : 'flex-1 basis-0 self-stretch';
+  const primaryCtaClass = `${ctaStretch} ${WORKSPACE_CTA_BASE} ${config.primaryButtonClass}`;
+  const secondaryCtaClass = `${ctaStretch} ${WORKSPACE_CTA_SECONDARY}`;
+  const downloadIdleCtaClass = `${ctaStretch} ${WORKSPACE_CTA_IDLE}`;
 
   const renderResultChips = (item: WorkspaceFile) => {
     const chips: string[] = [];
@@ -1363,7 +1445,7 @@ export function ToolWorkspace({
   const renderQueueListScroll = () => (
     <div className="w-full min-w-0 shrink-0">
       <div
-        className="flex w-full min-w-0 flex-col gap-2 py-0.5"
+        className={clsx('flex w-full min-w-0 flex-col py-0.5', isFlowStudio ? 'gap-2' : 'gap-2')}
         role="list"
         aria-label="Selected files"
       >
@@ -1388,13 +1470,23 @@ export function ToolWorkspace({
               }}
               onDrop={() => isReorderable && handleReorder(item.id)}
               onDragEnd={() => setDraggedFileId(null)}
+              onClick={isFlowStudio ? () => setFocusedFileId(item.id) : undefined}
               className={clsx(
-                'box-border min-h-12 w-full min-w-0 overflow-hidden px-1 py-2 transition',
-                studioChrome
-                  ? 'border-b border-border/25 bg-transparent last:border-b-0 focus-within:brightness-110'
-                  : 'rounded-sm border border-[hsl(var(--brand-copper)/0.12)] bg-black/25 px-2.5 focus-within:ring-2 focus-within:ring-[hsl(var(--brand-copper)/0.35)]',
-                draggedFileId === item.id && 'opacity-50',
-                isReorderable && 'cursor-grab active:cursor-grabbing'
+                'box-border min-h-12 w-full min-w-0 overflow-hidden transition',
+                isFlowStudio
+                  ? clsx(
+                      STUDIO_FLOW_QUEUE_ROW,
+                      focusedFileId === item.id && STUDIO_FLOW_QUEUE_ROW_SELECTED,
+                      isReorderable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+                    )
+                  : clsx(
+                      'px-1 py-2',
+                      studioChrome
+                        ? 'border-b border-border/25 bg-transparent last:border-b-0 focus-within:brightness-110'
+                        : 'rounded-sm border border-[hsl(var(--brand-copper)/0.12)] bg-black/25 px-2.5 focus-within:ring-2 focus-within:ring-[hsl(var(--brand-copper)/0.35)]',
+                      isReorderable && 'cursor-grab active:cursor-grabbing'
+                    ),
+                draggedFileId === item.id && 'opacity-50'
               )}
             >
               <div className="flex w-full items-center gap-2.5">
@@ -1550,12 +1642,12 @@ export function ToolWorkspace({
   );
 
   const renderQueueToolbar = () => (
-    <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-2">
+    <StudioFlowRailToolbar>
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={busy || files.length >= effectiveBatchMax}
-        className="inline-flex items-center justify-center gap-1.5 rounded-sm border border-border/70 bg-[#0a0a0a] px-3 py-2 font-mono text-xs font-medium uppercase tracking-wide text-foreground transition-colors hover:bg-black/40 disabled:cursor-not-allowed disabled:opacity-50"
+        className={WORKSPACE_TOOLBAR_BTN}
       >
         <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
         Add files
@@ -1564,22 +1656,22 @@ export function ToolWorkspace({
         type="button"
         onClick={handleReset}
         disabled={busy}
-        className="inline-flex items-center justify-center gap-1.5 rounded-sm border border-border/70 bg-[#0a0a0a] px-3 py-2 font-mono text-xs font-medium uppercase tracking-wide text-foreground transition-colors hover:bg-black/40 disabled:cursor-not-allowed disabled:opacity-50"
+        className={WORKSPACE_TOOLBAR_BTN}
       >
         <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
         Clear all
       </button>
-    </div>
+    </StudioFlowRailToolbar>
   );
 
   const renderCtaRow = (opts?: { mobileRail?: boolean }) => {
     const mobile = opts?.mobileRail === true;
     const mobilePrimary = `${MOBILE_RAIL_CTA_BASE} ${config.primaryButtonClass} disabled:opacity-45`;
-    const mobileSecondary = `${MOBILE_RAIL_CTA_BASE} border border-border/70 bg-[#0a0a0a] text-foreground hover:bg-black/40 disabled:opacity-45`;
+    const mobileSecondary = `${MOBILE_RAIL_CTA_BASE} ${WORKSPACE_CTA_SECONDARY} disabled:opacity-45`;
     const mobileIdle = `${MOBILE_RAIL_CTA_BASE} bg-muted/35 text-muted-foreground disabled:opacity-100`;
 
-    return (
-    <div className={clsx('flex w-full min-w-0 flex-col', mobile ? 'mobile-rail-cta gap-2.5' : 'gap-2')}>
+    const ctaRow = mobile ? (
+      <div className="mobile-rail-cta flex w-full min-w-0 flex-col gap-2.5">
       <button
         type="button"
         onClick={() => {
@@ -1590,15 +1682,7 @@ export function ToolWorkspace({
           }
         }}
         disabled={allDone ? busy : busy || pendingCount === 0}
-        className={
-          mobile
-            ? downloadPrimary
-              ? mobileSecondary
-              : mobilePrimary
-            : `${downloadPrimary ? secondaryCtaClass : primaryCtaClass} ${
-                downloadPrimary ? 'order-2 sm:order-2' : 'order-1 sm:order-1'
-              }`
-        }
+        className={downloadPrimary ? mobileSecondary : mobilePrimary}
       >
         <HugeiconsIcon
           icon={busy || allDone ? RefreshIcon : File01Icon}
@@ -1618,19 +1702,7 @@ export function ToolWorkspace({
         disabled={!downloadReady}
         aria-busy={busy}
         className={
-          mobile
-            ? downloadPrimary
-              ? mobilePrimary
-              : downloadReady
-                ? mobileSecondary
-                : mobileIdle
-            : `${
-                downloadPrimary
-                  ? primaryCtaClass
-                  : downloadReady
-                    ? secondaryCtaClass
-                    : downloadIdleCtaClass
-              } ${downloadPrimary ? 'order-1 sm:order-1' : 'order-2 sm:order-2'}`
+          downloadPrimary ? mobilePrimary : downloadReady ? mobileSecondary : mobileIdle
         }
       >
         {downloadReady ? (
@@ -1659,21 +1731,133 @@ export function ToolWorkspace({
             : 'Almost there · hit ' + actionLabel}
       </button>
     </div>
+    ) : (
+      <StudioFlowCtaRow>
+      <button
+        type="button"
+        onClick={() => {
+          if (allDone) {
+            handleReset();
+          } else {
+            void handleProcess();
+          }
+        }}
+        disabled={allDone ? busy : busy || pendingCount === 0}
+        className={
+          downloadPrimary ? secondaryCtaClass : primaryCtaClass
+        }
+      >
+        <HugeiconsIcon
+          icon={busy || allDone ? RefreshIcon : File01Icon}
+          size={15}
+          strokeWidth={2}
+          className={clsx('shrink-0', busy && 'animate-spin')}
+        />
+        {busy
+          ? 'Processing…'
+          : allDone
+            ? 'Start again'
+            : `${actionLabel} ${pendingCount} ${pendingCount === 1 ? 'file' : 'files'}`}
+      </button>
+      <button
+        type="button"
+        onClick={() => void handleDownload()}
+        disabled={!downloadReady}
+        aria-busy={busy}
+        className={
+          downloadPrimary
+            ? primaryCtaClass
+            : downloadReady
+              ? secondaryCtaClass
+              : downloadIdleCtaClass
+        }
+      >
+        {downloadReady ? (
+          <HugeiconsIcon
+            icon={isBulkDownload ? Archive01Icon : Download01Icon}
+            size={15}
+            strokeWidth={2}
+            className="shrink-0"
+          />
+        ) : busy ? (
+          <HugeiconsIcon
+            icon={RefreshIcon}
+            size={15}
+            strokeWidth={2}
+            className="shrink-0 animate-spin opacity-70"
+          />
+        ) : (
+          <HugeiconsIcon icon={File01Icon} size={15} strokeWidth={2} className="shrink-0 opacity-60" />
+        )}
+        {busy
+          ? 'Your output will appear here shortly'
+          : hasOutputs
+            ? isBulkDownload
+              ? 'Download as ZIP'
+              : 'Download result'
+            : 'Almost there · hit ' + actionLabel}
+      </button>
+      </StudioFlowCtaRow>
     );
+
+    return ctaRow;
   };
 
-  const studioChrome = Boolean(studioSurface);
+  const studioChrome = Boolean(studioSurface) || inFlowStudio;
+  const isFlowStudio = inFlowStudio;
+  const slimFlowAside = isFlowStudio && Boolean(footer);
+
+  if (showOutput) {
+    return (
+      <input
+        ref={inputRef}
+        type="file"
+        accept={config.accept}
+        multiple={config.allowMultiple}
+        onChange={handleInputChange}
+        className="hidden"
+        disabled={busy}
+        aria-hidden
+      />
+    );
+  }
 
   return (
     <div
-      className={clsx('tool-workspace w-full space-y-4', studioChrome && 'tool-workspace--studio')}
+      className={clsx(
+        'tool-workspace w-full',
+        flowActive && 'flex h-full min-h-0 flex-col',
+        !flowActive && 'space-y-4',
+        studioChrome && 'tool-workspace--studio',
+        isFlowStudio && 'tool-workspace--flow-studio'
+      )}
       data-tone={studioChrome && config.tone ? config.tone : undefined}
-      {...(studioChrome && hasFiles ? { 'data-studio-queued': 'true' } : {})}
+      {...(inFlowStudio && hasFiles ? { 'data-studio-queued': 'true' } : {})}
     >
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={config.accept}
+        multiple={config.allowMultiple}
+        onChange={handleInputChange}
+        className="hidden"
+        disabled={busy}
+        aria-hidden
+      />
+      {renderDropZone ? (
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={spring}
+        className={clsx(flowActive && showPick && 'flex min-h-0 flex-1 flex-col')}
+      >
         <div
           className={clsx(
-            `${config.cardClass} rounded-sm p-6 sm:p-7 transition-all duration-300`,
+            `${config.cardClass} rounded-sm transition-all duration-300`,
+            flowActive &&
+              flowStage === 'pick' &&
+              'conversion-flow-drop-target flex min-h-0 flex-1 flex-col justify-center border border-[hsl(var(--brand-copper)/0.14)] bg-black/30 p-6 sm:p-8',
+            (!flowActive || flowStage !== 'pick') && 'p-6 sm:p-7',
             dragOver && config.dragClass,
             busy ? 'cursor-default opacity-85' : 'cursor-pointer'
           )}
@@ -1696,15 +1880,6 @@ export function ToolWorkspace({
             if (!busy) inputRef.current?.click();
           }}
         >
-          <input
-            ref={inputRef}
-            type="file"
-            accept={config.accept}
-            multiple={config.allowMultiple}
-            onChange={handleInputChange}
-            className="hidden"
-            disabled={busy}
-          />
           <div className="flex flex-col items-center gap-5">
             <motion.div
               className={`flex h-14 w-14 items-center justify-center rounded-sm ${config.iconBoxClass}`}
@@ -1718,7 +1893,7 @@ export function ToolWorkspace({
               )}
             </motion.div>
             <div className="text-center space-y-1.5">
-              <h2 className="text-base font-semibold text-foreground">{config.title}</h2>
+              <h2 className="text-base font-medium text-foreground">{config.title}</h2>
               <p className="text-xs text-muted-foreground">{config.hint}</p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground">
@@ -1734,6 +1909,7 @@ export function ToolWorkspace({
           </div>
         </div>
       </motion.div>
+      ) : null}
 
       {/* Top notice row: only shown while validating or for non-transient notices, or before the queue exists. */}
       <AnimatePresence>
@@ -1781,7 +1957,7 @@ export function ToolWorkspace({
 
       {/* Single inline chip row: file count, total bytes, privacy. Transient success notice is rendered INLINE in this same row. */}
       <AnimatePresence mode="popLayout">
-        {hasFiles && (
+        {hasFiles && showFlowPickChrome && (
           <motion.div
             layout
             initial={{ opacity: 0, y: -4 }}
@@ -1837,9 +2013,9 @@ export function ToolWorkspace({
         )}
       </AnimatePresence>
 
-      {/* Duplicate-name prompt: Skip / Add again. */}
+      {/* Duplicate-name prompt: Skip / Add again (non–flow-studio only; flow studio renders in preview column). */}
       <AnimatePresence>
-        {duplicatePrompt && (
+        {duplicatePrompt && !isFlowStudio ? (
           <motion.div
             layout
             initial={{ opacity: 0, y: 6 }}
@@ -1848,38 +2024,24 @@ export function ToolWorkspace({
             transition={chipMotion}
             className="flex justify-center px-2 py-0.5"
           >
-            <div
-              className={`flex w-full max-w-2xl flex-wrap items-center gap-2 rounded-sm border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide text-[11px] text-muted-foreground shadow-sm backdrop-blur-md sm:flex-nowrap sm:gap-2.5 ${chipClass}`}
-            >
-              <p className="min-w-0 flex-1 leading-snug">{duplicatePrompt.message}</p>
-              <div className="flex shrink-0 gap-1.5">
-                <button
-                  type="button"
-                  onClick={handleSkipDuplicates}
-                  className="rounded-full border border-border/40 bg-card/40 px-3 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-card/55"
-                >
-                  Skip
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddDuplicates}
-                  className={`rounded-full ${config.primaryButtonClass} px-3 py-1 text-[11px] font-medium transition-opacity`}
-                >
-                  Add again
-                </button>
-              </div>
-            </div>
+            <StudioFlowDuplicatePrompt
+              className="max-w-2xl"
+              message={duplicatePrompt.message}
+              onSkip={handleSkipDuplicates}
+              onAddAgain={handleAddDuplicates}
+            />
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
 
-      {hasFiles && (
+      {renderStudioBlock ? (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={spring}
           className={clsx(
             'relative z-0 flex min-h-0 w-full flex-col overflow-x-visible max-md:pb-safe',
+            flowActive && 'h-full min-h-0 flex-1',
             studioChrome
               ? 'gap-0 bg-transparent p-0'
               : 'gap-3 rounded-sm border border-[hsl(var(--brand-copper)/0.15)] bg-[#0b0b0b] p-5 sm:p-6 max-md:overflow-hidden max-md:p-3'
@@ -1888,23 +2050,27 @@ export function ToolWorkspace({
           <div
             className={clsx(
               'flex min-h-0 w-full flex-col max-md:overflow-x-hidden',
+              isFlowStudio && 'h-full min-h-0 flex-1',
               studioChrome ? 'gap-0' : 'gap-3 px-2 sm:px-3 max-md:px-0'
             )}
           >
             <div
               className={clsx(
-                'grid w-full items-stretch lg:min-h-0 max-md:grid-cols-1 max-md:gap-4',
-                studioChrome
-                  ? 'gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:gap-8 xl:grid-cols-[minmax(0,1.85fr)_360px] xl:gap-10'
-                  : 'gap-5 xl:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)]'
+                'w-full items-stretch max-md:grid-cols-1 max-md:gap-4',
+                isFlowStudio ? `${STUDIO_FLOW_GRID} min-h-0 flex-1` : clsx('grid lg:min-h-0', STUDIO_DESKTOP_GRID),
+                !isFlowStudio && (studioChrome ? 'gap-0 lg:gap-6 xl:gap-8' : 'gap-5 lg:gap-6 xl:gap-8')
               )}
             >
               <div
                 className={clsx(
-                  'mobile-preview-shell relative flex h-full min-h-0 min-w-0 flex-col overflow-x-visible max-md:min-h-[min(58vh,28rem)] max-md:overflow-hidden max-md:pb-14',
-                  studioChrome
-                    ? 'gap-3 py-1 sm:py-2 lg:min-h-[min(32rem,72vh)]'
-                    : 'studio-shell-panel gap-4 rounded-sm border p-4 sm:p-6 max-md:p-3'
+                  'mobile-preview-shell relative flex min-w-0 flex-col',
+                  isFlowStudio
+                    ? 'h-full min-h-0 overflow-hidden border-r border-[hsl(var(--brand-copper)/0.12)] bg-[hsl(0_0%_3.5%/0.65)] p-4 sm:p-5'
+                    : 'h-full min-h-0 overflow-x-visible max-md:min-h-[min(58vh,28rem)] max-md:overflow-hidden max-md:pb-14',
+                  studioChrome &&
+                    !isFlowStudio &&
+                    'gap-3 py-1 sm:py-2 lg:min-h-[min(32rem,72vh)]',
+                  !studioChrome && 'studio-shell-panel gap-4 rounded-sm border p-4 sm:p-6 max-md:p-3'
                 )}
               >
                 {config.allowMultiple ? (
@@ -1918,9 +2084,31 @@ export function ToolWorkspace({
                     primaryButtonClass={config.primaryButtonClass}
                   />
                 ) : null}
-                <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden basis-0 px-px pt-px max-md:basis-auto max-md:min-h-[min(52vh,24rem)]">
+                <div
+                  className={clsx(
+                    'flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden basis-0',
+                    isFlowStudio
+                      ? 'gap-3 overflow-hidden'
+                      : 'max-md:basis-auto max-md:min-h-[min(52vh,24rem)] px-px pt-px'
+                  )}
+                >
+                  {isFlowStudio && flowDuplicateBanner && studioSurface ? flowDuplicateBanner : null}
                   {/* eslint-disable-next-line react-hooks/refs -- false positive: surfaceApi is state snapshot; refs only used when callers invoke picker */}
-                  {studioSurface ? studioSurface(surfaceApi) : <DefaultBatchStudioSurface api={surfaceApi} />}
+                  {studioSurface ? (
+                    studioSurface({
+                      ...surfaceApi,
+                      flowQueueToolbar: isFlowStudio ? renderQueueToolbar() : undefined,
+                      flowDuplicateBanner,
+                    })
+                  ) : (
+                    <DefaultBatchStudioSurface
+                      api={{
+                        ...surfaceApi,
+                        flowQueueToolbar: isFlowStudio ? renderQueueToolbar() : undefined,
+                        flowDuplicateBanner,
+                      }}
+                    />
+                  )}
                 </div>
                 {pageGridPanelVisible ? (
                   <div className="max-h-[min(48vh,24rem)] min-h-0 shrink-0 overflow-x-hidden overflow-y-auto">
@@ -1932,16 +2120,29 @@ export function ToolWorkspace({
               </div>
               <aside
                 className={clsx(
-                  'flex h-full w-full min-h-0 min-w-0 flex-col overflow-visible',
-                  studioChrome
-                    ? 'studio-shell-aside-divider gap-5 py-1 sm:py-2 lg:border-l lg:pl-8'
-                    : 'studio-shell-panel rounded-sm border px-4 py-4 sm:px-5 sm:py-5',
-                  pageGridPanelVisible && 'lg:sticky lg:top-36',
+                  'flex h-full w-full min-h-0 min-w-0 flex-col',
+                  isFlowStudio
+                    ? 'overflow-hidden bg-[hsl(0_0%_2%/0.5)] px-4 py-4 sm:px-5 sm:py-5'
+                    : 'overflow-visible',
+                  studioChrome && !isFlowStudio
+                    ? 'studio-shell-aside-divider gap-5 py-1 sm:py-2 lg:border-l lg:pl-6 xl:pl-8'
+                    : !isFlowStudio && 'studio-shell-panel rounded-sm border px-4 py-4 sm:px-5 sm:py-5',
+                  pageGridPanelVisible && !isFlowStudio && 'lg:sticky lg:top-36',
                   mobileActionsInRail && 'max-md:hidden'
                 )}
               >
-                <div className="flex w-full min-w-0 flex-col gap-5">
-                {config.studioHint ? (
+                <div
+                  className={clsx(
+                    'flex w-full min-w-0 flex-col',
+                    isFlowStudio ? 'h-full min-h-0 gap-4' : 'gap-5'
+                  )}
+                >
+                {config.studioHint && isFlowStudio && !slimFlowAside ? (
+                  <StudioFlowAsideInfo title="How it works">
+                    {config.studioHint}
+                  </StudioFlowAsideInfo>
+                ) : null}
+                {config.studioHint && !slimFlowAside && !isFlowStudio ? (
                   <div
                     className={clsx(
                       'flex min-w-0 shrink-0 gap-2 font-mono text-[11px] leading-relaxed text-muted-foreground',
@@ -1958,37 +2159,89 @@ export function ToolWorkspace({
                     <div className="min-w-0">{config.studioHint}</div>
                   </div>
                 ) : null}
-                <div className="shrink-0 border-b border-border/25 pb-3">
-                  <h2 className="text-center text-sm font-semibold tracking-tight text-foreground sm:text-left">
-                    {queuedTitle}
-                  </h2>
-                  <p className="mt-1.5 text-center text-[11px] leading-relaxed text-muted-foreground sm:text-left">
-                    Queue: {files.length} of {effectiveBatchMax} files. Selected total:{' '}
-                    {formatBytes(totalBytes)}.
-                  </p>
-                </div>
-                <div className={clsx('shrink-0', mobileActionsInRail && !config.allowMultiple && 'max-md:hidden')}>
-                  {renderQueueToolbar()}
-                </div>
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-5">
+                {isFlowStudio ? (
+                  <StudioFlowRailHeader
+                    meta={
+                      <>
+                        {files.length} / {effectiveBatchMax} files · {formatBytes(totalBytes)}
+                      </>
+                    }
+                  />
+                ) : !slimFlowAside ? (
+                  <>
+                    <div className="shrink-0 border-b border-border/25 pb-3">
+                      <h2 className="text-center text-sm font-medium tracking-tight text-foreground sm:text-left">
+                        {queuedTitle}
+                      </h2>
+                      <p className="mt-1.5 text-center text-[11px] leading-relaxed text-muted-foreground sm:text-left">
+                        Queue: {files.length} of {effectiveBatchMax} files. Selected total:{' '}
+                        {formatBytes(totalBytes)}.
+                      </p>
+                    </div>
+                    <div
+                      className={clsx('shrink-0', mobileActionsInRail && !config.allowMultiple && 'max-md:hidden')}
+                    >
+                      {renderQueueToolbar()}
+                    </div>
+                  </>
+                ) : null}
+                <div
+                  className={clsx(
+                    'flex min-h-0 min-w-0 flex-1 flex-col',
+                    isFlowStudio ? 'gap-4' : 'gap-5'
+                  )}
+                >
+                  {!slimFlowAside ? (
+                    isFlowStudio ? (
+                      <StudioScrollArea
+                        measureKey={files.length}
+                        className="min-h-0 flex-1"
+                        style={
+                          toneStyle
+                            ? ({
+                                '--queue-scrollbar-thumb': toneStyle.scrollbarThumb,
+                                '--queue-scrollbar-thumb-hover': toneStyle.scrollbarThumbHover,
+                              } as CSSProperties)
+                            : undefined
+                        }
+                      >
+                        {renderQueueListScroll()}
+                      </StudioScrollArea>
+                    ) : (
+                      <div
+                        ref={queueListScrollRef}
+                        className={clsx(
+                          'w-full min-w-0',
+                          mobileActionsInRail && !config.allowMultiple && 'max-md:hidden',
+                          queueListUsesScrollRegion
+                            ? clsx(
+                                'min-h-0 shrink-0 overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable]',
+                                pageGridPanelVisible ? 'max-h-[min(50vh,24rem)]' : 'max-h-72'
+                              )
+                            : 'shrink-0'
+                        )}
+                      >
+                        {renderQueueListScroll()}
+                      </div>
+                    )
+                  ) : null}
+                  {isFlowStudio && slimFlowAside ? (
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                      {typeof footer === 'function' ? footer(surfaceApi) : footer}
+                    </div>
+                  ) : null}
                   <div
-                    ref={queueListScrollRef}
                     className={clsx(
-                      'w-full min-w-0',
-                      mobileActionsInRail && !config.allowMultiple && 'max-md:hidden',
-                      queueListUsesScrollRegion
-                        ? clsx(
-                            'min-h-0 shrink-0 overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable]',
-                            pageGridPanelVisible ? 'max-h-[min(50vh,24rem)]' : 'max-h-72'
-                          )
-                        : 'shrink-0'
+                      'flex w-full min-w-0 shrink-0 flex-col gap-4 pb-0.5',
+                      slimFlowAside && !isFlowStudio && 'mt-auto',
+                      isFlowStudio && 'studio-shell-divider border-t border-[hsl(var(--brand-copper)/0.12)] pt-3'
                     )}
                   >
-                    {renderQueueListScroll()}
-                  </div>
-                  <div className="flex w-full min-w-0 shrink-0 flex-col gap-4 pb-0.5">
-                    {/* eslint-disable-next-line react-hooks/refs -- false positive: surfaceApi snapshot; footer may read queue/grid only */}
-                    {typeof footer === 'function' ? footer(surfaceApi) : footer}
+                    {!isFlowStudio || !slimFlowAside
+                      ? typeof footer === 'function'
+                        ? footer(surfaceApi)
+                        : footer
+                      : null}
                     {renderCtaRow()}
                   </div>
                 </div>
@@ -2006,7 +2259,7 @@ export function ToolWorkspace({
             ) : null}
           </div>
         </motion.div>
-      )}
+      ) : null}
 
       <AnimatePresence>
         {toast && (

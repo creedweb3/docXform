@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ToolWorkspace, type WorkspaceFile } from '@/components/tools/tool-workspace';
+import { ToolWorkspace, type WorkspaceFile, type WorkspaceSurfaceApi } from '@/components/tools/tool-workspace';
+import { StudioFlowAsideInfo } from '@/components/tools/studio/studio-flow-aside-info';
 import { buildWorkspaceConfig } from '@/components/tools/tool-theme';
 import { imagesToPdf, type ImageFit } from '@/lib/tool-runs/images-to-pdf';
 import { validateImageFiles } from '@/lib/tool-validations';
@@ -31,19 +32,31 @@ const config = buildWorkspaceConfig(tool, {
 export function ImagesToPdfTool() {
   const [fit, setFit] = useLocalSetting<ImageFit>('docxform:images-to-pdf:fit', 'fit');
 
-  const footer = (
-    <div className="rounded-xl border border-border/50 bg-card/50 p-3 text-xs text-muted-foreground">
-      <RadioGroup<ImageFit>
-        name="images-to-pdf-fit"
-        label="Layout"
-        value={fit}
-        onChange={setFit}
-        options={[
-          { value: 'fit', label: 'Fit to page', description: 'Resize each image to one page' },
-          { value: 'contain', label: 'Native size', description: 'Center each image at its true size' },
-        ]}
-      />
-    </div>
+  const footer = useCallback(
+    (api: WorkspaceSurfaceApi) => {
+      const controls = (
+        <RadioGroup<ImageFit>
+          name="images-to-pdf-fit"
+          label="Layout"
+          value={fit}
+          onChange={setFit}
+          options={[
+            { value: 'fit', label: 'Fit to page', description: 'Resize each image to one page' },
+            { value: 'contain', label: 'Native size', description: 'Center each image at its true size' },
+          ]}
+        />
+      );
+      return api.inFlowStudio ? (
+        <StudioFlowAsideInfo title="Layout" className="space-y-3">
+          {controls}
+        </StudioFlowAsideInfo>
+      ) : (
+        <div className="rounded-xl border border-border/50 bg-card/50 p-3 text-xs text-muted-foreground">
+          {controls}
+        </div>
+      );
+    },
+    [fit, setFit]
   );
 
   const processFiles = useCallback(

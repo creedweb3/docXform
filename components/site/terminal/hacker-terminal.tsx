@@ -24,6 +24,13 @@ type HackerTerminalProps = {
   mode?: TerminalMode;
   presentation?: TerminalPresentation;
   className?: string;
+  /** Product flows: terminal + body fill the parent viewport (flex chain). */
+  fillHeight?: boolean;
+  bodyClassName?: string;
+  /** Product mode: bottom “local session” bar (off for studio). */
+  showProductFooter?: boolean;
+  /** Product page mode: right side of the path row (e.g. pick → studio → output). */
+  topAccessory?: React.ReactNode;
 };
 
 const MAX_TABS = 2;
@@ -38,7 +45,12 @@ export function HackerTerminal({
   mode = 'content',
   presentation = 'page',
   className,
+  fillHeight = false,
+  bodyClassName,
+  showProductFooter: showProductFooterProp,
+  topAccessory,
 }: HackerTerminalProps) {
+  const showProductFooter = showProductFooterProp ?? mode !== 'product';
   const visibleTabs = tabs?.slice(0, MAX_TABS) ?? [];
   const hasTabs = visibleTabs.length >= 2;
   const initialTab =
@@ -59,15 +71,24 @@ export function HackerTerminal({
         : [];
 
   return (
-    <div className={cn('term-shell relative overflow-hidden', className)}>
+    <div
+      className={cn(
+        'term-shell relative overflow-hidden',
+        fillHeight && 'flex h-full min-h-0 flex-col',
+        className
+      )}
+    >
       <div className="term-scanlines pointer-events-none absolute inset-0" aria-hidden />
 
       <div className="relative border-b border-[hsl(var(--brand-copper)/0.2)] bg-[#0a0a0a] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.14em]">
         {presentation === 'page' ? (
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 normal-case tracking-normal">
-            <span className="text-muted-foreground">docxform</span>
-            <span className="text-muted-foreground/50">/</span>
-            <span className="text-[hsl(var(--brand-copper))]">{path.replace(/^\//, '')}</span>
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 normal-case tracking-normal">
+              <span className="text-muted-foreground">docxform</span>
+              <span className="text-muted-foreground/50">/</span>
+              <span className="truncate text-[hsl(var(--brand-copper))]">{path.replace(/^\//, '')}</span>
+            </div>
+            {topAccessory ? <div className="shrink-0">{topAccessory}</div> : null}
           </div>
         ) : (
           <>
@@ -123,16 +144,21 @@ export function HackerTerminal({
       {activeContent ? (
         <div
           className={cn(
-            'relative flex flex-col bg-[#0b0b0b] p-5 sm:p-8',
-            mode === 'product' ? 'gap-6' : 'gap-5'
+            'relative flex flex-col bg-[#0b0b0b]',
+            fillHeight ? 'min-h-0 flex-1 gap-4 overflow-hidden p-4 sm:p-5' : 'p-5 sm:p-8',
+            !fillHeight && (mode === 'product' ? 'gap-6' : 'gap-5'),
+            bodyClassName
           )}
         >
           {activeContent}
         </div>
       ) : null}
 
-      {mode === 'product' ? (
-        <div className="relative border-t border-[hsl(var(--brand-copper)/0.15)] bg-[#080808] px-3 py-2 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+      {mode === 'product' && showProductFooter ? (
+        <div
+          className="term-product-footer relative border-t border-[hsl(var(--brand-copper)/0.15)] bg-[#080808] px-3 py-2 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground"
+          data-product-footer
+        >
           <span className="text-[hsl(var(--brand-sage))]">■</span> local session
           <span className="mx-2 opacity-30">│</span>
           <span>no remote conversion socket</span>

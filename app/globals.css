@@ -511,6 +511,78 @@
     border-color: hsl(var(--border) / 0.75);
     background: hsl(0 0% 0% / 0.4);
   }
+  .term-shell .tool-workspace--studio .studio-shell-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 2px;
+    border: 1px solid hsl(var(--brand-copper) / 0.38);
+    background-color: hsl(0 0% 0% / 0.45);
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  .term-shell .tool-workspace--studio .studio-shell-checkbox:hover:not(:disabled) {
+    border-color: hsl(var(--brand-copper) / 0.52);
+    background-color: hsl(0 0% 0% / 0.55);
+  }
+  .term-shell .tool-workspace--studio .studio-shell-checkbox:checked {
+    border-color: hsl(var(--brand-copper) / 0.65);
+    background-color: hsl(var(--brand-copper) / 0.14);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath stroke='%23d4a574' stroke-width='1.75' stroke-linecap='square' stroke-linejoin='miter' d='M2.5 6.25 5 8.75 9.5 3.25'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 0.7rem 0.7rem;
+  }
+  .term-shell .tool-workspace--studio .studio-shell-checkbox:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--brand-copper) / 0.35);
+  }
+  .term-shell .tool-workspace--studio .studio-shell-checkbox:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .term-shell .tool-workspace--studio .studio-num-input {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  .term-shell .tool-workspace--studio .studio-num-input::-webkit-inner-spin-button,
+  .term-shell .tool-workspace--studio .studio-num-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .term-shell .tool-workspace--studio .studio-num-stepper-btns {
+    border-left: 1px solid hsl(var(--brand-copper) / 0.2);
+    background: hsl(0 0% 0% / 0.35);
+  }
+  .term-shell .tool-workspace--studio .studio-num-stepper-btn {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  .term-shell .tool-workspace--studio .studio-num-stepper-btn + .studio-num-stepper-btn {
+    border-top: 1px solid hsl(var(--brand-copper) / 0.14);
+  }
+  .term-shell .tool-workspace--studio .studio-num-stepper-btn:hover:not(:disabled) {
+    background: hsl(0 0% 0% / 0.45);
+    color: hsl(var(--foreground));
+  }
+  .term-shell .tool-workspace--studio .studio-num-stepper-btn:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 1px hsl(var(--brand-copper) / 0.4);
+    color: hsl(var(--brand-copper));
+  }
+  .term-shell .tool-workspace--flow-studio .queue-list-scrollbar {
+    --queue-scrollbar-thumb: hsl(var(--brand-copper) / 0.42);
+    --queue-scrollbar-thumb-hover: hsl(var(--brand-copper) / 0.68);
+  }
+  .term-shell .tool-workspace--flow-studio .studio-flow-queue-row:hover:not(:disabled) {
+    border-color: hsl(var(--brand-copper) / 0.32);
+    background: hsl(0 0% 0% / 0.38);
+  }
   .term-shell .tool-workspace--studio .studio-shell-pill {
     border-color: hsl(var(--brand-copper) / 0.12);
     background: hsl(0 0% 0% / 0.22);
@@ -531,6 +603,86 @@
   }
   .term-shell .tool-workspace--studio .studio-shell-aside-divider {
     border-color: hsl(var(--brand-copper) / 0.12);
+  }
+
+  .conversion-flow-vp .term-shell {
+    height: 100%;
+    min-height: 0;
+    background: #0a0a0a;
+    border: 1px solid hsl(var(--brand-copper) / 0.22);
+    border-radius: 2px;
+    box-shadow:
+      0 0 0 1px hsl(0 0% 0% / 0.55) inset,
+      0 12px 40px -24px hsl(0 0% 0% / 0.85);
+  }
+
+  .conversion-flow-vp .term-shell > .relative.border-b {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+
+  .conversion-flow-vp .conversion-flow-workspace,
+  .conversion-flow-vp .conversion-flow-studio-canvas {
+    min-height: 0;
+  }
+
+  .conversion-flow-pick-frame {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  .conversion-flow-pick-frame > p {
+    margin-bottom: 0.75rem;
+  }
+
+  .conversion-flow-pick-mount {
+    display: flex;
+    min-height: 0;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .conversion-flow-drop-target {
+    min-height: 0;
+    flex: 1;
+  }
+
+  html[data-conversion-stage='studio'] [data-marketing-footer-zone] {
+    display: none;
+  }
+
+  /* Product flow: solid console field — no marketing gradient bleeding through gutters or panels */
+  html[data-conversion-stage='pick'] [data-marketing-backdrop],
+  html[data-conversion-stage='studio'] [data-marketing-backdrop],
+  html[data-conversion-stage='output'] [data-marketing-backdrop] {
+    opacity: 0;
+  }
+
+  .conversion-flow-vp .term-scanlines {
+    opacity: 0.12;
+  }
+
+  .conversion-flow-vp .tool-workspace--flow-studio .studio-shell-pill {
+    background: hsl(0 0% 4%);
+  }
+
+  .conversion-flow-vp .tool-workspace--studio[data-studio-queued='true'] {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .conversion-flow-vp .tool-workspace--flow-studio {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .conversion-flow-vp .tool-workspace--flow-studio .mobile-preview-shell,
+  .conversion-flow-vp .tool-workspace--flow-studio aside {
+    min-height: 0;
+    align-self: stretch;
   }
 
   /* Converter / marketing section rhythm — plain CSS so spacing survives Tailwind content scans */

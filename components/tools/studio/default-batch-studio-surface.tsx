@@ -1,7 +1,9 @@
 'use client';
 
 import clsx from 'clsx';
+import { formatBytes } from '@/lib/client-file-validation';
 import type { WorkspaceSurfaceApi } from '@/components/tools/tool-workspace';
+import { FlowBatchPreview } from '@/components/tools/studio/flow-batch-preview';
 import {
   STUDIO_CARD,
   STUDIO_CARD_DRAG,
@@ -15,9 +17,45 @@ import {
  * Fallback “stage” when a tool does not pass a custom `studioSurface`.
  */
 export function DefaultBatchStudioSurface({ api }: { api: WorkspaceSurfaceApi }) {
-  const { files, busy, draggedFileId, setDraggedFileId, reorderFilesInQueue, config } = api;
+  const {
+    files,
+    busy,
+    draggedFileId,
+    setDraggedFileId,
+    reorderFilesInQueue,
+    config,
+    focusedFileId,
+    setFocusedFileId,
+    inFlowStudio,
+    flowDuplicateBanner,
+  } = api;
   const isReorderable = config.allowMultiple && files.length > 1 && !busy;
   const title = config.studioStageTitle ?? 'Your files';
+
+  if (inFlowStudio) {
+    return (
+      <FlowBatchPreview
+        title={title}
+        topBanner={flowDuplicateBanner}
+        items={files.map((item, index) => ({
+          id: item.id,
+          name: item.file.name,
+          index,
+          thumbUrl: item.preview?.status === 'ready' ? item.preview.thumbUrl : null,
+          thumbLoading: item.preview?.status === 'loading',
+          meta: formatBytes(item.file.size),
+        }))}
+        iconBoxClass={config.iconBoxClass}
+        iconClass={config.iconClass}
+        showIndex={config.allowMultiple && files.length > 1}
+        selectedId={focusedFileId}
+        onSelect={setFocusedFileId}
+        draggable={isReorderable}
+        draggingId={draggedFileId}
+        onReorderDrop={isReorderable ? reorderFilesInQueue : undefined}
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
