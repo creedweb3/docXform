@@ -1,6 +1,6 @@
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { SiteShell } from '@/components/site/site-shell';
 import { ArticlesShowcase } from '@/components/articles-showcase';
+import { Container } from '@/components/site/ui/container';
 import { JsonLd } from '@/components/json-ld';
 import {
   articlesCollectionJsonLd,
@@ -43,15 +43,13 @@ export default function ArticlesPage() {
           ]),
         ])}
       />
-      <div className="min-h-screen flex flex-col bg-dot-grid-subtle">
-        <Navbar />
-        <main className="flex-1 pt-[8.5rem] sm:pt-[9rem]">
-          <section className="px-6 pt-4 sm:pt-6 pb-14 sm:pb-16">
+      <SiteShell>
+        <section className="py-12 sm:py-20">
+          <Container size="lg">
             <ArticlesShowcase variant="page" />
-          </section>
-        </main>
-        <Footer />
-      </div>
+          </Container>
+        </section>
+      </SiteShell>
     </>
   );
 }

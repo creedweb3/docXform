@@ -37,7 +37,7 @@ export function PdfMergeStudioSurface({ api }: { api: WorkspaceSurfaceApi }) {
             onDrop={() => isReorderable && reorderFilesInQueue(item.id)}
             onDragEnd={() => setDraggedFileId(null)}
             className={clsx(
-              'flex w-[min(100%,11rem)] shrink-0 flex-col overflow-hidden rounded-2xl border-2 border-dashed border-border/50 bg-white/70 shadow-sm transition',
+              'flex w-[min(100%,11rem)] shrink-0 flex-col overflow-hidden rounded-2xl border-2 border-dashed border-border/50 bg-card/40 shadow-sm transition',
               draggedFileId === item.id && 'opacity-50',
               isReorderable && 'cursor-grab active:cursor-grabbing hover:border-border'
             )}
@@ -190,15 +190,15 @@ function PageThumbCard({
 
 /** Range preview dashed cards: single-page groups (grid col-span set per card). */
 const PDF_SPLIT_RANGE_CARD_CLASS =
-  'flex h-full min-h-0 w-full min-w-0 flex-col gap-2 rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-3 pb-2 pt-2 shadow-sm dark:border-zinc-500/60 dark:bg-muted/20';
+  'flex h-full min-h-0 w-full min-w-0 flex-col gap-2 rounded-xl border-2 border-dashed border-zinc-400/65 bg-card/40 px-3 pb-2 pt-2 shadow-sm dark:border-zinc-500/60 dark:bg-muted/20';
 
 /** Full-row multi on 6-column grid. */
 const PDF_SPLIT_RANGE_CARD_ALONE_MULTI_CLASS =
-  'col-span-6 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-0 pb-2 pt-2 shadow-sm gap-y-2 dark:border-zinc-500/60 dark:bg-muted/20';
+  'col-span-6 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-card/40 px-0 pb-2 pt-2 shadow-sm gap-y-2 dark:border-zinc-500/60 dark:bg-muted/20';
 
 /** Multi paired with single on one row (4 of 6 cols). */
 const PDF_SPLIT_RANGE_CARD_PAIR_MULTI_CLASS =
-  'col-span-4 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-white/55 px-0 pb-2 pt-2 shadow-sm gap-y-2 dark:border-zinc-500/60 dark:bg-muted/20';
+  'col-span-4 grid h-full min-h-0 w-full min-w-0 grid-rows-[auto_minmax(0,1fr)] rounded-xl border-2 border-dashed border-zinc-400/65 bg-card/40 px-0 pb-2 pt-2 shadow-sm gap-y-2 dark:border-zinc-500/60 dark:bg-muted/20';
 
 /** Two equal halves; each thumb centered in its half (1.5+1.5 style positioning). */
 const PDF_SPLIT_RANGE_MULTI_THUMBS_CLASS =
@@ -472,7 +472,7 @@ export function PdfSplitStudioSurface({
           Splitting by target file size is not available in this version.
         </p>
       ) : !file ? (
-        <p className="rounded-xl border border-dashed border-border/50 bg-white/50 px-3 py-10 text-center text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed border-border/50 bg-card/30 px-3 py-10 text-center text-sm text-muted-foreground">
           Add a PDF to preview every page and how outputs group.
         </p>
       ) : previewFailed ? (
@@ -480,11 +480,11 @@ export function PdfSplitStudioSurface({
           {preview?.error ?? 'Could not load a preview of this PDF.'}
         </p>
       ) : previewPending ? (
-        <p className="rounded-xl border border-dashed border-border/50 bg-white/50 px-3 py-10 text-center text-sm text-muted-foreground animate-pulse">
+        <p className="rounded-xl border border-dashed border-border/50 bg-card/30 px-3 py-10 text-center text-sm text-muted-foreground animate-pulse">
           Loading PDF preview…
         </p>
       ) : pageCount <= 0 ? (
-        <p className="rounded-xl border border-dashed border-border/50 bg-white/50 px-3 py-10 text-center text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed border-border/50 bg-card/30 px-3 py-10 text-center text-sm text-muted-foreground">
           This PDF has no readable pages, or the preview did not finish loading.
         </p>
       ) : splitTab === 'range' && groups.length > 0 ? (
@@ -686,7 +686,7 @@ export function PdfRotateStudioSurface({ api, angle }: { api: WorkspaceSurfaceAp
         style={{ perspective: '800px' }}
       >
         <div
-          className="flex h-full w-full items-center justify-center bg-white/80 p-2 transition-transform duration-500"
+          className="flex h-full w-full items-center justify-center bg-card/50 p-2 transition-transform duration-500"
           style={{ transform: `rotate(${angle}deg)` }}
         >
           {file?.preview?.status === 'ready' && file.preview.thumbUrl ? (
@@ -718,7 +718,7 @@ export function PdfWatermarkStudioSurface({
 
   return (
     <div className="flex flex-1 flex-col items-center gap-3 py-2">
-      <div className="relative aspect-[3/4] w-full max-w-sm overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-slate-100 to-white shadow-inner">
+      <div className="relative aspect-[3/4] w-full max-w-sm overflow-hidden rounded-2xl border border-border/70 bg-card/40 shadow-inner">
         {file?.preview?.status === 'ready' && file.preview.thumbUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img src={file.preview.thumbUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -768,7 +768,7 @@ export function PdfOrganizeStudioSurface({ api, order }: { api: WorkspaceSurface
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="rounded-xl border border-border/50 bg-white/60 px-3 py-2 text-center">
+      <div className="rounded-xl border border-border/50 bg-card/40 px-3 py-2 text-center">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Output page order</p>
         <p className="mt-1 break-words font-mono text-xs text-foreground">{orderStr}</p>
       </div>

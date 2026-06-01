@@ -26,6 +26,7 @@ import {
   MAX_CONVERSION_BATCH_FILES,
   MAX_CONVERSION_FILE_SIZE_LABEL,
 } from '@/lib/conversion-limits';
+import { WORKSPACE_SECONDARY_SURFACE } from '@/lib/site-design';
 import {
   formatBytes,
   getDynamicBatchLimitLabel,
@@ -647,9 +648,9 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
   const ctaFlexLayout =
     'inline-flex min-h-12 min-w-0 flex-1 basis-0 select-none items-center justify-center gap-2 self-stretch rounded-xl box-border px-4 py-3 text-center text-xs font-semibold leading-snug';
 
-  const primaryCtaClass = `${ctaFlexLayout} bg-gradient-to-br ${config.primaryButtonClass} text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45`;
+  const primaryCtaClass = `${ctaFlexLayout} ${config.primaryButtonClass} transition-opacity disabled:cursor-not-allowed disabled:opacity-45`;
   const secondaryCtaClass =
-    `${ctaFlexLayout} border border-border/40 bg-white/60 text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-45`;
+    `${ctaFlexLayout} ${WORKSPACE_SECONDARY_SURFACE} disabled:cursor-not-allowed disabled:opacity-45`;
   /** Disabled download slot: own surface so it is not overridden by secondaryCtaClass border/bg. */
   const downloadIdleCtaClass =
     `${ctaFlexLayout} border border-dashed border-slate-300/75 bg-slate-100 text-slate-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-100`;
@@ -738,11 +739,11 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
               <p className="text-xs text-muted-foreground">{config.hint}</p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5 bg-white/50 rounded-full px-3 py-1.5 border border-border/30">
+              <span className="inline-flex items-center gap-1.5 bg-card/40 rounded-full px-3 py-1.5 border border-border/70">
                 <HugeiconsIcon icon={Shield01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 Never uploaded to any server
               </span>
-              <span className="inline-flex items-center gap-1.5 bg-white/50 rounded-full px-3 py-1.5 border border-border/30">
+              <span className="inline-flex items-center gap-1.5 bg-card/40 rounded-full px-3 py-1.5 border border-border/70">
                 {MAX_CONVERSION_FILE_SIZE_LABEL} per file
               </span>
             </div>
@@ -847,14 +848,14 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                 <button
                   type="button"
                   onClick={handleSkipDuplicates}
-                  className="rounded-full border border-border/40 bg-white/60 px-3 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-white/80"
+                  className="rounded-full border border-border/70 bg-card/40 px-3 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-card/55"
                 >
                   Skip
                 </button>
                 <button
                   type="button"
                   onClick={handleAddDuplicates}
-                  className={`rounded-full bg-gradient-to-br ${config.primaryButtonClass} px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-90`}
+                  className={`rounded-full ${config.primaryButtonClass} px-3 py-1 text-[11px] font-medium transition-opacity`}
                 >
                   Add again
                 </button>
@@ -885,7 +886,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   type="button"
                   onClick={() => inputRef.current?.click()}
                   disabled={busy || items.length >= MAX_CONVERSION_BATCH_FILES}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/70 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
                   Add files
@@ -894,7 +895,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   type="button"
                   onClick={handleClear}
                   disabled={busy}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/70 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
                   Clear all
@@ -925,7 +926,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                 {items.map((item) => (
               <div
                 key={item.id}
-                className="min-h-12 rounded-xl border border-border/45 bg-white/60 px-2.5 py-2 box-border"
+                className="min-h-12 rounded-xl border border-border/70 bg-card/40 px-2.5 py-2 box-border"
               >
                 <div className="flex w-full items-center gap-2.5">
                   <div className={`h-8 w-8 shrink-0 rounded-lg ${config.iconBoxClass} flex items-center justify-center`}>

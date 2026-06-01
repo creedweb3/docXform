@@ -6,22 +6,24 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowRight02Icon } from '@hugeicons/core-free-icons';
 import { getArticleTagVisuals } from '@/lib/article-tag-visuals';
 import { ARTICLE_TAG_ORDER, SITE_ARTICLES, type ArticleTag } from '@/lib/site-articles';
+import { SectionHeader } from '@/components/site/ui/section-header';
+import { Card } from '@/components/site/ui/card';
+import { Button } from '@/components/site/ui/button';
+import { cn } from '@/lib/utils';
 
 const tagStyles: Record<ArticleTag, string> = {
-  Security: 'text-blue-600 bg-blue-50/90 border-blue-100/80',
-  Guide: 'text-rose-600 bg-rose-50/90 border-rose-100/80',
-  Technical: 'text-amber-700 bg-amber-50/90 border-amber-100/80',
-  Performance: 'text-emerald-700 bg-emerald-50/90 border-emerald-100/80',
+  Security: 'text-muted-foreground bg-card/50 border-border/70',
+  Guide: 'text-muted-foreground bg-card/50 border-border/70',
+  Technical: 'text-muted-foreground bg-card/50 border-border/70',
+  Performance: 'text-muted-foreground bg-card/50 border-border/70',
 };
 
 interface ArticlesShowcaseProps {
-  /** Larger typography on marketing home */
   variant?: 'home' | 'page';
 }
 
 export function ArticlesShowcase({ variant = 'page' }: ArticlesShowcaseProps) {
   const isHome = variant === 'home';
-  const HeadingTag = isHome ? 'h2' : 'h1';
   const showTypeFilter = variant === 'page';
   const [activeTag, setActiveTag] = useState<ArticleTag | 'all'>('all');
 
@@ -31,99 +33,79 @@ export function ArticlesShowcase({ variant = 'page' }: ArticlesShowcaseProps) {
   }, [activeTag]);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-10 sm:mb-12">
-        <HeadingTag
-          className={`font-bold tracking-tight text-foreground mb-3 ${
-            isHome ? 'text-3xl sm:text-4xl' : 'text-3xl sm:text-[2.75rem]'
-          }`}
-        >
-          Articles &amp; guides
-        </HeadingTag>
-        <p
-          className={`text-muted-foreground max-w-xl mx-auto leading-relaxed ${
-            isHome ? 'text-sm sm:text-base' : 'text-sm'
-          }`}
-        >
-          Learn more about PDF to Word conversion, DOCX to PDF workflows, browser privacy, and performance best practices - free
-          guides for teams and individuals.
-        </p>
-      </div>
+    <div>
+      <SectionHeader
+        eyebrow={isHome ? undefined : 'Resources'}
+        title={isHome ? 'Articles & guides' : 'Articles & guides'}
+        description="Guides on PDF↔Word workflows, DOCX standards, browser privacy, and performance — written for teams and individuals."
+        align="center"
+        className="mb-10 sm:mb-12"
+      />
 
       {showTypeFilter ? (
         <div
-          className="flex flex-wrap justify-center gap-2 mb-8 sm:mb-10"
+          className="flex flex-wrap justify-center gap-2 mb-10"
           role="tablist"
           aria-label="Filter articles by type"
         >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTag === 'all'}
-            onClick={() => setActiveTag('all')}
-            className={`inline-flex items-center rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-              activeTag === 'all'
-                ? 'border-foreground/25 bg-foreground/[0.06] text-foreground'
-                : 'border-border/70 bg-white/50 text-muted-foreground hover:text-foreground hover:border-foreground/20'
-            }`}
-          >
+          <FilterPill active={activeTag === 'all'} onClick={() => setActiveTag('all')}>
             All
-          </button>
+          </FilterPill>
           {ARTICLE_TAG_ORDER.map((tag) => (
-            <button
+            <FilterPill
               key={tag}
-              type="button"
-              role="tab"
-              aria-selected={activeTag === tag}
+              active={activeTag === tag}
               onClick={() => setActiveTag(tag)}
-              className={`inline-flex items-center rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                activeTag === tag
-                  ? `${tagStyles[tag]} shadow-sm`
-                  : 'border-border/70 bg-white/50 text-muted-foreground hover:text-foreground hover:border-foreground/20'
-              }`}
+              className={activeTag === tag ? tagStyles[tag] : undefined}
             >
               {tag}
-            </button>
+            </FilterPill>
           ))}
         </div>
       ) : null}
 
-      <div className="grid sm:grid-cols-2 gap-4 sm:gap-5">
+      <div className="grid sm:grid-cols-2 gap-4">
         {filteredArticles.map((a) => {
           const { Icon, iconBoxClass, iconClass } = getArticleTagVisuals(a.tag);
           return (
-            <Link
-              key={a.slug}
-              href={`/articles/${a.slug}`}
-              className="glass rounded-3xl p-6 sm:p-7 flex flex-col gap-4 text-left group hover:shadow-[0_12px_48px_rgba(15,23,42,0.08)] transition-shadow duration-300 border border-white/70"
-            >
-              <div className="flex items-start gap-4">
-                <div
-                  className={`w-12 h-12 rounded-2xl shrink-0 flex items-center justify-center ${iconBoxClass}`}
-                >
-                  <HugeiconsIcon icon={Icon} size={22} strokeWidth={1.5} className={iconClass} />
-                </div>
-                <div className="flex-1 min-w-0 pt-0.5">
-                  <span
-                    className={`inline-flex text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border ${tagStyles[a.tag]}`}
+            <Link key={a.slug} href={`/articles/${a.slug}`} className="group block">
+              <Card hover padding="lg" className="h-full flex flex-col">
+                <div className="flex items-start gap-4">
+                  <div
+                    className={cn(
+                      'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border',
+                      iconBoxClass
+                    )}
                   >
-                    {a.tag}
-                  </span>
-                  <h3 className="mt-3 text-base sm:text-lg font-semibold text-foreground leading-snug group-hover:underline underline-offset-2">
-                    {a.title}
-                  </h3>
+                    <HugeiconsIcon icon={Icon} size={22} strokeWidth={1.5} className={iconClass} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span
+                      className={cn(
+                        'inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                        tagStyles[a.tag]
+                      )}
+                    >
+                      {a.tag}
+                    </span>
+                    <h3 className="mt-3 font-display text-lg font-semibold text-foreground leading-snug group-hover:text-muted-foreground transition-colors">
+                      {a.title}
+                    </h3>
+                  </div>
                 </div>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">{a.description}</p>
-              <div className="flex items-center justify-between mt-auto pt-1">
-                <span className="text-xs text-muted-foreground">{a.readTime}</span>
-                <HugeiconsIcon
-                  icon={ArrowRight02Icon}
-                  size={18}
-                  strokeWidth={2}
-                  className="text-muted-foreground group-hover:translate-x-0.5 transition-transform"
-                />
-              </div>
+                <p className="mt-4 text-sm text-muted-foreground leading-relaxed flex-1">
+                  {a.description}
+                </p>
+                <div className="mt-5 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{a.readTime}</span>
+                  <HugeiconsIcon
+                    icon={ArrowRight02Icon}
+                    size={16}
+                    strokeWidth={2}
+                    className="transition-transform group-hover:translate-x-0.5"
+                  />
+                </div>
+              </Card>
             </Link>
           );
         })}
@@ -131,15 +113,41 @@ export function ArticlesShowcase({ variant = 'page' }: ArticlesShowcaseProps) {
 
       {isHome ? (
         <div className="text-center mt-10">
-          <Link
-            href="/articles"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-          >
+          <Button href="/articles" variant="outline">
             View all articles
             <HugeiconsIcon icon={ArrowRight02Icon} size={16} strokeWidth={2.5} />
-          </Link>
+          </Button>
         </div>
       ) : null}
     </div>
+  );
+}
+
+function FilterPill({
+  children,
+  active,
+  onClick,
+  className,
+}: {
+  children: React.ReactNode;
+  active: boolean;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
+        active
+          ? className ?? 'border-foreground/25 bg-foreground/10 text-foreground'
+          : 'border-border bg-card/40 text-muted-foreground hover:text-foreground'
+      )}
+    >
+      {children}
+    </button>
   );
 }

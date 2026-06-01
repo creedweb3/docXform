@@ -1,5 +1,7 @@
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { SiteShell } from '@/components/site/site-shell';
+import { PageHero } from '@/components/site/page-hero';
+import { Container } from '@/components/site/ui/container';
+import { Card } from '@/components/site/ui/card';
 import { ContactForm } from '@/components/contact-form';
 import { JsonLd } from '@/components/json-ld';
 import {
@@ -40,27 +42,20 @@ export default function ContactPage() {
           ]),
         ])}
       />
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 pt-[8.5rem] sm:pt-[9rem]">
-          <section className="px-6 pt-4 sm:pt-6 pb-10 sm:pb-12">
-            <div className="max-w-4xl mx-auto">
-              <div className="max-w-3xl mx-auto text-center mb-10">
-                <h1 className="text-3xl sm:text-[2.75rem] font-bold tracking-tight text-foreground mb-3">
-                  Contact docXform
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Business inquiries only. Document conversion happens in your browser;
-                  this form only sends the message details you submit.
-                </p>
-              </div>
-
+      <SiteShell>
+        <PageHero
+          eyebrow="Contact"
+          title="Get in touch"
+          description="Business inquiries only. Document conversion happens in your browser — this form only sends the message you write."
+        />
+        <section className="pb-20">
+          <Container size="md">
+            <Card padding="lg">
               <ContactForm />
-            </div>
-          </section>
-        </main>
-        <Footer />
-      </div>
+            </Card>
+          </Container>
+        </section>
+      </SiteShell>
     </>
   );
 }

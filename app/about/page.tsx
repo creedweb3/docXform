@@ -1,5 +1,8 @@
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { SiteShell } from '@/components/site/site-shell';
+import { PageHero } from '@/components/site/page-hero';
+import { Container } from '@/components/site/ui/container';
+import { SectionHeader } from '@/components/site/ui/section-header';
+import { Card } from '@/components/site/ui/card';
 import { JsonLd } from '@/components/json-ld';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { CpuIcon, EyeIcon, LockKeyIcon, Shield01Icon } from '@hugeicons/core-free-icons';
@@ -23,34 +26,28 @@ export const metadata: Metadata = createPageMetadata({
   image: OG_IMAGES.about,
 });
 
+const featureSurface = 'text-muted-foreground border border-border/70 bg-card/40';
+
 const features = [
   {
     icon: Shield01Icon,
-    label: 'No Server-Side File Conversion',
-    desc: 'The selected document is processed by the browser-based converter instead of being uploaded to docXform for conversion.',
-    boxClass: 'icon-box-blue',
-    iconClass: 'text-blue-500',
+    label: 'No server-side conversion',
+    desc: 'Your file is processed in-browser — not uploaded for conversion.',
   },
   {
     icon: CpuIcon,
-    label: 'WebAssembly Engine',
-    desc: 'WebAssembly lets the conversion engine run inside a modern browser with practical desktop-like performance.',
-    boxClass: 'icon-box-rose',
-    iconClass: 'text-rose-400',
+    label: 'WebAssembly engine',
+    desc: 'A compiled conversion stack with practical desktop-like speed.',
   },
   {
     icon: EyeIcon,
-    label: 'Verifiable Workflow',
-    desc: 'You can inspect network activity in browser developer tools to verify that conversion files are not uploaded.',
-    boxClass: 'icon-box-amber',
-    iconClass: 'text-amber-500',
+    label: 'Verifiable workflow',
+    desc: 'Open DevTools and confirm conversion traffic stays local.',
   },
   {
     icon: LockKeyIcon,
-    label: 'No Account Required',
-    desc: 'Convert documents without creating an account or giving docXform access to your document storage.',
-    boxClass: 'icon-box-mint',
-    iconClass: 'text-emerald-500',
+    label: 'No account required',
+    desc: 'Convert without sign-up or linking cloud storage.',
   },
 ];
 
@@ -60,84 +57,56 @@ export default function AboutPage() {
       <JsonLd
         id="about-schema"
         data={schemaGraph([
-          webPageJsonLd({
-            type: 'AboutPage',
-            name: title,
-            description,
-            path: '/about',
-          }),
+          webPageJsonLd({ type: 'AboutPage', name: title, description, path: '/about' }),
           breadcrumbJsonLd([
             { name: 'Home', path: '/' },
             { name: 'About', path: '/about' },
           ]),
         ])}
       />
-      <div className="min-h-screen flex flex-col bg-dot-grid-subtle">
-        <Navbar />
-        <main className="flex-1 pt-[8.5rem] sm:pt-[9rem]">
-          <section className="px-6 pt-4 sm:pt-6 pb-14 sm:pb-16">
-            <div className="max-w-2xl mx-auto">
-              <h1 className="text-3xl sm:text-[2.75rem] font-bold tracking-tight text-foreground mb-3 text-center">
-                About docXform
-              </h1>
-              <div className="space-y-4 text-muted-foreground leading-relaxed mb-14 text-center">
-                <p>
-                  docXform exists to make everyday document conversion more private.
-                  Traditional online converters usually require uploading files to
-                  remote servers. docXform takes a different approach: conversion
-                  runs directly in your browser.
-                </p>
-                <p>
-                  Using WebAssembly (WASM), docXform runs a document conversion
-                  engine on your device. Your selected files are processed locally,
-                  and the converted output is generated for download in the browser.
-                </p>
-              </div>
-              <h2 className="text-2xl font-bold tracking-tight text-foreground mb-8">
-                Built for Private Browser Workflows
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {features.map((feature) => (
-                  <div key={feature.label} className="glass rounded-2xl p-5">
+      <SiteShell>
+        <PageHero
+          eyebrow="About"
+          title="Documents stay on your device"
+          description="docXform exists to make everyday Word and PDF conversion private by default — with the engine running in your browser, not on remote servers."
+        />
+        <section className="pb-20">
+          <Container size="lg">
+            <div className="prose-width mx-auto max-w-2xl space-y-5 text-sm sm:text-base text-muted-foreground leading-relaxed">
+              <p>
+                Traditional online converters usually require uploading files to remote
+                infrastructure. docXform takes a different approach: conversion runs
+                directly where you work — in the browser tab.
+              </p>
+              <p>
+                Using WebAssembly, docXform ships a document engine to your device. You
+                select a file, convert locally, and download the output without sending
+                the document to docXform for processing.
+              </p>
+            </div>
+
+            <div className="mt-16">
+              <SectionHeader
+                eyebrow="Principles"
+                title="Built for private browser workflows"
+              />
+              <div className="mt-10 grid gap-4 sm:grid-cols-2">
+                {features.map((f) => (
+                  <Card key={f.label} hover>
                     <div
-                      className={`w-10 h-10 rounded-xl ${feature.boxClass} flex items-center justify-center mb-4`}
+                      className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${featureSurface}`}
                     >
-                      <HugeiconsIcon
-                        icon={feature.icon}
-                        size={20}
-                        strokeWidth={1.5}
-                        className={feature.iconClass}
-                      />
+                      <HugeiconsIcon icon={f.icon} size={22} strokeWidth={1.5} />
                     </div>
-                    <h3 className="text-sm font-semibold text-foreground mb-1">
-                      {feature.label}
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {feature.desc}
-                    </p>
-                  </div>
+                    <h3 className="font-semibold text-foreground">{f.label}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                  </Card>
                 ))}
               </div>
             </div>
-          </section>
-
-          <section className="px-6 py-16 bg-gradient-to-b from-transparent to-white/5">
-            <div className="max-w-2xl mx-auto text-center">
-              <h2 className="text-2xl font-bold text-foreground mb-4">
-                The docXform Approach
-              </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Your documents are your property. docXform is designed so conversion
-                files stay on your device during Word to PDF and PDF to Word workflows.
-                The site may still use standard web services such as advertising or
-                the contact form, but the documents you convert are not sent to
-                docXform for processing.
-              </p>
-            </div>
-          </section>
-        </main>
-        <Footer />
-      </div>
+          </Container>
+        </section>
+      </SiteShell>
     </>
   );
 }

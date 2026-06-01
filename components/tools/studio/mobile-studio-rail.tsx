@@ -63,8 +63,8 @@ export function MobileStudioRail({
           onClick={() => setOpen(true)}
           className={clsx(
             'fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-3 z-30 flex h-11 w-11 items-center justify-center rounded-full',
-            'text-white shadow-md transition active:scale-[0.97]',
-            `bg-gradient-to-br ${toneStyle.primaryButton}`
+            'shadow-md transition active:scale-[0.97]',
+            toneStyle.primaryButton
           )}
         >
           <HugeiconsIcon icon={Settings02Icon} size={22} strokeWidth={2} aria-hidden />

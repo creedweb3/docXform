@@ -1,18 +1,6 @@
 import { PdfToWordConverter } from '@/components/pdf-to-word-converter';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
-import { AdSlot } from '@/components/ad-slot';
+import { ConverterLandingPage } from '@/components/site/converter-landing-page';
 import { JsonLd } from '@/components/json-ld';
-import { FaqDetailsCard } from '@/components/faq-details-card';
-import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  BookOpen01Icon,
-  File01Icon,
-  FlashIcon,
-  Shield01Icon,
-  SparklesIcon,
-} from '@hugeicons/core-free-icons';
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { MAX_CONVERSION_FILE_SIZE_LABEL } from '@/lib/conversion-limits';
 import {
@@ -92,11 +80,7 @@ export default function PdfToWordPage() {
       <JsonLd
         id="pdf-to-word-schema"
         data={schemaGraph([
-          webPageJsonLd({
-            name: title,
-            description,
-            path: '/pdf-to-word',
-          }),
+          webPageJsonLd({ name: title, description, path: '/pdf-to-word' }),
           softwareApplicationJsonLd({
             name: 'docXform PDF to Word Converter',
             description,
@@ -115,105 +99,21 @@ export default function PdfToWordPage() {
           faqPageJsonLd(toolFaqs, '/pdf-to-word'),
         ])}
       />
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 flex flex-col items-center px-6 pt-[8.5rem] sm:pt-[9rem] pb-12">
-          <div className="w-full max-w-4xl mx-auto pt-4">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 glass-subtle rounded-full px-4 py-1.5 mb-6 border border-white/5">
-                <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className="text-rose-500" />
-                <span className="text-xs font-medium text-muted-foreground">
-                  No file upload &middot; up to {MAX_CONVERSION_FILE_SIZE_LABEL} &middot; free to use
-                </span>
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">
-                <span className="gradient-text-rose">PDF to Word converter</span>
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Convert PDF files into editable DOCX documents in your browser.
-              </p>
-            </div>
-            <PdfToWordConverter />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
-              <div className="glass-subtle rounded-xl p-5 text-center">
-                <HugeiconsIcon icon={Shield01Icon} size={20} strokeWidth={2} className="text-rose-400 mx-auto mb-2.5" />
-                <p className="text-sm font-medium text-foreground">Private by design</p>
-                <p className="text-xs text-muted-foreground mt-1">No file upload</p>
-              </div>
-              <div className="glass-subtle rounded-xl p-5 text-center">
-                <HugeiconsIcon icon={FlashIcon} size={20} strokeWidth={2} className="text-amber-500 mx-auto mb-2.5" />
-                <p className="text-sm font-medium text-foreground">Browser based</p>
-                <p className="text-xs text-muted-foreground mt-1">Runs locally</p>
-              </div>
-              <div className="glass-subtle rounded-xl p-5 text-center">
-                <HugeiconsIcon icon={SparklesIcon} size={20} strokeWidth={2} className="text-emerald-500 mx-auto mb-2.5" />
-                <p className="text-sm font-medium text-foreground">Editable DOCX</p>
-                <p className="text-xs text-muted-foreground mt-1">Review before reuse</p>
-              </div>
-            </div>
-
-            <section className="mt-12">
-              <h2 className="text-2xl font-bold tracking-tight text-foreground text-center mb-6">
-                PDF to Word details
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {infoSections.map((section) => (
-                  <div key={section.title} className="glass-subtle rounded-2xl p-5">
-                    <div className="w-10 h-10 rounded-xl icon-box-rose flex items-center justify-center mb-4">
-                      <HugeiconsIcon icon={File01Icon} size={18} strokeWidth={1.5} className="text-rose-500" />
-                    </div>
-                    <h3 className="text-sm font-semibold text-foreground mb-1">
-                      {section.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {section.text}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="mt-12">
-              <h2 className="text-2xl font-bold tracking-tight text-foreground text-center mb-6">
-                Common questions
-              </h2>
-              <div className="space-y-3">
-                {toolFaqs.map((faq, index) => (
-                  <FaqDetailsCard
-                    key={faq.question}
-                    question={faq.question}
-                    answer={faq.answer}
-                    defaultOpen={index === 0}
-                    variant="glass-subtle"
-                    showExpander={false}
-                  />
-                ))}
-              </div>
-            </section>
-
-            <section className="mt-12 rounded-2xl bg-white/55 border border-border/50 p-6 text-center">
-              <HugeiconsIcon icon={BookOpen01Icon} size={22} strokeWidth={1.5} className="text-rose-500 mx-auto mb-3" />
-              <h2 className="text-base font-semibold text-foreground mb-2">
-                Learn more about private PDF workflows
-              </h2>
-              <div className="flex flex-wrap justify-center gap-4 text-xs font-medium">
-                <Link href="/articles/modern-word-security" className="text-rose-600 hover:text-rose-700">
-                  Browser document security
-                </Link>
-                <Link href="/articles/formatting-guide" className="text-rose-600 hover:text-rose-700">
-                  Formatting guide
-                </Link>
-                <Link href="/faq" className="text-rose-600 hover:text-rose-700">
-                  Read all FAQs
-                </Link>
-              </div>
-            </section>
-
-            <AdSlot variant="content" visibleClassName="mt-8" />
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <ConverterLandingPage
+        accent="rose"
+        eyebrow="No file upload"
+        title="PDF to Word converter"
+        description="Convert PDF files into editable DOCX documents in your browser."
+        converter={<PdfToWordConverter />}
+        infoSections={infoSections}
+        faqs={toolFaqs}
+        learnTitle="Learn more about private PDF workflows"
+        learnLinks={[
+          { href: '/articles/modern-word-security', label: 'Browser document security' },
+          { href: '/articles/formatting-guide', label: 'Formatting guide' },
+          { href: '/faq', label: 'Read all FAQs' },
+        ]}
+      />
     </>
   );
 }

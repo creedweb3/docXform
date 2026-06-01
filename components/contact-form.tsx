@@ -100,7 +100,7 @@ export function ContactForm() {
         <button
           type="button"
           onClick={resetToForm}
-          className="mt-5 inline-flex items-center justify-center gap-2 bg-white/70 border border-blue-100/60 text-blue-700 rounded-xl px-5 py-2.5 font-medium text-sm hover:bg-white/90 transition-colors mx-auto"
+          className="mt-5 inline-flex items-center justify-center gap-2 border border-border/70 bg-card/40 text-foreground rounded-xl px-5 py-2.5 font-medium text-sm hover:bg-card/55 transition-colors mx-auto"
         >
           <HugeiconsIcon icon={RefreshIcon} size={14} strokeWidth={2} />
           Send another message
@@ -124,7 +124,7 @@ export function ContactForm() {
           required
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="w-full bg-white/70 border border-blue-100/60 rounded-xl px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-200/70"
+          className="w-full border border-border/70 bg-card/40 rounded-xl px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
           placeholder="Your name"
         />
       </div>
@@ -139,7 +139,7 @@ export function ContactForm() {
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="w-full bg-white/70 border border-blue-100/60 rounded-xl px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-200/70"
+          className="w-full border border-border/70 bg-card/40 rounded-xl px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
           placeholder="you@company.com"
         />
       </div>
@@ -154,7 +154,7 @@ export function ContactForm() {
           rows={8}
           value={message}
           onChange={(event) => setMessage(event.target.value)}
-          className="w-full min-h-[14rem] bg-white/70 border border-blue-100/60 rounded-xl px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-200/70 resize-none"
+          className="w-full min-h-[14rem] border border-border/70 bg-card/40 rounded-xl px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15 resize-none"
           placeholder="How can we help?"
         />
       </div>

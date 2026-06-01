@@ -327,7 +327,7 @@ export function ToolWorkspace({
   );
 
   const toneStyle = config.tone ? TONE_STYLES[config.tone] : undefined;
-  const chipClass = toneStyle?.chip ?? 'border-border/40 bg-white/65';
+  const chipClass = toneStyle?.chip ?? 'border-border/70 bg-card/50 text-muted-foreground';
   const studioInfoPillClass =
     toneStyle?.studioInfoPill ?? 'border-border/50 bg-muted/30 text-foreground ring-1 ring-border/40';
   const pageGridToneClass = toneStyle?.pageGridSelected ?? 'border-border/60 bg-muted/40 text-foreground';
@@ -1162,8 +1162,8 @@ export function ToolWorkspace({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }, [actions.zipName, handleDownloadSingle, outputs]);
 
-  const primaryCtaClass = `${CTA_FLEX_LAYOUT} bg-gradient-to-br ${config.primaryButtonClass} text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45`;
-  const secondaryCtaClass = `${CTA_FLEX_LAYOUT} border border-border/40 bg-white/60 text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-45`;
+  const primaryCtaClass = `${CTA_FLEX_LAYOUT} ${config.primaryButtonClass} transition-opacity disabled:cursor-not-allowed disabled:opacity-45`;
+  const secondaryCtaClass = `${CTA_FLEX_LAYOUT} border border-border/40 bg-card/40 text-foreground transition-colors hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-45`;
   const downloadIdleCtaClass = `${CTA_FLEX_LAYOUT} border border-dashed border-slate-300/75 bg-slate-100 text-slate-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-100`;
 
   const renderResultChips = (item: WorkspaceFile) => {
@@ -1263,7 +1263,7 @@ export function ToolWorkspace({
               onDrop={() => isReorderable && handleReorder(item.id)}
               onDragEnd={() => setDraggedFileId(null)}
               className={clsx(
-                'box-border min-h-12 w-full min-w-0 overflow-hidden rounded-xl border border-border/45 bg-white/60 px-2.5 py-2 transition focus-within:ring-2 focus-within:ring-ring',
+                'box-border min-h-12 w-full min-w-0 overflow-hidden rounded-xl border border-border/45 bg-card/40 px-2.5 py-2 transition focus-within:ring-2 focus-within:ring-ring',
                 draggedFileId === item.id && 'opacity-50',
                 isReorderable && 'cursor-grab active:cursor-grabbing'
               )}
@@ -1287,7 +1287,7 @@ export function ToolWorkspace({
                   ) : /\.pdf$/i.test(item.file.name) ? (
                     <div
                       className={clsx(
-                        'flex h-full w-full items-center justify-center rounded-lg bg-white/50',
+                        'flex h-full w-full items-center justify-center rounded-lg bg-card/40',
                         item.preview?.status === 'loading' && 'animate-pulse'
                       )}
                     >
@@ -1305,7 +1305,7 @@ export function ToolWorkspace({
                       />
                     </div>
                   ) : item.preview?.status === 'loading' ? (
-                    <div className="h-full w-full animate-pulse rounded-lg bg-white/60" />
+                    <div className="h-full w-full animate-pulse rounded-lg bg-card/40" />
                   ) : (
                     <HugeiconsIcon icon={File01Icon} size={22} strokeWidth={1.7} className={config.iconClass} />
                   )}
@@ -1426,7 +1426,7 @@ export function ToolWorkspace({
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={busy || files.length >= effectiveBatchMax}
-        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={2} />
         Add files
@@ -1435,7 +1435,7 @@ export function ToolWorkspace({
         type="button"
         onClick={handleReset}
         disabled={busy}
-        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-white/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-card/40 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-card/55 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
         Clear all
@@ -1445,7 +1445,7 @@ export function ToolWorkspace({
 
   const renderCtaRow = (opts?: { mobileRail?: boolean }) => {
     const mobile = opts?.mobileRail === true;
-    const mobilePrimary = `${MOBILE_RAIL_CTA_BASE} bg-gradient-to-br ${config.primaryButtonClass} text-white shadow-sm hover:opacity-90 disabled:opacity-45`;
+    const mobilePrimary = `${MOBILE_RAIL_CTA_BASE} ${config.primaryButtonClass} disabled:opacity-45`;
     const mobileSecondary = `${MOBILE_RAIL_CTA_BASE} border border-border/30 bg-white text-foreground hover:bg-muted/20 disabled:opacity-45 dark:bg-zinc-900/80`;
     const mobileIdle = `${MOBILE_RAIL_CTA_BASE} bg-muted/35 text-muted-foreground disabled:opacity-100`;
 
@@ -1587,11 +1587,11 @@ export function ToolWorkspace({
               <p className="text-xs text-muted-foreground">{config.hint}</p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5 bg-white/50 rounded-full px-3 py-1.5 border border-border/30">
+              <span className="inline-flex items-center gap-1.5 bg-card/40 rounded-full px-3 py-1.5 border border-border/70">
                 <HugeiconsIcon icon={Shield01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 Never uploaded to any server
               </span>
-              <span className="inline-flex items-center gap-1.5 bg-white/50 rounded-full px-3 py-1.5 border border-border/30">
+              <span className="inline-flex items-center gap-1.5 bg-card/40 rounded-full px-3 py-1.5 border border-border/70">
                 {MAX_CONVERSION_FILE_SIZE_LABEL} per file
               </span>
               {subtitle}
@@ -1721,14 +1721,14 @@ export function ToolWorkspace({
                 <button
                   type="button"
                   onClick={handleSkipDuplicates}
-                  className="rounded-full border border-border/40 bg-white/60 px-3 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-white/80"
+                  className="rounded-full border border-border/40 bg-card/40 px-3 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-card/55"
                 >
                   Skip
                 </button>
                 <button
                   type="button"
                   onClick={handleAddDuplicates}
-                  className={`rounded-full bg-gradient-to-br ${config.primaryButtonClass} px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-90`}
+                  className={`rounded-full ${config.primaryButtonClass} px-3 py-1 text-[11px] font-medium transition-opacity`}
                 >
                   Add again
                 </button>

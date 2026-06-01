@@ -1,5 +1,4 @@
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { SiteShell } from '@/components/site/site-shell';
 import { JsonLd } from '@/components/json-ld';
 import { ToolComingSoon } from '@/components/tools/tool-coming-soon';
 import { ToolExperience } from '@/components/tools/tool-experience';
@@ -46,17 +45,15 @@ export function ToolPage({ tool, workspace }: ToolPageProps) {
           faqPageJsonLd(toolFaqsForJsonLd(tool), path),
         ])}
       />
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 flex flex-col items-center px-4 pt-[7.75rem] pb-10 max-md:px-3 max-md:pt-[7rem] max-md:pb-safe sm:px-6 sm:pt-[9rem] sm:pb-12">
+      <SiteShell plain>
+        <div className="flex flex-col items-center px-4 pb-10 max-md:px-3 max-md:pb-safe sm:px-6 sm:pb-12">
           {available ? (
             <ToolExperience tool={tool} workspace={workspace} />
           ) : (
             <ToolComingSoon tool={tool} />
           )}
-        </main>
-        <Footer />
-      </div>
+        </div>
+      </SiteShell>
     </>
   );
 }

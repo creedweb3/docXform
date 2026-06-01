@@ -7,8 +7,9 @@ import {
   webPageJsonLd,
 } from '@/lib/seo';
 import { JsonLd } from '@/components/json-ld';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { SiteShell } from '@/components/site/site-shell';
+import { PageHero } from '@/components/site/page-hero';
+import { Container } from '@/components/site/ui/container';
 import { ToolsIndexClient } from '@/components/tools/tools-index-client';
 import { toolDefinitions } from '@/lib/tools';
 
@@ -53,13 +54,18 @@ export default function ToolsPage() {
           ),
         ])}
       />
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 flex flex-col items-center px-6 pt-[8.5rem] sm:pt-[9rem] pb-12">
-          <ToolsIndexClient />
-        </main>
-        <Footer />
-      </div>
+      <SiteShell plain>
+        <PageHero
+          eyebrow="Toolkit"
+          title="Every tool runs in your browser"
+          description="Search, filter, and open PDF & Office utilities — same local-only architecture as our flagship converters."
+        />
+        <section className="pb-20">
+          <Container size="full">
+            <ToolsIndexClient />
+          </Container>
+        </section>
+      </SiteShell>
     </>
   );
 }

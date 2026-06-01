@@ -9,6 +9,7 @@ import {
   Cancel01Icon,
 } from '@hugeicons/core-free-icons';
 import clsx from 'clsx';
+import { WORKSPACE_SECONDARY_SURFACE } from '@/lib/site-design';
 
 export type PageThumb = {
   id: string;
@@ -111,7 +112,7 @@ export function PageGrid({
   }, [compact, dense]);
 
   return (
-    <div className="w-full rounded-2xl border border-border/60 bg-white/80 p-3 shadow-sm backdrop-blur">
+    <div className="w-full rounded-2xl border border-border/70 bg-card/40 p-3 backdrop-blur-md">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-foreground">Pages</span>
@@ -122,7 +123,7 @@ export function PageGrid({
             type="button"
             className={clsx(
               'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition',
-              dense ? `${toneClass}` : 'border-border/60 bg-white/70 text-muted-foreground'
+              dense ? `${toneClass}` : `border-border/70 bg-card/30 text-muted-foreground hover:bg-card/55`
             )}
             onClick={() => setDense((v) => !v)}
           >
@@ -132,7 +133,7 @@ export function PageGrid({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-white/70 text-muted-foreground transition hover:bg-white"
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors ${WORKSPACE_SECONDARY_SURFACE}`}
               aria-label="Close page grid"
             >
               <HugeiconsIcon icon={Cancel01Icon} size={14} strokeWidth={2} />
@@ -145,7 +146,7 @@ export function PageGrid({
           <button
             type="button"
             onClick={onSelectAll}
-            className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-white/70 px-2.5 py-1 font-medium text-foreground transition hover:bg-white"
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${WORKSPACE_SECONDARY_SURFACE}`}
           >
             Select all
           </button>
@@ -154,7 +155,7 @@ export function PageGrid({
           <button
             type="button"
             onClick={onSelectNone}
-            className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-white/70 px-2.5 py-1 font-medium text-foreground transition hover:bg-white"
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${WORKSPACE_SECONDARY_SURFACE}`}
           >
             Clear
           </button>
@@ -182,7 +183,7 @@ export function PageGrid({
                 onDragOver={handleDragOver}
                 onDrop={reorderable ? handleDropOn(index) : undefined}
                 className={clsx(
-                  'group relative flex flex-col gap-2 rounded-xl border bg-white/80 p-2 shadow-sm transition hover:shadow-md',
+                  'group relative flex flex-col gap-2 rounded-xl border border-border/70 bg-card/40 p-2 transition-colors hover:border-foreground/12 hover:bg-card/55',
                   isSelected ? `${toneClass} border-opacity-80` : 'border-border/60',
                   reorderable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
                   reorderable && draggingFrom === index && 'ring-2 ring-ring/50'
@@ -198,7 +199,7 @@ export function PageGrid({
                 />
                 <div
                   className={clsx(
-                    'flex items-center justify-center overflow-hidden rounded-lg border border-border/50 bg-white/70',
+                    'flex items-center justify-center overflow-hidden rounded-lg border border-border/70 bg-card/50',
                     dense ? 'h-32' : 'h-40'
                   )}
                 >
@@ -226,14 +227,14 @@ export function PageGrid({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={spring}
-                    className="pointer-events-none absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/85 px-2 py-1 text-[10px] font-semibold text-emerald-600 shadow-sm"
+                    className="pointer-events-none absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-border/70 bg-card/90 px-2 py-1 text-[10px] font-semibold text-emerald-500"
                   >
                     <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={2} />
                     Selected
                   </motion.span>
                 )}
                 {page.status === 'loading' && (
-                  <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-white/85 px-2 py-1 text-[10px] font-medium text-muted-foreground shadow-sm">
+                  <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full border border-border/70 bg-card/90 px-2 py-1 text-[10px] font-medium text-muted-foreground">
                     <HugeiconsIcon icon={RefreshIcon} size={12} strokeWidth={2} className="animate-spin" />
                     Loading
                   </span>

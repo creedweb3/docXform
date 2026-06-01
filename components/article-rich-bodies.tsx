@@ -12,6 +12,10 @@ const RICH_SLUGS = new Set([
   'wasm-converter-troubleshooting',
   'first-load-wasm-slow-devices',
   'browser-conversion-future',
+  'modern-word-security',
+  'formatting-guide',
+  'docx-standards',
+  'pdf-optimization',
 ]);
 
 export function hasArticleRichBody(slug: string): boolean {
@@ -20,7 +24,10 @@ export function hasArticleRichBody(slug: string): boolean {
 
 function InlineLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className="font-medium text-blue-600 hover:text-blue-700 underline-offset-2 hover:underline">
+    <Link
+      href={href}
+      className="font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground transition-colors"
+    >
       {children}
     </Link>
   );
@@ -48,6 +55,14 @@ export function ArticleRichBody({ slug }: { slug: string }) {
       return <FirstLoadSlowDevicesBody />;
     case 'browser-conversion-future':
       return <BrowserConversionFutureBody />;
+    case 'modern-word-security':
+      return <ModernWordSecurityBody />;
+    case 'formatting-guide':
+      return <FormattingGuideBody />;
+    case 'docx-standards':
+      return <DocxStandardsBody />;
+    case 'pdf-optimization':
+      return <PdfOptimizationBody />;
     default:
       return null;
   }
@@ -364,6 +379,157 @@ function FirstLoadSlowDevicesBody() {
         Tell users to open the tool once on a good connection before a deadline rush. Pair that with the plain-language future view
         in <InlineLink href="/articles/browser-conversion-future">browser conversion and the next few years</InlineLink> so people
         know why the approach exists.
+      </p>
+    </>
+  );
+}
+
+function ModernWordSecurityBody() {
+  return (
+    <>
+      <p>
+        Most online conversion tools require uploading your files to a remote server. This creates avoidable risk: your data
+        passes through networks and sits on infrastructure you do not control. Even with HTTPS, your documents exist on
+        someone else&apos;s servers while they are processed.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">The cloud conversion problem</h2>
+      <p>
+        When you upload a DOCX file to a traditional converter, it is transmitted over the internet, stored temporarily on a
+        server, processed by software you cannot inspect, and sent back. Server logs, backups, and caching layers can retain
+        copies longer than users expect.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">WebAssembly changes the workflow</h2>
+      <p>
+        WebAssembly (WASM) enables high-performance applications to run directly in your browser at near-native speeds. With a
+        WASM-powered tool like docXform, your file is read by the browser, processed by a WASM module in the browser sandbox,
+        and the result is generated in memory on your device.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">The browser sandbox</h2>
+      <p>
+        WASM runs inside the browser&apos;s security sandbox, which enforces the same-origin policy and restricts file system
+        access. The converter can process the file you selected, but it does not get broad access to your device.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Verifiable privacy</h2>
+      <p>
+        With client-side processing, you can inspect network traffic using browser dev tools and confirm the conversion file
+        itself is not transmitted to docXform servers. For teams handling sensitive documents, this reduces the exposure created
+        by upload-based conversion workflows. See also{' '}
+        <InlineLink href="/articles/pdf-to-word-privacy-compliance">privacy and compliance</InlineLink> and the{' '}
+        <InlineLink href="/privacy">Privacy Policy</InlineLink>.
+      </p>
+    </>
+  );
+}
+
+function FormattingGuideBody() {
+  return (
+    <>
+      <p>
+        Well-formatted DOCX documents convert more cleanly to PDF. This guide covers document preparation techniques that help
+        keep output consistent across common Word to PDF workflows.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Styles over manual formatting</h2>
+      <p>
+        Define styles for headings, body text, and captions rather than manually applying bold, sizes, and colors. Styles ensure
+        uniformity and make global changes easier. Templates take this further by providing predefined sets of styles and layouts.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Page layout</h2>
+      <p>
+        Standard business documents often use 1-inch margins. When using columns, tables, or text boxes, keep layouts simple and
+        avoid deeply nested structures. Use section breaks to isolate complex regions.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Font selection</h2>
+      <p>
+        Use commonly available fonts such as Arial, Times New Roman, or Calibri to reduce substitution risk. If you need custom
+        fonts, embed them in the DOCX file where licensing allows it. Read{' '}
+        <InlineLink href="/articles/font-embedding-pdf">font embedding and fidelity</InlineLink> for PDF-specific checks.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Image handling</h2>
+      <p>
+        Use appropriately sized images rather than inserting large files and scaling down. PNG works well for screenshots and
+        sharp graphics, while JPEG works well for photographs. Inline placement is often more reliable than floating images during
+        conversion.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Pre-conversion checklist</h2>
+      <p>
+        Verify that styles are consistent, images are properly sized, fonts are embedded or common, and page breaks use section
+        breaks. These checks improve the chance of clean, professional PDF output. Then run a sample through{' '}
+        <InlineLink href="/word-to-pdf">Word to PDF</InlineLink>.
+      </p>
+    </>
+  );
+}
+
+function DocxStandardsBody() {
+  return (
+    <>
+      <p>
+        The DOCX format is one of the world&apos;s most widely used document formats. Behind the familiar extension is a
+        standards-based architecture that helps documents move between editors, converters, and publishing workflows.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">What is Office Open XML?</h2>
+      <p>
+        Office Open XML (OOXML) is an open standard for representing word processing documents, spreadsheets, and presentations.
+        Standardized as ISO/IEC 29500, DOCX is the word processing implementation. Unlike the older binary DOC format, OOXML is
+        based on XML with documented schemas.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Inside a DOCX file</h2>
+      <p>
+        A DOCX file is a ZIP archive containing XML files and folders. Key files include document.xml for content and structure,
+        styles.xml for formatting, and relationship files describing how parts connect. This modular structure makes DOCX
+        flexible and easier for conversion engines to inspect.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Compatibility</h2>
+      <p>
+        DOCX is supported by Microsoft Word, Google Docs, LibreOffice, Apple Pages, and many other applications. Not every editor
+        implements the standard in the same way, which can cause formatting differences. This is one reason PDF is preferred for
+        sharing final documents.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Why standards matter for conversion</h2>
+      <p>
+        Because the format is documented and structured, conversion engines can parse DOCX systematically and produce PDF output
+        from its text, styles, images, and layout information. WebAssembly allows a converter to run that workflow inside the
+        browser — see <InlineLink href="/articles/modern-word-security">WASM security</InlineLink> and{' '}
+        <InlineLink href="/about">About</InlineLink>.
+      </p>
+    </>
+  );
+}
+
+function PdfOptimizationBody() {
+  return (
+    <>
+      <p>
+        PDF files can become large because of embedded images, fonts, and metadata. Optimization reduces file size, improves
+        loading times, and makes sharing easier while preserving the visual quality users need.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Understanding PDF bloat</h2>
+      <p>
+        High-resolution images are a common source of oversized PDFs. Embedded fonts, especially full font families, can also add
+        weight. The right optimization method depends on whether the document is image-heavy, text-heavy, or designed for print.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Image compression</h2>
+      <p>
+        Use JPEG for photographs and PNG for sharp graphics. Downsampling images to match their display resolution can reduce
+        file size significantly without a visible difference for screen reading.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Font subsetting</h2>
+      <p>
+        Font subsetting includes only the characters used in the document rather than the entire font. This can reduce font data
+        while keeping the intended appearance for the text that is present. Pair with{' '}
+        <InlineLink href="/articles/font-embedding-pdf">font embedding guidance</InlineLink>.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Object optimization</h2>
+      <p>
+        Edited and re-saved PDFs can accumulate unused objects. Removing them reduces file size. Linearization can also reorganize
+        the PDF so the first page displays before the entire file downloads.
+      </p>
+      <h2 className="text-lg font-semibold text-foreground pt-2">Before you convert</h2>
+      <p>
+        When creating a PDF from Word, start with optimized images and consistent styles in the source document. Cleaner source
+        files usually produce smaller, more reliable PDFs — start from the{' '}
+        <InlineLink href="/articles/formatting-guide">formatting guide</InlineLink> and{' '}
+        <InlineLink href="/word-to-pdf">Word to PDF</InlineLink> tool.
       </p>
     </>
   );

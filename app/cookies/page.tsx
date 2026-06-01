@@ -1,5 +1,4 @@
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { ContentPage } from '@/components/site/content-page';
 import { JsonLd } from '@/components/json-ld';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -39,16 +38,8 @@ export default function CookiesPage() {
           ]),
         ])}
       />
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 pt-[8.5rem] sm:pt-[9rem]">
-        <article className="px-6 pt-4 sm:pt-6 pb-14 sm:pb-16">
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-10">
-              <h1 className="text-3xl sm:text-[2.75rem] font-bold tracking-tight text-foreground mb-3">Cookie Policy</h1>
-              <p className="text-xs text-muted-foreground">Last updated: May 1, 2026</p>
-            </div>
-            <div className="prose prose-neutral max-w-none space-y-5 text-sm text-muted-foreground leading-relaxed">
+      <ContentPage title="Cookie Policy" eyebrow="Legal" description="Last updated: May 1, 2026">
+              <div className="space-y-5">
               <h2 className="text-lg font-semibold text-foreground pt-2">What Are Cookies</h2>
               <p>Cookies are small text files stored on your device when you visit a website. They can be persistent (until expiry or deletion) or session-based (deleted when you close your browser).</p>
               <h2 className="text-lg font-semibold text-foreground pt-2">Cookies We Use</h2>
@@ -59,12 +50,8 @@ export default function CookiesPage() {
               <p>Control cookies through your browser settings. Blocking all cookies may affect functionality. To opt out of personalized Google ads, visit <a href="https://www.google.com/settings/ads" className="text-foreground underline" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</p>
               <h2 className="text-lg font-semibold text-foreground pt-2">Contact</h2>
               <p>Questions? <Link href="/contact" className="text-foreground underline">Contact us</Link>.</p>
-            </div>
-          </div>
-        </article>
-        </main>
-        <Footer />
-      </div>
+              </div>
+      </ContentPage>
     </>
   );
 }

@@ -1,8 +1,11 @@
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { SiteShell } from '@/components/site/site-shell';
+import { PageHero } from '@/components/site/page-hero';
+import { Container } from '@/components/site/ui/container';
+import { Button } from '@/components/site/ui/button';
+import { Card } from '@/components/site/ui/card';
 import { FAQSchema } from '@/components/faq-schema';
 import { AdSlot } from '@/components/ad-slot';
-import Link from 'next/link';
+import { FaqDetailsCard } from '@/components/faq-details-card';
 import type { Metadata } from 'next';
 import { SITE_FAQS } from '@/lib/site-faqs';
 import {
@@ -13,7 +16,6 @@ import {
   webPageJsonLd,
 } from '@/lib/seo';
 import { JsonLd } from '@/components/json-ld';
-import { FaqDetailsCard } from '@/components/faq-details-card';
 
 const title = 'FAQ - Private Word and PDF Conversion Questions | docXform';
 const description =
@@ -33,72 +35,53 @@ export default function FaqPage() {
       <JsonLd
         id="faq-page-schema"
         data={schemaGraph([
-          webPageJsonLd({
-            type: 'WebPage',
-            name: title,
-            description,
-            path: '/faq',
-          }),
+          webPageJsonLd({ type: 'WebPage', name: title, description, path: '/faq' }),
           breadcrumbJsonLd([
             { name: 'Home', path: '/' },
             { name: 'FAQ', path: '/faq' },
           ]),
         ])}
       />
-      <div className="min-h-screen flex flex-col bg-dot-grid-subtle">
-        <Navbar />
-        <main className="flex-1 pt-[8.5rem] sm:pt-[9rem]">
-          <section className="px-6 pt-4 sm:pt-6 pb-14 sm:pb-16">
-            <div className="mx-auto max-w-6xl">
-              <div className="grid grid-cols-1 xl:grid-cols-[180px_minmax(0,1fr)_180px] gap-8">
-                <aside className="hidden xl:block xl:sticky xl:top-32 self-start">
+      <SiteShell>
+        <PageHero
+          eyebrow="Help"
+          title="Questions & answers"
+          description="Privacy, file limits, supported formats, and what to expect from browser-based conversion."
+        />
+        <section className="pb-24">
+          <Container size="full">
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_minmax(0,40rem)_1fr] gap-8">
+              <aside className="hidden xl:block xl:sticky xl:top-24 self-start">
+                <AdSlot variant="content" />
+              </aside>
+              <div className="space-y-2 min-w-0">
+                {SITE_FAQS.map((faq, index) => (
+                  <FaqDetailsCard
+                    key={faq.question}
+                    question={faq.question}
+                    answer={faq.answer}
+                    defaultOpen={index === 0}
+                  />
+                ))}
+                <Card padding="lg" className="mt-10 text-center">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Business or partnership inquiries?
+                  </p>
+                  <Button href="/contact" variant="primary">
+                    Contact docXform
+                  </Button>
+                </Card>
+                <div className="mt-8 xl:hidden flex justify-center">
                   <AdSlot variant="content" />
-                </aside>
-                <div className="max-w-2xl mx-auto w-full">
-                  <div className="text-center mb-10">
-                    <h1 className="text-3xl sm:text-[2.75rem] font-bold tracking-tight text-foreground mb-3">
-                      Frequently Asked Questions
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                      Everything you need to know about docXform&apos;s
-                      browser-based Word to PDF and PDF to Word tools.
-                    </p>
-                  </div>
-                  <div className="space-y-3">
-                    {SITE_FAQS.map((faq, index) => (
-                      <FaqDetailsCard
-                        key={faq.question}
-                        question={faq.question}
-                        answer={faq.answer}
-                        defaultOpen={index === 0}
-                        variant="glass"
-                      />
-                    ))}
-                  </div>
-                  <div className="mt-12 text-center">
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Need business help with docXform?
-                    </p>
-                    <Link
-                      href="/contact"
-                      className="inline-flex items-center gap-2 bg-gradient-to-br from-slate-800 to-slate-600 text-white rounded-xl px-5 py-2.5 font-medium text-xs hover:opacity-90 transition-opacity"
-                    >
-                      Contact docXform
-                    </Link>
-                  </div>
-                  <div className="mt-10 xl:hidden">
-                    <AdSlot variant="content" />
-                  </div>
                 </div>
-                <aside className="hidden xl:block xl:sticky xl:top-32 self-start">
-                  <AdSlot variant="content" />
-                </aside>
               </div>
+              <aside className="hidden xl:block xl:sticky xl:top-24 self-start">
+                <AdSlot variant="content" />
+              </aside>
             </div>
-          </section>
-        </main>
-        <Footer />
-      </div>
+          </Container>
+        </section>
+      </SiteShell>
     </>
   );
 }

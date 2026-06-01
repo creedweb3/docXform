@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "design:judge": "node scripts/design-judge.mjs",
+    "design:judge:all": "node scripts/design-judge.mjs --all",
     "knip": "knip",
     "clean:local": "node scripts/cleanup-local-artifacts.mjs",
     "test:e2e": "playwright test",

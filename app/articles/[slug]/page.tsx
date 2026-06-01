@@ -1,5 +1,5 @@
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { SiteShell } from '@/components/site/site-shell';
+import { ArticleDetailCtaCard } from '@/components/site/article-detail-cta-card';
 import { AdSlot } from '@/components/ad-slot';
 import { JsonLd } from '@/components/json-ld';
 import Link from 'next/link';
@@ -70,10 +70,8 @@ export default async function ArticleDetailPage({ params }: PageProps) {
           ]),
         ])}
       />
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 pt-[8.5rem] sm:pt-[9rem]">
-          <article className="px-6 py-14 sm:py-16">
+      <SiteShell>
+          <article className="px-4 sm:px-6 py-12 sm:py-16">
             <div className="mx-auto max-w-6xl">
               <div className="grid grid-cols-1 xl:grid-cols-[180px_minmax(0,1fr)_180px] gap-8">
                 <aside className="hidden xl:block xl:sticky xl:top-32 self-start">
@@ -96,7 +94,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
                       className={visuals.iconClass}
                     />
                   </div>
-                  <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">{article.title}</h1>
+                  <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight mb-3">{article.title}</h1>
                   <p className="text-xs text-muted-foreground mb-10">
                     <time dateTime={article.dateModified}>Updated {formatArticleDate(article.dateModified)}</time>{' '}
                     &middot; {article.readTime} by {article.author}
@@ -125,13 +123,12 @@ export default async function ArticleDetailPage({ params }: PageProps) {
                       </>
                     )}
                   </div>
-                  <div className="mt-10 rounded-2xl bg-white/60 border border-border/50 p-6">
-                    <h2 className="text-base font-semibold text-foreground mb-2">{cta.title}</h2>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-4">{cta.body}</p>
-                    <Link href={article.relatedHref} className={`text-xs font-semibold ${visuals.ctaLinkClass}`}>
-                      {article.relatedLabel}
-                    </Link>
-                  </div>
+                  <ArticleDetailCtaCard
+                    title={cta.title}
+                    body={cta.body}
+                    href={article.relatedHref}
+                    linkLabel={article.relatedLabel}
+                  />
                   <div className="mt-10 xl:hidden">
                     <AdSlot variant="content" />
                   </div>
@@ -142,9 +139,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
               </div>
             </div>
           </article>
-        </main>
-        <Footer />
-      </div>
+      </SiteShell>
     </>
   );
 }

@@ -1,7 +1,7 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
-import { Inter } from 'next/font/google';
+import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
 import { ADSENSE_CLIENT_ID, ADSENSE_SCRIPT_SRC } from '@/lib/adsense';
 import { ConverterQueueProvider } from '@/components/converter-queue-provider';
 import { PostLcpWasmPrime } from '@/components/post-lcp-wasm-prime';
@@ -18,17 +18,33 @@ import {
 } from '@/lib/seo';
 import { WasmCdnResourceHints } from '@/components/wasm-cdn-resource-hints';
 
-const inter = Inter({
+const sans = IBM_Plex_Sans({
   subsets: ['latin'],
   display: 'swap',
   adjustFontFallback: true,
   preload: true,
+  variable: '--font-sans',
+  weight: ['400', '500', '600'],
+});
+
+const display = Fraunces({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-display',
+  weight: ['500', '600', '700'],
+});
+
+const mono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-mono',
+  weight: ['400', '500'],
 });
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#f8fafc',
+  themeColor: '#100e0c',
 };
 
 export const metadata: Metadata = {
@@ -78,8 +94,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className="dark">
+      <body
+        className={`${sans.variable} ${display.variable} ${mono.variable} ${sans.className} font-sans antialiased`}
+      >
         <JsonLd
           id="site-schema"
           data={schemaGraph([organizationJsonLd(), websiteJsonLd()])}

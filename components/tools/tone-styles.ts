@@ -1,5 +1,29 @@
+import { WORKSPACE_PRIMARY_CTA } from '@/lib/site-design';
+
 /** File-type brand colors (see {@link FORMAT_TONE} in lib/format-tone.ts). */
 export type FormatTone = 'rose' | 'blue' | 'purple' | 'orange';
+
+const DARK_DRAG_BLUE = 'ring-2 ring-blue-500/20 bg-blue-500/[0.06]';
+const DARK_DRAG_ROSE = 'ring-2 ring-rose-500/20 bg-rose-500/[0.06]';
+const DARK_DRAG_PURPLE = 'ring-2 ring-purple-500/20 bg-purple-500/[0.06]';
+const DARK_DRAG_ORANGE = 'ring-2 ring-orange-500/20 bg-orange-500/[0.06]';
+const DARK_DRAG_EMERALD = 'ring-2 ring-emerald-500/20 bg-emerald-500/[0.06]';
+const DARK_DRAG_AMBER = 'ring-2 ring-amber-500/20 bg-amber-500/[0.06]';
+const DARK_DRAG_TEAL = 'ring-2 ring-teal-500/20 bg-teal-500/[0.06]';
+const DARK_DRAG_CYAN = 'ring-2 ring-cyan-500/20 bg-cyan-500/[0.06]';
+const DARK_DRAG_INDIGO = 'ring-2 ring-indigo-500/20 bg-indigo-500/[0.06]';
+const DARK_DRAG_SLATE = 'ring-2 ring-slate-400/20 bg-slate-500/[0.06]';
+const DARK_DRAG_SKY = 'ring-2 ring-sky-500/20 bg-sky-500/[0.06]';
+const DARK_DRAG_VIOLET = 'ring-2 ring-violet-500/20 bg-violet-500/[0.06]';
+const DARK_DRAG_LIME = 'ring-2 ring-lime-500/20 bg-lime-500/[0.06]';
+const DARK_DRAG_FUCHSIA = 'ring-2 ring-fuchsia-500/20 bg-fuchsia-500/[0.06]';
+
+const DARK_CHIP = 'border-border/70 bg-card/50 text-muted-foreground';
+const DARK_LINK = 'text-foreground/85 hover:text-foreground underline-offset-4';
+const DARK_PAGE_GRID = 'border-border/80 bg-card/50 text-foreground';
+const DARK_STUDIO_INFO_PILL =
+  'border-border/70 bg-card/40 text-foreground shadow-sm ring-1 ring-border/40';
+const DARK_STUDIO_BANNER_MARK = 'bg-card/60 text-muted-foreground';
 
 /** All pastel palette keys (format tones + legacy studio hues). */
 export type ToneKey =
@@ -28,8 +52,6 @@ export type ToneStyle = {
   converterCta: string;
   /** Selected card tint for PageGrid (border + background). */
   pageGridSelected: string;
-  /** Tailwind class fragment for `bg-gradient-to-br` (from/to). */
-  gradientText: string;
   /** Tinted icon color matching the tone (medium weight). */
   pillIcon: string;
   /** Existing `icon-box-*` utility for square icon tiles. */
@@ -55,40 +77,40 @@ export type ToneStyle = {
 export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   blue: {
     mainCard: 'converter-main-card-blue',
-    drag: 'ring-2 ring-blue-300/50 bg-blue-50/60 scale-[1.01]',
-    primaryButton: 'from-blue-500 to-blue-400',
+    drag: DARK_DRAG_BLUE,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-blue-400 to-cyan-400',
     indexCard: 'converter-card-blue',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-blue-300/80 bg-blue-50/75 text-blue-900',
-    gradientText: 'from-blue-500 to-sky-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-blue-500',
     iconBox: 'icon-box-blue',
     iconText: 'text-blue-500',
     iconTextSubtle: 'text-blue-400',
-    linkText: 'text-blue-600 hover:text-blue-700',
-    chip: 'border-blue-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-blue-300/70 bg-blue-50/95 text-blue-950 shadow-sm ring-1 ring-blue-500/10',
-    studioInfoBannerMark: 'bg-blue-200/70 text-blue-900',
+    studioInfoBannerMark: DARK_STUDIO_BANNER_MARK,
     scrollbarThumb: 'rgba(147, 197, 253, 0.78)',
     scrollbarThumbHover: 'rgba(125, 211, 252, 0.88)',
   },
   emerald: {
     mainCard: 'converter-main-card-emerald',
-    drag: 'ring-2 ring-emerald-300/50 bg-emerald-50/60 scale-[1.01]',
-    primaryButton: 'from-emerald-500 to-emerald-400',
+    drag: DARK_DRAG_EMERALD,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-emerald-400 to-teal-400',
     indexCard: 'converter-main-card-emerald',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-emerald-300/80 bg-emerald-50/75 text-emerald-900',
-    gradientText: 'from-emerald-500 to-teal-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-emerald-500',
     iconBox: 'icon-box-emerald',
     iconText: 'text-emerald-500',
     iconTextSubtle: 'text-emerald-400',
-    linkText: 'text-emerald-600 hover:text-emerald-700',
-    chip: 'border-emerald-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-emerald-300/70 bg-emerald-50/95 text-emerald-950 shadow-sm ring-1 ring-emerald-500/10 dark:border-emerald-400/35 dark:bg-emerald-950/50 dark:text-emerald-50 dark:ring-emerald-400/10',
     studioInfoBannerMark:
@@ -98,19 +120,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   amber: {
     mainCard: 'converter-main-card-amber',
-    drag: 'ring-2 ring-amber-300/50 bg-amber-50/60 scale-[1.01]',
-    primaryButton: 'from-amber-500 to-amber-400',
+    drag: DARK_DRAG_AMBER,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-amber-400 to-yellow-400',
     indexCard: 'converter-main-card-amber',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-amber-300/80 bg-amber-50/75 text-amber-900',
-    gradientText: 'from-amber-500 to-yellow-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-amber-500',
     iconBox: 'icon-box-amber',
     iconText: 'text-amber-500',
     iconTextSubtle: 'text-amber-400',
-    linkText: 'text-amber-600 hover:text-amber-700',
-    chip: 'border-amber-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-amber-300/70 bg-amber-50/95 text-amber-950 shadow-sm ring-1 ring-amber-500/10 dark:border-amber-400/35 dark:bg-amber-950/50 dark:text-amber-50 dark:ring-amber-400/10',
     studioInfoBannerMark:
@@ -120,19 +142,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   teal: {
     mainCard: 'converter-main-card-teal',
-    drag: 'ring-2 ring-teal-300/50 bg-teal-50/60 scale-[1.01]',
-    primaryButton: 'from-teal-500 to-teal-400',
+    drag: DARK_DRAG_TEAL,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-teal-400 to-cyan-400',
     indexCard: 'converter-main-card-teal',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-teal-300/80 bg-teal-50/75 text-teal-900',
-    gradientText: 'from-teal-500 to-cyan-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-teal-500',
     iconBox: 'icon-box-teal',
     iconText: 'text-teal-500',
     iconTextSubtle: 'text-teal-400',
-    linkText: 'text-teal-600 hover:text-teal-700',
-    chip: 'border-teal-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-teal-300/70 bg-teal-50/95 text-teal-950 shadow-sm ring-1 ring-teal-500/10 dark:border-teal-400/35 dark:bg-teal-950/50 dark:text-teal-50 dark:ring-teal-400/10',
     studioInfoBannerMark:
@@ -142,19 +164,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   purple: {
     mainCard: 'converter-main-card-purple',
-    drag: 'ring-2 ring-purple-300/50 bg-purple-50/60 scale-[1.01]',
-    primaryButton: 'from-purple-500 to-purple-400',
-    progress: 'from-purple-400 to-violet-400',
+    drag: DARK_DRAG_PURPLE,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
+    progress: 'from-purple-400/80 to-purple-500/60',
     indexCard: 'converter-main-card-purple',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-purple-300/80 bg-purple-50/75 text-purple-900',
-    gradientText: 'from-purple-500 to-violet-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-purple-500',
     iconBox: 'icon-box-purple',
     iconText: 'text-purple-500',
     iconTextSubtle: 'text-purple-400',
-    linkText: 'text-purple-600 hover:text-purple-700',
-    chip: 'border-purple-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-purple-300/70 bg-purple-50/95 text-purple-950 shadow-sm ring-1 ring-purple-500/10 dark:border-purple-400/35 dark:bg-purple-950/50 dark:text-purple-50 dark:ring-purple-400/10',
     studioInfoBannerMark:
@@ -164,19 +186,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   cyan: {
     mainCard: 'converter-main-card-cyan',
-    drag: 'ring-2 ring-cyan-300/50 bg-cyan-50/60 scale-[1.01]',
-    primaryButton: 'from-cyan-500 to-cyan-400',
+    drag: DARK_DRAG_CYAN,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-cyan-400 to-sky-400',
     indexCard: 'converter-main-card-cyan',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-cyan-300/80 bg-cyan-50/75 text-cyan-900',
-    gradientText: 'from-cyan-500 to-sky-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-cyan-500',
     iconBox: 'icon-box-cyan',
     iconText: 'text-cyan-500',
     iconTextSubtle: 'text-cyan-400',
-    linkText: 'text-cyan-600 hover:text-cyan-700',
-    chip: 'border-cyan-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-cyan-300/70 bg-cyan-50/95 text-cyan-950 shadow-sm ring-1 ring-cyan-500/10 dark:border-cyan-400/35 dark:bg-cyan-950/50 dark:text-cyan-50 dark:ring-cyan-400/10',
     studioInfoBannerMark:
@@ -186,19 +208,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   orange: {
     mainCard: 'converter-main-card-orange',
-    drag: 'ring-2 ring-orange-300/50 bg-orange-50/60 scale-[1.01]',
-    primaryButton: 'from-orange-500 to-orange-400',
+    drag: DARK_DRAG_ORANGE,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-orange-400 to-amber-400',
     indexCard: 'converter-main-card-orange',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-orange-300/80 bg-orange-50/75 text-orange-900',
-    gradientText: 'from-orange-500 to-amber-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-orange-500',
     iconBox: 'icon-box-orange',
     iconText: 'text-orange-500',
     iconTextSubtle: 'text-orange-400',
-    linkText: 'text-orange-600 hover:text-orange-700',
-    chip: 'border-orange-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-orange-300/70 bg-orange-50/95 text-orange-950 shadow-sm ring-1 ring-orange-500/10 dark:border-orange-400/35 dark:bg-orange-950/50 dark:text-orange-50 dark:ring-orange-400/10',
     studioInfoBannerMark:
@@ -208,19 +230,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   indigo: {
     mainCard: 'converter-main-card-indigo',
-    drag: 'ring-2 ring-indigo-300/50 bg-indigo-50/60 scale-[1.01]',
-    primaryButton: 'from-indigo-500 to-indigo-400',
+    drag: DARK_DRAG_INDIGO,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-indigo-400 to-blue-400',
     indexCard: 'converter-main-card-indigo',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-indigo-300/80 bg-indigo-50/75 text-indigo-900',
-    gradientText: 'from-indigo-500 to-blue-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-indigo-500',
     iconBox: 'icon-box-indigo',
     iconText: 'text-indigo-500',
     iconTextSubtle: 'text-indigo-400',
-    linkText: 'text-indigo-600 hover:text-indigo-700',
-    chip: 'border-indigo-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-indigo-300/70 bg-indigo-50/95 text-indigo-950 shadow-sm ring-1 ring-indigo-500/10 dark:border-indigo-400/35 dark:bg-indigo-950/50 dark:text-indigo-50 dark:ring-indigo-400/10',
     studioInfoBannerMark:
@@ -230,19 +252,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   slate: {
     mainCard: 'converter-main-card-slate',
-    drag: 'ring-2 ring-slate-300/50 bg-slate-50/60 scale-[1.01]',
-    primaryButton: 'from-slate-600 to-slate-500',
+    drag: DARK_DRAG_SLATE,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-slate-400 to-gray-400',
     indexCard: 'converter-main-card-slate',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-slate-300/80 bg-slate-50/75 text-slate-900',
-    gradientText: 'from-slate-600 to-gray-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-slate-500',
     iconBox: 'icon-box-slate',
     iconText: 'text-slate-600',
     iconTextSubtle: 'text-slate-400',
-    linkText: 'text-slate-700 hover:text-slate-900',
-    chip: 'border-slate-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-slate-300/70 bg-slate-50/95 text-slate-950 shadow-sm ring-1 ring-slate-500/10 dark:border-slate-500/35 dark:bg-slate-900/55 dark:text-slate-50 dark:ring-slate-400/10',
     studioInfoBannerMark:
@@ -252,19 +274,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   rose: {
     mainCard: 'converter-main-card-rose',
-    drag: 'ring-2 ring-rose-300/50 bg-rose-50/60 scale-[1.01]',
-    primaryButton: 'from-rose-500 to-rose-400',
+    drag: DARK_DRAG_ROSE,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-rose-400 to-pink-400',
     indexCard: 'converter-card-rose',
     converterCta: 'converter-cta-rose',
-    pageGridSelected: 'border-rose-300/80 bg-rose-50/75 text-rose-900',
-    gradientText: 'from-rose-400 to-pink-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-rose-500',
     iconBox: 'icon-box-rose',
     iconText: 'text-rose-400',
     iconTextSubtle: 'text-rose-400',
-    linkText: 'text-rose-600 hover:text-rose-700',
-    chip: 'border-rose-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-rose-300/70 bg-rose-50/95 text-rose-950 shadow-sm ring-1 ring-rose-500/10 dark:border-rose-400/35 dark:bg-rose-950/50 dark:text-rose-50 dark:ring-rose-400/10',
     studioInfoBannerMark:
@@ -274,19 +296,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   sky: {
     mainCard: 'converter-main-card-sky',
-    drag: 'ring-2 ring-sky-300/50 bg-sky-50/60 scale-[1.01]',
-    primaryButton: 'from-sky-500 to-sky-400',
+    drag: DARK_DRAG_SKY,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-sky-400 to-cyan-400',
     indexCard: 'converter-main-card-sky',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-sky-300/80 bg-sky-50/75 text-sky-900',
-    gradientText: 'from-sky-500 to-cyan-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-sky-500',
     iconBox: 'icon-box-sky',
     iconText: 'text-sky-500',
     iconTextSubtle: 'text-sky-400',
-    linkText: 'text-sky-600 hover:text-sky-700',
-    chip: 'border-sky-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-sky-300/70 bg-sky-50/95 text-sky-950 shadow-sm ring-1 ring-sky-500/10 dark:border-sky-400/35 dark:bg-sky-950/50 dark:text-sky-50 dark:ring-sky-400/10',
     studioInfoBannerMark:
@@ -296,19 +318,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   violet: {
     mainCard: 'converter-main-card-violet',
-    drag: 'ring-2 ring-violet-300/50 bg-violet-50/60 scale-[1.01]',
-    primaryButton: 'from-violet-500 to-violet-400',
-    progress: 'from-violet-400 to-purple-400',
+    drag: DARK_DRAG_VIOLET,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
+    progress: 'from-purple-400/80 to-purple-500/60',
     indexCard: 'converter-main-card-violet',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-violet-300/80 bg-violet-50/75 text-violet-900',
-    gradientText: 'from-violet-500 to-purple-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-violet-500',
     iconBox: 'icon-box-violet',
     iconText: 'text-violet-500',
-    iconTextSubtle: 'text-violet-400',
-    linkText: 'text-violet-600 hover:text-violet-700',
-    chip: 'border-violet-200/70 bg-white/65',
+    iconTextSubtle: 'text-muted-foreground',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-violet-300/70 bg-violet-50/95 text-violet-950 shadow-sm ring-1 ring-violet-500/10 dark:border-violet-400/35 dark:bg-violet-950/50 dark:text-violet-50 dark:ring-violet-400/10',
     studioInfoBannerMark:
@@ -318,19 +340,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   lime: {
     mainCard: 'converter-main-card-lime',
-    drag: 'ring-2 ring-lime-300/50 bg-lime-50/60 scale-[1.01]',
-    primaryButton: 'from-lime-500 to-lime-400',
+    drag: DARK_DRAG_LIME,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-lime-400 to-green-400',
     indexCard: 'converter-main-card-lime',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-lime-300/80 bg-lime-50/75 text-lime-900',
-    gradientText: 'from-lime-500 to-green-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-lime-500',
     iconBox: 'icon-box-lime',
     iconText: 'text-lime-600',
     iconTextSubtle: 'text-lime-500',
-    linkText: 'text-lime-600 hover:text-lime-700',
-    chip: 'border-lime-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-lime-300/70 bg-lime-50/95 text-lime-950 shadow-sm ring-1 ring-lime-500/10 dark:border-lime-400/35 dark:bg-lime-950/50 dark:text-lime-50 dark:ring-lime-400/10',
     studioInfoBannerMark:
@@ -340,19 +362,19 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   fuchsia: {
     mainCard: 'converter-main-card-fuchsia',
-    drag: 'ring-2 ring-fuchsia-300/50 bg-fuchsia-50/60 scale-[1.01]',
-    primaryButton: 'from-fuchsia-500 to-fuchsia-400',
+    drag: DARK_DRAG_FUCHSIA,
+    primaryButton: WORKSPACE_PRIMARY_CTA,
     progress: 'from-fuchsia-400 to-pink-400',
     indexCard: 'converter-main-card-fuchsia',
     converterCta: 'converter-cta-blue',
-    pageGridSelected: 'border-fuchsia-300/80 bg-fuchsia-50/75 text-fuchsia-900',
-    gradientText: 'from-fuchsia-500 to-pink-400',
+    pageGridSelected: DARK_PAGE_GRID,
+
     pillIcon: 'text-fuchsia-500',
     iconBox: 'icon-box-fuchsia',
     iconText: 'text-fuchsia-500',
     iconTextSubtle: 'text-fuchsia-400',
-    linkText: 'text-fuchsia-600 hover:text-fuchsia-700',
-    chip: 'border-fuchsia-200/70 bg-white/65',
+    linkText: DARK_LINK,
+    chip: DARK_CHIP,
     studioInfoPill:
       'border-fuchsia-300/70 bg-fuchsia-50/95 text-fuchsia-950 shadow-sm ring-1 ring-fuchsia-500/10 dark:border-fuchsia-400/35 dark:bg-fuchsia-950/50 dark:text-fuchsia-50 dark:ring-fuchsia-400/10',
     studioInfoBannerMark:
@@ -362,6 +384,3 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
 };
 
-export const TONE_TEXT_GRADIENT: Record<ToneKey, string> = Object.fromEntries(
-  (Object.entries(TONE_STYLES) as [ToneKey, ToneStyle][]).map(([k, v]) => [k, v.gradientText])
-) as Record<ToneKey, string>;

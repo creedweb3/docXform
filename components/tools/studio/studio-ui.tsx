@@ -34,8 +34,8 @@ export function StudioFabStack({
           disabled={busy || atCap}
           onClick={onAdd}
           className={clsx(
-            'relative flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40',
-            `bg-gradient-to-br ${primaryButtonClass}`
+            'relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40',
+            primaryButtonClass
           )}
         >
           <HugeiconsIcon icon={Add01Icon} size={26} strokeWidth={2} />
@@ -51,7 +51,7 @@ export function StudioFabStack({
           aria-label="Sort files A to Z"
           disabled={busy || fileCount < 2}
           onClick={onSort}
-          className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-border/50 bg-white/95 text-foreground shadow-md transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-card/80 text-foreground shadow-md transition hover:bg-card disabled:cursor-not-allowed disabled:opacity-40"
         >
           <span className="text-[11px] font-bold leading-none tracking-tight" aria-hidden>
             A<span className="text-muted-foreground">↓</span>Z
@@ -111,7 +111,7 @@ export function StudioTabBar<T extends string>({
               `relative flex min-h-10 min-w-0 flex-1 flex-col items-center justify-center rounded-md px-1 py-1 text-[10px] font-semibold uppercase tracking-wide outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 sm:px-1.5 sm:py-1.5 sm:text-[11px] max-md:min-h-11 max-md:rounded-2xl max-md:px-2 max-md:text-[11px]`,
               active
                 ? 'bg-white text-foreground shadow-sm dark:bg-zinc-900 dark:text-zinc-50'
-                : 'text-muted-foreground hover:bg-white/55 hover:text-foreground dark:hover:bg-white/10',
+                : 'text-muted-foreground hover:bg-card/55 hover:text-foreground',
               t.disabled && 'cursor-not-allowed opacity-45'
             )}
           >
@@ -157,7 +157,7 @@ export function StudioSegmentRow<T extends string>({
               `min-w-0 flex-1 rounded-md px-1.5 py-2 text-center text-[10px] font-semibold outline-none transition focus-visible:ring-2 ${accent.segmentFocus} focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-45 sm:px-2 sm:text-[11px] max-md:min-h-11 max-md:rounded-2xl max-md:px-2.5 max-md:text-[11px]`,
               active
                 ? (activeClassName ?? accent.segmentActive)
-                : 'text-muted-foreground hover:bg-white/40 hover:text-foreground dark:hover:bg-white/10'
+                : 'text-muted-foreground hover:bg-card/40 hover:text-foreground'
             )}
           >
             {o.label}

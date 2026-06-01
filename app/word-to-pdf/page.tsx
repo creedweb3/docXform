@@ -1,18 +1,6 @@
 import { WordToPdfConverter } from '@/components/word-to-pdf-converter';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
-import { AdSlot } from '@/components/ad-slot';
+import { ConverterLandingPage } from '@/components/site/converter-landing-page';
 import { JsonLd } from '@/components/json-ld';
-import { FaqDetailsCard } from '@/components/faq-details-card';
-import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  BookOpen01Icon,
-  File01Icon,
-  FlashIcon,
-  Shield01Icon,
-  SparklesIcon,
-} from '@hugeicons/core-free-icons';
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { MAX_CONVERSION_FILE_SIZE_LABEL } from '@/lib/conversion-limits';
 import {
@@ -92,11 +80,7 @@ export default function WordToPdfPage() {
       <JsonLd
         id="word-to-pdf-schema"
         data={schemaGraph([
-          webPageJsonLd({
-            name: title,
-            description,
-            path: '/word-to-pdf',
-          }),
+          webPageJsonLd({ name: title, description, path: '/word-to-pdf' }),
           softwareApplicationJsonLd({
             name: 'docXform Word to PDF Converter',
             description,
@@ -115,105 +99,21 @@ export default function WordToPdfPage() {
           faqPageJsonLd(toolFaqs, '/word-to-pdf'),
         ])}
       />
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 flex flex-col items-center px-6 pt-[8.5rem] sm:pt-[9rem] pb-12">
-          <div className="w-full max-w-4xl mx-auto pt-4">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 glass-subtle rounded-full px-4 py-1.5 mb-6 border border-white/5">
-                <HugeiconsIcon icon={Shield01Icon} size={14} strokeWidth={2} className="text-blue-500" />
-                <span className="text-xs font-medium text-muted-foreground">
-                  No file upload &middot; up to {MAX_CONVERSION_FILE_SIZE_LABEL} &middot; free to use
-                </span>
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">
-                <span className="gradient-text-blue">Word to PDF converter</span>
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Convert DOC and DOCX files into downloadable PDFs in your browser.
-              </p>
-            </div>
-            <WordToPdfConverter />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
-              <div className="glass-subtle rounded-xl p-5 text-center">
-                <HugeiconsIcon icon={Shield01Icon} size={20} strokeWidth={2} className="text-blue-400 mx-auto mb-2.5" />
-                <p className="text-sm font-medium text-foreground">Private by design</p>
-                <p className="text-xs text-muted-foreground mt-1">No file upload</p>
-              </div>
-              <div className="glass-subtle rounded-xl p-5 text-center">
-                <HugeiconsIcon icon={FlashIcon} size={20} strokeWidth={2} className="text-amber-500 mx-auto mb-2.5" />
-                <p className="text-sm font-medium text-foreground">Browser based</p>
-                <p className="text-xs text-muted-foreground mt-1">Runs locally</p>
-              </div>
-              <div className="glass-subtle rounded-xl p-5 text-center">
-                <HugeiconsIcon icon={SparklesIcon} size={20} strokeWidth={2} className="text-emerald-500 mx-auto mb-2.5" />
-                <p className="text-sm font-medium text-foreground">Formatted output</p>
-                <p className="text-xs text-muted-foreground mt-1">Review before sharing</p>
-              </div>
-            </div>
-
-            <section className="mt-12">
-              <h2 className="text-2xl font-bold tracking-tight text-foreground text-center mb-6">
-                Word to PDF details
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {infoSections.map((section) => (
-                  <div key={section.title} className="glass-subtle rounded-2xl p-5">
-                    <div className="w-10 h-10 rounded-xl icon-box-blue flex items-center justify-center mb-4">
-                      <HugeiconsIcon icon={File01Icon} size={18} strokeWidth={1.5} className="text-blue-500" />
-                    </div>
-                    <h3 className="text-sm font-semibold text-foreground mb-1">
-                      {section.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {section.text}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="mt-12">
-              <h2 className="text-2xl font-bold tracking-tight text-foreground text-center mb-6">
-                Common questions
-              </h2>
-              <div className="space-y-3">
-                {toolFaqs.map((faq, index) => (
-                  <FaqDetailsCard
-                    key={faq.question}
-                    question={faq.question}
-                    answer={faq.answer}
-                    defaultOpen={index === 0}
-                    variant="glass-subtle"
-                    showExpander={false}
-                  />
-                ))}
-              </div>
-            </section>
-
-            <section className="mt-12 rounded-2xl bg-white/55 border border-border/50 p-6 text-center">
-              <HugeiconsIcon icon={BookOpen01Icon} size={22} strokeWidth={1.5} className="text-blue-500 mx-auto mb-3" />
-              <h2 className="text-base font-semibold text-foreground mb-2">
-                Learn more about clean Word to PDF conversion
-              </h2>
-              <div className="flex flex-wrap justify-center gap-4 text-xs font-medium">
-                <Link href="/articles/formatting-guide" className="text-blue-600 hover:text-blue-700">
-                  DOCX formatting guide
-                </Link>
-                <Link href="/articles/docx-standards" className="text-blue-600 hover:text-blue-700">
-                  DOCX standards
-                </Link>
-                <Link href="/faq" className="text-blue-600 hover:text-blue-700">
-                  Read all FAQs
-                </Link>
-              </div>
-            </section>
-
-            <AdSlot variant="content" visibleClassName="mt-8" />
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <ConverterLandingPage
+        accent="blue"
+        eyebrow="No file upload"
+        title="Word to PDF converter"
+        description="Convert DOC and DOCX files into downloadable PDFs in your browser."
+        converter={<WordToPdfConverter />}
+        infoSections={infoSections}
+        faqs={toolFaqs}
+        learnTitle="Learn more about clean Word to PDF conversion"
+        learnLinks={[
+          { href: '/articles/formatting-guide', label: 'DOCX formatting guide' },
+          { href: '/articles/docx-standards', label: 'DOCX standards' },
+          { href: '/faq', label: 'Read all FAQs' },
+        ]}
+      />
     </>
   );
 }
