@@ -34,7 +34,7 @@ export function FaqDetailsCard({
       className={cn(
         'faq-details group overflow-hidden transition-[background-color,border-color,box-shadow] duration-200',
         isTerminal
-          ? 'rounded-sm border border-[hsl(var(--brand-copper)/0.18)] bg-black/35 hover:border-[hsl(var(--brand-copper)/0.32)] hover:bg-black/45'
+          ? 'faq-details-terminal rounded-sm border border-[hsl(var(--brand-copper)/0.14)] bg-[#080808] hover:border-[hsl(var(--brand-copper)/0.28)]'
           : 'rounded-sm border border-border/70 bg-card/40 hover:border-[hsl(var(--brand-copper)/0.22)] hover:bg-card/52',
         open &&
           (isTerminal
@@ -78,7 +78,7 @@ export function FaqDetailsCard({
               'faq-expander flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border text-muted-foreground transition-colors duration-200',
               'group-hover:border-[hsl(var(--brand-copper)/0.35)] group-hover:text-foreground/90',
               isTerminal
-                ? 'border-[hsl(var(--brand-copper)/0.2)] bg-black/40 font-mono text-[10px]'
+                ? 'border-[hsl(var(--brand-copper)/0.2)] bg-[#070707] font-mono text-[10px]'
                 : 'border-border/70 bg-card/50',
               open && (isTerminal ? 'text-[hsl(var(--brand-copper))]' : 'border-foreground/15 text-foreground')
             )}

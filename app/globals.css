@@ -332,11 +332,16 @@
       color: hsl(var(--foreground) / 0.9);
     }
   }
-  .term-faq details {
+  .term-faq details,
+  .faq-details-terminal {
     border-radius: 2px;
-    border-color: hsl(var(--brand-copper) / 0.18);
-    background: hsl(0 0% 0% / 0.35);
+    border-color: hsl(var(--brand-copper) / 0.14);
+    background: #080808;
     font-family: var(--font-mono), ui-monospace, monospace;
+  }
+  .faq-details-terminal:hover,
+  .term-faq details:hover {
+    border-color: hsl(var(--brand-copper) / 0.28);
   }
   .term-faq details[open] {
     border-color: hsl(var(--brand-copper) / 0.38);

@@ -48,13 +48,14 @@ export default function FaqPage() {
           description="Privacy, supported formats, file limits, output quality, and what to expect from in-browser conversion."
           separatorAfter
         >
-          <div className="term-list-stack">
+          <div className="term-faq term-list-stack">
             {SITE_FAQS.map((faq, index) => (
               <FaqDetailsCard
                 key={faq.question}
                 question={faq.question}
                 answer={faq.answer}
                 defaultOpen={index === 0}
+                variant="terminal"
               />
             ))}
           </div>
