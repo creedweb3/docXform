@@ -76,6 +76,6 @@ export const SURFACE_HOVER = SHEET_HOVER;
 export const CATALOG_ROW =
   'group relative flex min-h-[3.25rem] items-center gap-3 sm:gap-4 px-5 py-4 sm:px-6 sm:min-h-[3.5rem] transition-[background-color,box-shadow,color] duration-200 hover:bg-[hsl(var(--brand-copper)/0.08)] hover:shadow-[inset_3px_0_0_0_hsl(var(--brand-copper))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-copper)/0.25)]';
 
-/** Sticky filter bar below catalog header — spacing from {@link BODY_BLOCK_STACK} above. */
+/** Sticky filter bar below catalog header — matches term-shell #080808. */
 export const STICKY_BAR =
-  'sticky z-20 top-[calc(3.5rem+0.5rem)] bg-background/90 py-0 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80';
+  'sticky z-20 top-[calc(3.5rem+0.5rem)] bg-[#080808] py-0 backdrop-blur-sm supports-[backdrop-filter]:bg-[#080808]/95';

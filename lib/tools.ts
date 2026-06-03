@@ -21,7 +21,7 @@ import {
   Image02Icon,
   TaskEdit01Icon,
 } from '@hugeicons/core-free-icons';
-import { formatCatalogTokens, getFormatTone, type ToolFormat } from '@/lib/format-tone';
+import { formatCatalogTokens, getFormatTone, SITE_TOOL_TONE, type ToolFormat } from '@/lib/format-tone';
 
 export type { ToolFormat } from '@/lib/format-tone';
 
@@ -473,12 +473,12 @@ export const toolDefinitions: ToolDefinition[] = rawToolDefinitions.map((tool) =
   if (!taxonomy) {
     throw new Error(`Missing TOOL_TAXONOMY for slug: ${tool.slug}`);
   }
-  const tone = getFormatTone(taxonomy.format);
-  const tokens = formatCatalogTokens(tone);
+  const catalogTone = getFormatTone(taxonomy.format);
+  const tokens = formatCatalogTokens(catalogTone);
   return {
     ...tool,
     ...taxonomy,
-    tone,
+    tone: SITE_TOOL_TONE,
     accentClass: tokens.accentClass,
     badgeClass: tokens.badgeClass,
     buttonClass: tokens.buttonClass,

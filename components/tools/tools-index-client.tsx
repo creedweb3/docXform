@@ -73,14 +73,14 @@ const CORE_CONVERTERS = [
     name: 'Word to PDF',
     description: 'Convert DOC, DOCX, and Word files to PDF in your browser.',
     iconPair: { back: Doc01Icon, front: Pdf01Icon },
-    tone: 'orange' as const,
+    tone: 'blue' as const,
   },
   {
     href: '/pdf-to-word',
     name: 'PDF to Word',
     description: 'Convert PDF files to editable DOCX documents locally.',
     iconPair: { back: Pdf01Icon, front: Doc01Icon },
-    tone: 'orange' as const,
+    tone: 'rose' as const,
   },
 ] as const;
 
@@ -355,7 +355,7 @@ export function ToolsIndexClient() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search tools…"
                 aria-label="Search tools"
-                className="h-9 w-full rounded-sm border border-border bg-background pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-copper)/0.35)]"
+                className="h-9 w-full rounded-sm border border-[hsl(var(--brand-copper)/0.18)] bg-[#070707] pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand-copper)/0.35)]"
               />
               {query ? (
                 <button
