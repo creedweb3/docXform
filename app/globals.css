@@ -432,9 +432,9 @@
     --studio-l: 55%;
   }
   .tool-workspace--studio[data-tone='orange'] {
-    --studio-h: 28;
-    --studio-s: 35%;
-    --studio-l: 55%;
+    --studio-h: 26;
+    --studio-s: 72%;
+    --studio-l: 48%;
   }
   .tool-workspace--studio[data-tone='emerald'] {
     --studio-h: 160;
@@ -995,12 +995,12 @@
   }
   .converter-main-card-orange {
     @apply rounded-sm border backdrop-blur-md;
-    background: hsl(28 40% 50% / 0.08);
-    border-color: hsl(28 35% 55% / 0.22);
+    background: hsl(var(--brand-copper) / 0.06);
+    border-color: hsl(var(--brand-copper) / 0.22);
   }
   .converter-main-card-orange:hover {
-    background: hsl(28 40% 50% / 0.11);
-    border-color: hsl(28 35% 55% / 0.3);
+    background: hsl(var(--brand-copper) / 0.09);
+    border-color: hsl(var(--brand-copper) / 0.32);
   }
   .converter-main-card-indigo {
     @apply rounded-sm border backdrop-blur-md;
@@ -1122,7 +1122,9 @@
     @apply border border-cyan-500/25 bg-cyan-500/10;
   }
   .icon-box-orange {
-    @apply border border-orange-500/25 bg-orange-500/10;
+    border-color: hsl(var(--brand-copper) / 0.25);
+    background: hsl(var(--brand-copper) / 0.08);
+    @apply border;
   }
   .icon-box-indigo {
     @apply border border-indigo-500/25 bg-indigo-500/10;

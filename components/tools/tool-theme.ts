@@ -1,6 +1,6 @@
 import type { ToolDefinition, ToolIntent } from '@/lib/tools';
 import type { ToolFormat } from '@/lib/format-tone';
-import { getFormatTone } from '@/lib/format-tone';
+import { getFormatTone, SITE_TOOL_TONE } from '@/lib/format-tone';
 import type { WorkspaceConfig } from '@/components/tools/tool-workspace';
 import { TONE_STYLES, type ToneKey } from '@/components/tools/tone-styles';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,7 @@ import {
   FILTER_PILL_IDLE,
 } from '@/lib/site-design';
 
-export { FORMAT_TONE, formatCatalogTokens, getFormatTone } from '@/lib/format-tone';
+export { FORMAT_TONE, formatCatalogTokens, getFormatTone, SITE_TOOL_TONE } from '@/lib/format-tone';
 export type { FormatTone } from '@/components/tools/tone-styles';
 
 /** Format chip on tools index — neutral on dark surfaces. */
@@ -52,8 +52,8 @@ export function workspaceThemeFromTone(tone: ToneKey): WorkspaceThemeFields {
   };
 }
 
-export function workspaceThemeFromTool(tool: ToolDefinition): WorkspaceThemeFields {
-  return workspaceThemeFromTone(getFormatTone(tool.format));
+export function workspaceThemeFromTool(_tool: ToolDefinition): WorkspaceThemeFields {
+  return workspaceThemeFromTone(SITE_TOOL_TONE);
 }
 
 /** Dark utility cards on `/tools`. */
@@ -95,9 +95,8 @@ export function buildWorkspaceConfig(
 
 export type FlagshipConverterMode = 'word-to-pdf' | 'pdf-to-word';
 
-export function flagshipConverterTheme(mode: FlagshipConverterMode) {
-  const tone: ToneKey = mode === 'word-to-pdf' ? 'orange' : 'slate';
-  const s = TONE_STYLES[tone];
+export function flagshipConverterTheme(_mode: FlagshipConverterMode) {
+  const s = TONE_STYLES[SITE_TOOL_TONE];
   return {
     cardClass: s.mainCard,
     iconBoxClass: s.iconBox,

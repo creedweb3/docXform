@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { CreativeReveal } from '@/components/creative/CreativeReveal';
 import { ConversionFlowStageRail } from '@/components/site/conversion-flow-chrome';
 import { HackerTerminal } from '@/components/site/terminal/hacker-terminal';
-import { TermOut } from '@/components/site/terminal/hacker-primitives';
 import {
   ConversionFlowProvider,
   useConversionFlow,
@@ -30,6 +29,26 @@ type ConversionProductShellProps = {
   workspace: React.ReactNode;
 };
 
+function formatOutputReadyLine(outputLabel?: string): string {
+  const label = outputLabel?.trim();
+  if (!label || label.toLowerCase() === 'files') return 'Your files are ready to download';
+  const lower = label.toLowerCase();
+  const singularTypes = new Set(['pdf', 'docx', 'pptx', 'txt', 'md']);
+  if (singularTypes.has(lower) || !label.endsWith('s')) {
+    return `Your ${label} is ready to download`;
+  }
+  return `Your ${label} are ready to download`;
+}
+
+/** Drop pick-stage meta (limits/free) — trust row covers uploads/runtime. */
+function pickHeaderDescription(pageDescription: string): string {
+  let text = pageDescription.trim();
+  text = text.replace(/\s*·\s*up to .+? · free\.?\s*$/i, '').trim();
+  const freeLead = text.match(/^(.+? · free\.)\s*(.+)$/s);
+  if (freeLead?.[2]) return freeLead[2].trim();
+  return text || pageDescription;
+}
+
 function PickOutputTerminalHeader({
   stage,
   pageTitle,
@@ -43,15 +62,17 @@ function PickOutputTerminalHeader({
 }) {
   return (
     <div className="min-w-0 space-y-2">
-      <h1 className="font-display text-2xl text-foreground text-balance sm:text-3xl">{pageTitle}</h1>
+      <h1 className="font-mono text-xl font-medium leading-tight tracking-[-0.02em] text-foreground text-balance sm:text-2xl">
+        {pageTitle}
+      </h1>
       {stage === 'pick' ? (
-        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-          {pageDescription}
+        <p className="max-w-2xl text-sm leading-relaxed text-[hsl(var(--brand-copper))]/90 sm:text-[15px]">
+          {pickHeaderDescription(pageDescription)}
         </p>
       ) : (
-        <TermOut tone="sage" className="text-sm sm:text-[15px]">
-          Your {outputLabel ?? 'files'} are ready to download
-        </TermOut>
+        <p className="max-w-2xl text-sm leading-relaxed text-[hsl(var(--brand-sage))]/90 sm:text-[15px]">
+          {formatOutputReadyLine(outputLabel)}
+        </p>
       )}
     </div>
   );

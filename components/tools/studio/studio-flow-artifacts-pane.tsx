@@ -30,8 +30,13 @@ type DownloadRow = {
 
 const DOWNLOAD_ROW_BTN = clsx(
   WORKSPACE_TOOLBAR_BTN,
-  'box-border h-9 w-full max-w-none min-w-0 justify-start gap-2 self-stretch px-3'
+  'box-border h-9 w-full max-w-none min-w-0 justify-start gap-2 self-stretch px-3',
+  'border-[hsl(var(--brand-copper)/0.32)] bg-[hsl(var(--brand-copper)/0.09)]',
+  'hover:border-[hsl(var(--brand-copper)/0.22)] hover:bg-[#080808]'
 );
+
+const DOWNLOAD_ROW_LABEL =
+  'text-foreground/75 group-hover:text-[hsl(var(--brand-copper))]';
 
 const TWO_COLUMN_AFTER = 14;
 
@@ -55,7 +60,7 @@ function rowLabel(row: DownloadRow): string {
 
 /**
  * Output-stage artifacts pane (split, word-to-pdf, /tools/*).
- * Single studio panel; inner fill-height download grid — no nested queue-row chrome.
+ * Single studio panel; compact h-9 download rows — scroll when the list is long.
  */
 export function StudioFlowArtifactsPane({
   groups,
@@ -90,7 +95,7 @@ export function StudioFlowArtifactsPane({
         {singleGroup && group && !singleArtifact ? (
           <StudioFlowArtifactSourceHeader group={group} />
         ) : flatBatch ? (
-          <p className="shrink-0 font-mono text-[12px] text-foreground">
+          <p className="shrink-0 font-mono text-[12px] text-foreground/80">
             {groups.length} files
             <span className="text-muted-foreground">
               {' '}
@@ -105,7 +110,7 @@ export function StudioFlowArtifactsPane({
               if (g.files.length === 0) return null;
               return (
                 <div key={g.id} className="flex min-w-0 flex-col gap-2">
-                  <p className="truncate font-mono text-[11px] text-foreground/90" title={g.sourceName}>
+                  <p className="truncate font-mono text-[11px] text-foreground/80" title={g.sourceName}>
                     {g.sourceName}
                   </p>
                   <StudioFlowArtifactDownloadGrid
@@ -136,7 +141,7 @@ export function StudioFlowArtifactsPane({
 function StudioFlowArtifactSourceHeader({ group }: { group: StudioFlowArtifactGroup }) {
   return (
     <div className="w-full min-w-0 shrink-0">
-      <p className="truncate font-mono text-[12px] text-foreground" title={group.sourceName}>
+      <p className="truncate font-mono text-[12px] text-foreground/80" title={group.sourceName}>
         {group.sourceName}
       </p>
       <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -156,23 +161,20 @@ function StudioFlowArtifactDownloadGrid({
   onDownload: (file: StudioFlowArtifactFile) => void;
 }) {
   const twoColumn = useTwoColumns(rows.length);
-  /** Split-style equal rows only when there are multiple downloads — never stretch a lone button. */
-  const stretchRows = fillHeight && rows.length > 1;
 
   return (
     <StudioScrollArea
-      measureKey={`${rows.length}-${twoColumn ? '2' : '1'}-${stretchRows ? 'fill' : 'compact'}`}
+      measureKey={`${rows.length}-${twoColumn ? '2' : '1'}-${fillHeight ? 'fill' : 'compact'}`}
       aria-label="Download artifacts"
       className={clsx(
         'w-full min-w-0',
-        stretchRows ? 'flex min-h-0 flex-1 flex-col' : 'shrink-0'
+        fillHeight ? 'flex min-h-0 flex-1 flex-col' : 'shrink-0'
       )}
     >
       <div
         className={clsx(
-          'grid w-full min-w-0 gap-2',
-          twoColumn ? 'grid-cols-2' : 'grid-cols-1',
-          stretchRows && 'min-h-full flex-1 grid-auto-rows-1fr'
+          'grid w-full min-w-0 content-start gap-2',
+          twoColumn ? 'grid-cols-2' : 'grid-cols-1'
         )}
         role="group"
       >
@@ -183,15 +185,20 @@ function StudioFlowArtifactDownloadGrid({
             onClick={() => onDownload(row.file)}
             title={row.label}
             aria-label={`Download ${row.label}`}
-            className={clsx(DOWNLOAD_ROW_BTN, stretchRows && 'h-full min-h-9')}
+            className={clsx(DOWNLOAD_ROW_BTN, 'group')}
           >
-            <HugeiconsIcon icon={Download01Icon} size={14} strokeWidth={2} className="shrink-0" />
+            <HugeiconsIcon
+              icon={Download01Icon}
+              size={14}
+              strokeWidth={2}
+              className="shrink-0 text-foreground/55 group-hover:text-[hsl(var(--brand-copper))]"
+            />
             <span
               className={clsx(
                 'min-w-0 flex-1 truncate text-left font-mono',
                 rows.length === 1
-                  ? 'text-[12px] normal-case text-foreground'
-                  : 'text-[11px] uppercase tracking-wide'
+                  ? clsx('text-[12px] normal-case', DOWNLOAD_ROW_LABEL)
+                  : clsx('text-[11px] uppercase tracking-wide', DOWNLOAD_ROW_LABEL)
               )}
             >
               {rowLabel(row)}

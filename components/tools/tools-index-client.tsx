@@ -73,14 +73,14 @@ const CORE_CONVERTERS = [
     name: 'Word to PDF',
     description: 'Convert DOC, DOCX, and Word files to PDF in your browser.',
     iconPair: { back: Doc01Icon, front: Pdf01Icon },
-    tone: 'blue' as const,
+    tone: 'orange' as const,
   },
   {
     href: '/pdf-to-word',
     name: 'PDF to Word',
     description: 'Convert PDF files to editable DOCX documents locally.',
     iconPair: { back: Pdf01Icon, front: Doc01Icon },
-    tone: 'rose' as const,
+    tone: 'orange' as const,
   },
 ] as const;
 

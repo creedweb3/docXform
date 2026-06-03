@@ -3,6 +3,12 @@ import { WORKSPACE_PRIMARY_CTA } from '@/lib/site-design';
 /** File-type brand colors (see {@link FORMAT_TONE} in lib/format-tone.ts). */
 export type FormatTone = 'rose' | 'blue' | 'purple' | 'orange';
 
+const DARK_DRAG_COPPER = 'ring-2 ring-[hsl(var(--brand-copper)/0.2)] bg-[hsl(var(--brand-copper)/0.06)]';
+const DARK_STUDIO_PILL =
+  'border-[hsl(var(--brand-copper)/0.22)] bg-[hsl(var(--brand-copper)/0.06)] text-foreground ring-1 ring-[hsl(var(--brand-copper)/0.08)]';
+const COPPER_SCROLLBAR = 'hsl(26 72% 48% / 0.42)';
+const COPPER_SCROLLBAR_HOVER = 'hsl(26 72% 48% / 0.58)';
+
 const DARK_DRAG_BLUE = 'ring-2 ring-blue-500/20 bg-blue-500/[0.06]';
 const DARK_DRAG_ROSE = 'ring-2 ring-rose-500/20 bg-rose-500/[0.06]';
 const DARK_DRAG_PURPLE = 'ring-2 ring-purple-500/20 bg-purple-500/[0.06]';
@@ -205,25 +211,24 @@ export const TONE_STYLES: Record<ToneKey, ToneStyle> = {
   },
   orange: {
     mainCard: 'converter-main-card-orange',
-    drag: DARK_DRAG_ORANGE,
+    drag: DARK_DRAG_COPPER,
     primaryButton: WORKSPACE_PRIMARY_CTA,
-    progress: 'from-orange-400 to-amber-400',
+    progress: 'from-[hsl(var(--brand-copper))] to-[hsl(var(--brand-copper)/0.72)]',
     indexCard: 'converter-main-card-orange',
     converterCta: 'converter-cta-blue',
     pageGridSelected: DARK_PAGE_GRID,
 
-    pillIcon: 'text-orange-500',
+    pillIcon: 'text-[hsl(var(--brand-copper))]',
     iconBox: 'icon-box-orange',
-    iconText: 'text-orange-500',
-    iconTextSubtle: 'text-orange-400',
+    iconText: 'text-[hsl(var(--brand-copper))]',
+    iconTextSubtle: 'text-[hsl(var(--brand-copper)/0.85)]',
     linkText: DARK_LINK,
     chip: DARK_CHIP,
-    studioInfoPill:
-      'border-orange-300/70 bg-orange-50/95 text-orange-950 shadow-sm ring-1 ring-orange-500/10 dark:border-orange-400/35 dark:bg-orange-950/50 dark:text-orange-50 dark:ring-orange-400/10',
+    studioInfoPill: DARK_STUDIO_PILL,
     studioInfoBannerMark:
-      'bg-orange-200/70 text-orange-900 dark:bg-orange-800/80 dark:text-orange-100',
-    scrollbarThumb: 'rgba(253, 186, 116, 0.78)',
-    scrollbarThumbHover: 'rgba(251, 146, 60, 0.88)',
+      'bg-[hsl(var(--brand-copper)/0.14)] text-[hsl(var(--brand-copper))]',
+    scrollbarThumb: COPPER_SCROLLBAR,
+    scrollbarThumbHover: COPPER_SCROLLBAR_HOVER,
   },
   indigo: {
     mainCard: 'converter-main-card-indigo',
