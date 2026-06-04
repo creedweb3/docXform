@@ -1,6 +1,7 @@
 import type { ToolDefinition, ToolIntent } from '@/lib/tools';
 import type { ToolFormat } from '@/lib/format-tone';
 import { getFormatTone, SITE_TOOL_TONE } from '@/lib/format-tone';
+import type { ConversionMode } from '@/lib/client-file-validation';
 import type { WorkspaceConfig } from '@/components/tools/tool-workspace';
 import { TONE_STYLES, type ToneKey } from '@/components/tools/tone-styles';
 import { cn } from '@/lib/utils';
@@ -93,7 +94,7 @@ export function buildWorkspaceConfig(
   };
 }
 
-export type FlagshipConverterMode = 'word-to-pdf' | 'pdf-to-word';
+export type FlagshipConverterMode = ConversionMode;
 
 export function flagshipConverterTheme(_mode: FlagshipConverterMode) {
   const s = TONE_STYLES[SITE_TOOL_TONE];

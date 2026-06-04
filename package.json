@@ -22,7 +22,7 @@
     "wasm:diagnose": "node scripts/diagnose-wasm-assets.mjs",
     "wasm:r2:upload": "node scripts/upload-wasm-r2.mjs",
     "wasm:sync-js": "node scripts/sync-wasm-js.mjs",
-    "postinstall": "node scripts/sync-wasm-js.mjs && node scripts/copy-pdfjs-worker.mjs && node scripts/git-local-setup.mjs",
+    "postinstall": "node scripts/sync-wasm-js.mjs && node scripts/patch-matbee-worker-timeout.mjs && node scripts/copy-pdfjs-worker.mjs && node scripts/git-local-setup.mjs",
     "git:local-setup": "node scripts/git-local-setup.mjs"
   },
   "dependencies": {

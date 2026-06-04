@@ -10,6 +10,7 @@ import {
   verifyMarkedWasmRevisionStillInHttpCache,
 } from '@/lib/wasm-client-cache';
 import { buildWasmPrimeAbsoluteUrls } from '@/lib/wasm-prime-urls';
+import { getBrowserWorkerJsUrl } from '@/lib/wasm-asset-base';
 
 /** Converter routes already warm WASM aggressively; avoid competing fetches. */
 const EXCLUDE_CONVERTER_PATH =
@@ -90,6 +91,10 @@ export function PostLcpWasmPrime() {
         const [resWasm, resData] = await Promise.all([
           fetch(urls.wasm, init as RequestInit),
           fetch(urls.data, init as RequestInit),
+          fetch(getBrowserWorkerJsUrl(), {
+            ...init,
+            credentials: 'same-origin',
+          } as RequestInit),
         ]);
         if (!resWasm.ok || !resData.ok) return;
         // Do not hold bodies in memory when warming; cancel streams once cache eligibility is known.

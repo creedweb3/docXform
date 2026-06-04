@@ -7,7 +7,7 @@ import {
   MAX_CONVERSION_FILE_SIZE_MB,
 } from '@/lib/conversion-limits';
 
-export type ConversionMode = 'word-to-pdf' | 'pdf-to-word';
+export type ConversionMode = 'word-to-pdf' | 'pdf-to-word' | 'pptx-to-pdf' | 'docx-to-pptx';
 
 export interface FileValidationResult {
   ok: boolean;
@@ -96,6 +96,51 @@ export async function validateConversionFile(
       return {
         ok: false,
         message: `${file.name} does not look like a valid PDF file.`,
+      };
+    }
+
+    return { ok: true };
+  }
+
+  if (mode === 'pptx-to-pdf') {
+    if (extension !== 'pptx' && extension !== 'ppt') {
+      return {
+        ok: false,
+        message: `${file.name} is not a supported presentation file. Use PPTX or PPT.`,
+      };
+    }
+
+    const signature = await readBytes(file, ZIP_SIGNATURE.length);
+    if (!startsWith(signature, ZIP_SIGNATURE)) {
+      return {
+        ok: false,
+        message: `${file.name} does not look like a valid PPTX file.`,
+      };
+    }
+
+    return { ok: true };
+  }
+
+  if (mode === 'docx-to-pptx') {
+    if (extension !== 'docx') {
+      return {
+        ok: false,
+        message: `${file.name} is not a DOCX file.`,
+      };
+    }
+
+    const signature = await readBytes(file, ZIP_SIGNATURE.length);
+    if (!startsWith(signature, ZIP_SIGNATURE)) {
+      return {
+        ok: false,
+        message: `${file.name} does not look like a valid DOCX file.`,
+      };
+    }
+
+    if (!(await hasDocxStructure(file))) {
+      return {
+        ok: false,
+        message: `${file.name} is a ZIP file, but it does not contain a valid DOCX document structure.`,
       };
     }
 

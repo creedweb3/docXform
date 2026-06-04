@@ -25,5 +25,9 @@ export function ConversionFlowArtifactsPanel({
     })),
   }));
 
-  return <StudioFlowArtifactsPane groups={groups} onDownload={onDownloadFile} />;
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      <StudioFlowArtifactsPane groups={groups} onDownload={onDownloadFile} fillHeight />
+    </div>
+  );
 }

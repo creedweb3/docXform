@@ -19,6 +19,8 @@ import {
   convertDocumentFile,
   conversionErrorMessage,
   isConverterSessionReady,
+  primeConverterWorkerScript,
+  retryWarmConverter,
   warmConverter,
   type ConvertedDocument,
 } from '@/lib/client-document-converter';
@@ -65,6 +67,7 @@ import {
 } from '@/components/tools/studio/studio-flow-chrome';
 import { StudioScrollArea } from '@/components/tools/studio/studio-ui';
 import { useWorkspaceConversionFlow } from '@/components/tools/use-workspace-conversion-flow';
+import { isQueueDuplicateCopy, queueDuplicateCopyIds, duplicateIntakeContent, withoutQueueDuplicateCopies, type DuplicateIntakeContent } from '@/lib/queue-duplicate-keys';
 
 interface DocumentConverterProps {
   mode: ConversionMode;
@@ -72,7 +75,7 @@ interface DocumentConverterProps {
 
 interface DuplicatePrompt {
   files: File[];
-  message: string;
+  content: DuplicateIntakeContent;
 }
 
 type NoticeKind = 'success' | 'info' | 'error';
@@ -127,8 +130,28 @@ const converterConfig = {
     zipName: 'converted-documents.zip',
     ...flagshipConverterTheme('pdf-to-word'),
   },
+  'pptx-to-pdf': {
+    accept: '.ppt,.pptx',
+    title: 'Drop your presentation files here',
+    hint: `or click to browse - .pptx .ppt - max ${MAX_CONVERSION_BATCH_FILES} files`,
+    queuedTitle: 'Presentations ready',
+    outputFormat: 'pdf' as const,
+    outputLabel: 'PDF',
+    zipName: 'slides.pdf.zip',
+    ...flagshipConverterTheme('pptx-to-pdf'),
+  },
+  'docx-to-pptx': {
+    accept: '.docx',
+    title: 'Drop your Word files here',
+    hint: `or click to browse - .docx - max ${MAX_CONVERSION_BATCH_FILES} files`,
+    queuedTitle: 'Documents ready to slide',
+    outputFormat: 'pptx' as const,
+    outputLabel: 'PPTX',
+    zipName: 'slides.zip',
+    ...flagshipConverterTheme('docx-to-pptx'),
+  },
 } satisfies Record<ConversionMode, Record<string, string> & {
-  outputFormat: 'pdf' | 'docx';
+  outputFormat: 'pdf' | 'docx' | 'pptx';
 }>;
 
 function createQueuedFile(file: File, id: string): QueuedFile {
@@ -151,18 +174,6 @@ function summarizeMessages(messages: string[]) {
   if (messages.length === 0) return '';
   if (messages.length === 1) return messages[0];
   return `${messages[0]} ${messages.length - 1} more issue${messages.length > 2 ? 's' : ''} skipped.`;
-}
-
-function duplicateMessage(files: File[]) {
-  const names = Array.from(new Set(files.map((file) => file.name)));
-
-  if (names.length === 1) {
-    return `${names[0]} is already in the queue. Add it again or skip the duplicate?`;
-  }
-
-  const preview = names.slice(0, 2).join(', ');
-  const extra = names.length > 2 ? ` and ${names.length - 2} more` : '';
-  return `${preview}${extra} are already in the queue. Add them again or skip the duplicates?`;
 }
 
 function selectedFilesLabel(fileCount: number) {
@@ -311,6 +322,38 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       });
   }, [mode, showNotice]);
 
+  const handleRetryWarm = useCallback(() => {
+    warmStartedRef.current = true;
+    setWarmState('warming');
+    setWarmMessage('Retrying converter…');
+
+    void retryWarmConverter(({ message }) => {
+      setWarmMessage(message);
+    })
+      .then(() => {
+        setWarmState('ready');
+        setWarmMessage('Converter ready');
+        reportConverterMetric({ event: 'warm_ready', mode });
+        showNotice('Converter ready', { kind: 'success', transient: true, autoClear: true, duration: 4000 });
+      })
+      .catch((err) => {
+        warmStartedRef.current = false;
+        console.error('[docXform] Converter warm-up retry failed:', err);
+        setWarmState('failed');
+        setWarmMessage('Converter warm-up unavailable');
+        reportConverterMetric({
+          event: 'warm_failed',
+          mode,
+          detail: conversionErrorMessage(err).slice(0, 500),
+        });
+        showNotice(conversionErrorMessage(err), { kind: 'error' });
+      });
+  }, [mode, showNotice]);
+
+  useEffect(() => {
+    void primeConverterWorkerScript();
+  }, []);
+
   useEffect(() => {
     subscribeConnectionEligibilityInvalidation();
   }, []);
@@ -442,23 +485,35 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       const queuedNames = new Set(
         items.map((item) => item.file.name.trim().toLowerCase())
       );
+      let runningAddedBytes = 0;
 
       for (const file of candidates) {
-        const result = await validateConversionFile(file, mode);
-        if (!result.ok) {
-          messages.push(result.message ?? `${file.name} could not be validated.`);
-          continue;
-        }
-
         const normalizedName = file.name.trim().toLowerCase();
         if (!allowDuplicateNames && queuedNames.has(normalizedName)) {
           duplicateFiles.push(file);
           continue;
         }
 
+        const result = await validateConversionFile(file, mode);
+        if (!result.ok) {
+          messages.push(result.message ?? `${file.name} could not be validated.`);
+          continue;
+        }
+
+        const nextCount = items.length + accepted.length + 1;
+        const nextTotalBytes = totalBytes + runningAddedBytes + file.size;
+        const batchValidation = validateBatchSize(nextCount, nextTotalBytes);
+        if (!batchValidation.ok) {
+          messages.push(batchValidation.message ?? `${file.name} could not be added — batch limit reached.`);
+          continue;
+        }
+
         queuedNames.add(normalizedName);
+        runningAddedBytes += file.size;
         fileIdRef.current += 1;
-        accepted.push(createQueuedFile(file, `${Date.now()}-${fileIdRef.current}`));
+        const queued = createQueuedFile(file, `${Date.now()}-${fileIdRef.current}`);
+        accepted.push(queued);
+        setItems((current) => [...current, queued]);
       }
 
       setIsValidating(false);
@@ -466,7 +521,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       if (duplicateFiles.length > 0) {
         setDuplicatePrompt({
           files: duplicateFiles,
-          message: duplicateMessage(duplicateFiles),
+          content: duplicateIntakeContent(duplicateFiles),
         });
       } else {
         setDuplicatePrompt(null);
@@ -482,23 +537,9 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
         return;
       }
 
-      const nextCount = items.length + accepted.length;
-      const nextTotalBytes =
-        totalBytes + accepted.reduce((total, item) => total + item.file.size, 0);
-      const batchValidation = validateBatchSize(nextCount, nextTotalBytes);
-
-      if (!batchValidation.ok) {
-        showNotice(batchValidation.message ?? 'This batch is too large.', {
-          kind: 'error',
-        });
-        resetInput();
-        return;
-      }
-
       const addedLabel = `${accepted.length} file${accepted.length === 1 ? '' : 's'} added`;
       const issueSummary = summarizeMessages(messages);
 
-      setItems((current) => [...current, ...accepted]);
       showNotice(
         issueSummary ? `${addedLabel}. ${issueSummary}` : addedLabel,
         issueSummary
@@ -506,7 +547,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
           : { kind: 'success', autoClear: true, transient: true }
       );
       resetInput();
-      startWarmConverter();
+      if (accepted.length > 0) startWarmConverter();
     },
     [busy, items, mode, resetInput, setItems, showNotice, startWarmConverter, totalBytes]
   );
@@ -548,6 +589,11 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
     },
     [setItems]
   );
+
+  const handleRemoveDuplicateCopies = useCallback(() => {
+    setItems((current) => withoutQueueDuplicateCopies(current));
+    setDuplicatePrompt(null);
+  }, [setItems]);
 
   const handleClear = useCallback(() => {
     setItems([]);
@@ -755,12 +801,14 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
       onReset: handleClear,
       allowAddMoreFiles: true,
       onOpenFilePicker: openFilePicker,
-      duplicatePrompt: duplicatePrompt ? { message: duplicatePrompt.message } : null,
+      duplicatePrompt: duplicatePrompt ? { content: duplicatePrompt.content } : null,
       onSkipDuplicates: handleSkipDuplicates,
       onAddDuplicates: handleAddDuplicates,
     });
 
   const inFlowStudio = flowActive && flowStage === 'studio';
+
+  const duplicateCopyIds = useMemo(() => queueDuplicateCopyIds(items), [items]);
 
   useEffect(() => {
     if (!inFlowStudio) return;
@@ -930,6 +978,19 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                 />
                 {visibleConverterStatus}
               </motion.span>
+              {warmPreloadFailed ? (
+                <button
+                  type="button"
+                  onClick={handleRetryWarm}
+                  className={clsx(
+                    WORKSPACE_TOOLBAR_BTN,
+                    'h-8 rounded-full px-3 text-[9px] tracking-[0.1em]',
+                    'border-red-500/35 text-red-200/90 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-100'
+                  )}
+                >
+                  Retry loading converter
+                </button>
+              ) : null}
               <motion.span layout className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 shadow-sm backdrop-blur-md ${config.chipClass}`}>
                 <HugeiconsIcon icon={File01Icon} size={12} strokeWidth={2} className={config.iconClass} />
                 {items.length} / {MAX_CONVERSION_BATCH_FILES} files
@@ -958,10 +1019,35 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
           >
             <StudioFlowDuplicatePrompt
               className="max-w-2xl"
-              message={duplicatePrompt.message}
+              content={duplicatePrompt.content}
               onSkip={handleSkipDuplicates}
               onAddAgain={handleAddDuplicates}
             />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {warmPreloadFailed && !hasQueuedItems ? (
+          <motion.div
+            layout
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={chipMotion}
+            className="flex justify-center px-2 py-0.5"
+          >
+            <button
+              type="button"
+              onClick={handleRetryWarm}
+              className={clsx(
+                WORKSPACE_TOOLBAR_BTN,
+                'h-9 px-4 text-[10px] tracking-[0.1em]',
+                'border-red-500/35 text-red-200/90 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-100'
+              )}
+            >
+              Retry loading converter
+            </button>
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -989,7 +1075,7 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                   topBanner={
                     duplicatePrompt ? (
                       <StudioFlowDuplicatePrompt
-                        message={duplicatePrompt.message}
+                        content={duplicatePrompt.content}
                         onSkip={handleSkipDuplicates}
                         onAddAgain={handleAddDuplicates}
                       />
@@ -1000,12 +1086,16 @@ export function DocumentConverter({ mode }: DocumentConverterProps) {
                     name: item.file.name,
                     index,
                     meta: formatBytes(item.file.size),
+                    isDuplicate: isQueueDuplicateCopy(item.id, duplicateCopyIds),
                   }))}
                   iconBoxClass={config.iconBoxClass}
                   iconClass={config.iconClass}
-                  showIndex={items.length > 1}
+                  showIndex
                   selectedId={focusedFileId}
                   onSelect={setFocusedFileId}
+                  onRemove={handleRemove}
+                  onRemoveDuplicates={handleRemoveDuplicateCopies}
+                  removeDisabled={busy}
                 />
               }
               aside={

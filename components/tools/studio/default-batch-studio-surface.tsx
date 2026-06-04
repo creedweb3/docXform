@@ -1,7 +1,9 @@
 'use client';
 
+import { useMemo } from 'react';
 import clsx from 'clsx';
 import { formatBytes } from '@/lib/client-file-validation';
+import { isQueueDuplicateCopy, queueDuplicateCopyIds, withoutQueueDuplicateCopies } from '@/lib/queue-duplicate-keys';
 import type { WorkspaceSurfaceApi } from '@/components/tools/tool-workspace';
 import { FlowBatchPreview } from '@/components/tools/studio/flow-batch-preview';
 import {
@@ -28,9 +30,12 @@ export function DefaultBatchStudioSurface({ api }: { api: WorkspaceSurfaceApi })
     setFocusedFileId,
     inFlowStudio,
     flowDuplicateBanner,
+    handleRemove,
+    removeDuplicateCopies,
   } = api;
   const isReorderable = config.allowMultiple && files.length > 1 && !busy;
   const title = config.studioStageTitle ?? 'Your files';
+  const duplicateCopyIds = useMemo(() => queueDuplicateCopyIds(files), [files]);
 
   if (inFlowStudio) {
     return (
@@ -44,12 +49,16 @@ export function DefaultBatchStudioSurface({ api }: { api: WorkspaceSurfaceApi })
           thumbUrl: item.preview?.status === 'ready' ? item.preview.thumbUrl : null,
           thumbLoading: item.preview?.status === 'loading',
           meta: formatBytes(item.file.size),
+          isDuplicate: isQueueDuplicateCopy(item.id, duplicateCopyIds),
         }))}
         iconBoxClass={config.iconBoxClass}
         iconClass={config.iconClass}
-        showIndex={config.allowMultiple && files.length > 1}
+        showIndex={config.allowMultiple}
         selectedId={focusedFileId}
         onSelect={setFocusedFileId}
+        onRemove={handleRemove}
+        onRemoveDuplicates={removeDuplicateCopies}
+        removeDisabled={busy}
         draggable={isReorderable}
         draggingId={draggedFileId}
         onReorderDrop={isReorderable ? reorderFilesInQueue : undefined}

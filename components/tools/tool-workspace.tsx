@@ -42,6 +42,7 @@ import { StudioFabStack, StudioScrollArea } from '@/components/tools/studio/stud
 import {
   STUDIO_FLOW_QUEUE_ROW,
   STUDIO_FLOW_QUEUE_ROW_SELECTED,
+  StudioFlowAsideLayout,
   StudioFlowCtaRow,
   StudioFlowDuplicatePrompt,
   StudioFlowRailHeader,
@@ -49,13 +50,17 @@ import {
   STUDIO_FLOW_CTA_STRETCH_COL,
 } from '@/components/tools/studio/studio-flow-chrome';
 import { DefaultBatchStudioSurface } from '@/components/tools/studio/default-batch-studio-surface';
+import { ConversionFlowStudioGrid } from '@/components/tools/studio/conversion-flow-studio-grid';
+import { FlowBatchPreview } from '@/components/tools/studio/flow-batch-preview';
 import { StudioFlowAsideInfo } from '@/components/tools/studio/studio-flow-aside-info';
 import { STUDIO_DESKTOP_GRID, STUDIO_FLOW_GRID } from '@/components/tools/studio/studio-theme';
 import { CONVERSION_FLOW_DROP_TARGET } from '@/lib/conversion-flow-surfaces';
 import { probePdfPageCount, renderPdfPageThumbnails, revokePdfThumbUrls } from '@/lib/client-previews';
+import { isQueueDuplicateCopy, queueDuplicateCopyIds, duplicateIntakeContent, withoutQueueDuplicateCopies, type DuplicateIntakeContent } from '@/lib/queue-duplicate-keys';
 import {
   WORKSPACE_CTA_BASE,
   WORKSPACE_CTA_IDLE,
+  WORKSPACE_CTA_PRIMARY,
   WORKSPACE_CTA_SECONDARY,
   WORKSPACE_TOOLBAR_BTN,
 } from '@/lib/site-design';
@@ -171,6 +176,7 @@ export type WorkspaceSurfaceApi = {
   setDraggedFileId: (id: string | null) => void;
   reorderFilesInQueue: (targetId: string) => void;
   handleRemove: (id: string) => void;
+  removeDuplicateCopies: () => void;
   openFilePicker: () => void;
   sortFilesAlphabetically: () => void;
   /** True when this tool uses a PDF page grid and files are queued (always on; no separate toggle). */
@@ -229,13 +235,19 @@ type NoticeState = {
   autoClear: boolean;
   transient: boolean;
 };
-type DuplicatePrompt = { files: File[]; message: string };
+type DuplicatePrompt = { files: File[]; content: DuplicateIntakeContent };
 
 const TRANSIENT_NOTICE_DURATION = 1100;
 const DEFAULT_NOTICE_DURATION = 3500;
 
 /** File list gets its own scroll region (and themed scrollbar) after this many files. */
 const QUEUE_SCROLL_AFTER_FILE_COUNT = 4;
+
+const DIRECT_CONVERT_DOWNLOAD_IDLE_HINTS = [
+  'Almost there • hit Convert',
+  'Ready when you are',
+  'One tap away',
+] as const;
 
 /** Full-width stacked CTAs in the phone settings rail (no dashed / nested card chrome). */
 const MOBILE_RAIL_CTA_BASE =
@@ -255,16 +267,6 @@ function summarizeMessages(messages: string[]) {
   return `${messages[0]} ${messages.length - 1} more issue${
     messages.length > 2 ? 's' : ''
   } skipped.`;
-}
-
-function duplicateMessage(files: File[]) {
-  const names = Array.from(new Set(files.map((file) => file.name)));
-  if (names.length === 1) {
-    return `${names[0]} is already in the queue. Add it again or skip the duplicate?`;
-  }
-  const preview = names.slice(0, 2).join(', ');
-  const extra = names.length > 2 ? ` and ${names.length - 2} more` : '';
-  return `${preview}${extra} are already in the queue. Add them again or skip the duplicates?`;
 }
 
 function parseAcceptExtensions(accept: string): string[] {
@@ -342,6 +344,10 @@ export function ToolWorkspace({
   const thumbAbortRef = useRef<AbortController | null>(null);
   const gridByFileIdRef = useRef(gridByFileId);
   const filesRef = useRef(files);
+  const downloadIdleHintRollRef = useRef(false);
+  const [directConvertDownloadIdleHint, setDirectConvertDownloadIdleHint] = useState(
+    `Almost there · hit ${config.actionLabel ?? 'Convert'}`
+  );
 
   useLayoutEffect(() => {
     gridByFileIdRef.current = gridByFileId;
@@ -366,6 +372,16 @@ export function ToolWorkspace({
   const actionLabel = config.actionLabel ?? 'Process';
   const queuedTitle = config.queuedTitle ?? 'Files ready';
   const effectiveBatchMax = config.allowMultiple ? MAX_CONVERSION_BATCH_FILES : 1;
+
+  useEffect(() => {
+    if (downloadIdleHintRollRef.current) return;
+    downloadIdleHintRollRef.current = true;
+    const index = Math.floor(Math.random() * DIRECT_CONVERT_DOWNLOAD_IDLE_HINTS.length);
+    setDirectConvertDownloadIdleHint(
+      DIRECT_CONVERT_DOWNLOAD_IDLE_HINTS[index].replace('Convert', actionLabel)
+    );
+  }, [actionLabel]);
+
   const acceptExtensions = useMemo(
     () => parseAcceptExtensions(config.accept),
     [config.accept]
@@ -741,6 +757,7 @@ export function ToolWorkspace({
       const queuedNames = new Set(
         files.map((item) => item.file.name.trim().toLowerCase())
       );
+      let runningAddedBytes = 0;
 
       for (const file of candidates) {
         // Empty file guard.
@@ -766,6 +783,12 @@ export function ToolWorkspace({
           }
         }
 
+        const normalizedName = file.name.trim().toLowerCase();
+        if (!allowDuplicateNames && queuedNames.has(normalizedName)) {
+          duplicateFiles.push(file);
+          continue;
+        }
+
         // Tool-specific magic-byte / structural validation.
         if (actions.validateFiles) {
           try {
@@ -781,14 +804,18 @@ export function ToolWorkspace({
           }
         }
 
-        // Duplicate-name detection (only against current queue).
-        const normalizedName = file.name.trim().toLowerCase();
-        if (!allowDuplicateNames && queuedNames.has(normalizedName)) {
-          duplicateFiles.push(file);
+        const nextCount = files.length + accepted.length + 1;
+        const nextTotalBytes = totalBytes + runningAddedBytes + file.size;
+        const dynamicBudget = nextCount * MAX_CONVERSION_FILE_SIZE_BYTES;
+        if (nextTotalBytes > dynamicBudget) {
+          messages.push(
+            `${file.name} could not be added — batch size limit reached for ${nextCount} files.`
+          );
           continue;
         }
 
         queuedNames.add(normalizedName);
+        runningAddedBytes += file.size;
 
         // Kick off preview generation if provided; mark loading.
         let preview: WorkspaceFile['preview'] | undefined;
@@ -884,12 +911,15 @@ export function ToolWorkspace({
               );
             });
         }
-        accepted.push({
+
+        const workspaceFile: WorkspaceFile = {
           id: previewId,
           file,
           status: 'idle',
           preview,
-        });
+        };
+        accepted.push(workspaceFile);
+        setFiles((current) => [...current, workspaceFile]);
       }
 
       setIsValidating(false);
@@ -897,7 +927,7 @@ export function ToolWorkspace({
       if (duplicateFiles.length > 0) {
         setDuplicatePrompt({
           files: duplicateFiles,
-          message: duplicateMessage(duplicateFiles),
+          content: duplicateIntakeContent(duplicateFiles),
         });
       } else {
         setDuplicatePrompt(null);
@@ -916,27 +946,9 @@ export function ToolWorkspace({
         return;
       }
 
-      const nextCount = files.length + accepted.length;
-      const nextTotalBytes =
-        totalBytes + accepted.reduce((total, item) => total + item.file.size, 0);
-
-      // Dynamic batch budget: file count * per-file limit.
-      const dynamicBudget = nextCount * MAX_CONVERSION_FILE_SIZE_BYTES;
-      if (nextTotalBytes > dynamicBudget) {
-        showNotice(
-          `${nextCount} files can use up to ${
-            (dynamicBudget / 1024 / 1024).toFixed(0)
-          } MB total.`,
-          { kind: 'error', autoClear: true }
-        );
-        resetInput();
-        return;
-      }
-
       const addedLabel = `${accepted.length} file${accepted.length === 1 ? '' : 's'} added`;
       const issueSummary = summarizeMessages(messages);
 
-      setFiles((current) => [...current, ...accepted]);
       rememberRecentFiles(accepted.map((a) => a.file));
       showNotice(
         issueSummary ? `${addedLabel}. ${issueSummary}` : addedLabel,
@@ -1180,6 +1192,11 @@ export function ToolWorkspace({
     setFiles((current) => current.filter((file) => file.id !== id));
   }, []);
 
+  const handleRemoveDuplicateCopies = useCallback(() => {
+    setFiles((current) => withoutQueueDuplicateCopies(current));
+    setDuplicatePrompt(null);
+  }, []);
+
   const handleReorder = useCallback(
     (targetId: string) => {
       setFiles((current) => {
@@ -1262,7 +1279,7 @@ export function ToolWorkspace({
       onReset: handleReset,
       allowAddMoreFiles: config.allowMultiple,
       onOpenFilePicker: openFilePicker,
-      duplicatePrompt: duplicatePrompt ? { message: duplicatePrompt.message } : null,
+      duplicatePrompt: duplicatePrompt ? { content: duplicatePrompt.content } : null,
       onSkipDuplicates: handleSkipDuplicates,
       onAddDuplicates: handleAddDuplicates,
     });
@@ -1284,7 +1301,7 @@ export function ToolWorkspace({
     if (!inFlowStudio || !duplicatePrompt) return undefined;
     return (
       <StudioFlowDuplicatePrompt
-        message={duplicatePrompt.message}
+        content={duplicatePrompt.content}
         onSkip={handleSkipDuplicates}
         onAddAgain={handleAddDuplicates}
       />
@@ -1301,6 +1318,7 @@ export function ToolWorkspace({
       setDraggedFileId,
       reorderFilesInQueue: handleReorder,
       handleRemove,
+      removeDuplicateCopies: handleRemoveDuplicateCopies,
       openFilePicker,
       sortFilesAlphabetically,
       pageGridActive,
@@ -1329,6 +1347,7 @@ export function ToolWorkspace({
       draggedFileId,
       handleReorder,
       handleRemove,
+      handleRemoveDuplicateCopies,
       openFilePicker,
       sortFilesAlphabetically,
       pageGridActive,
@@ -1365,6 +1384,8 @@ export function ToolWorkspace({
   useEffect(() => {
     onPageGridStateChange?.(surfaceApiRef.current);
   }, [gridByFileId, onPageGridStateChange]);
+
+  const duplicateCopyIds = useMemo(() => queueDuplicateCopyIds(files), [files]);
 
   const renderDropZone = !flowActive || showPick;
   const renderStudioBlock = flowActive ? hasFiles && !showPick : hasFiles;
@@ -1806,7 +1827,15 @@ export function ToolWorkspace({
 
   const studioChrome = Boolean(studioSurface) || inFlowStudio;
   const isFlowStudio = inFlowStudio;
-  const slimFlowAside = isFlowStudio && Boolean(footer);
+  /** Tier 1 direct convert — same shell as flagship Word/PDF converters. */
+  const isDirectConvertFlow = isFlowStudio && !studioSurface && !footer;
+  /** Tier 3 custom stages keep the aside for modes/options only; queue lives in `studioSurface`. */
+  const slimFlowAside = isFlowStudio && Boolean(footer) && Boolean(studioSurface);
+  const flowPrimaryCtaClass = `${STUDIO_FLOW_CTA_STRETCH_COL} ${WORKSPACE_CTA_PRIMARY}`;
+  const flowSecondaryCtaClass = `${STUDIO_FLOW_CTA_STRETCH_COL} ${WORKSPACE_CTA_SECONDARY}`;
+  const flowDownloadIdleCtaClass = `${STUDIO_FLOW_CTA_STRETCH_COL} ${WORKSPACE_CTA_IDLE}`;
+  const directConvertOutputLabel =
+    actions.zipName?.replace(/\.zip$/i, '').replace(/-/g, ' ') ?? 'result';
 
   if (showOutput) {
     return (
@@ -2025,7 +2054,7 @@ export function ToolWorkspace({
           >
             <StudioFlowDuplicatePrompt
               className="max-w-2xl"
-              message={duplicatePrompt.message}
+              content={duplicatePrompt.content}
               onSkip={handleSkipDuplicates}
               onAddAgain={handleAddDuplicates}
             />
@@ -2053,6 +2082,133 @@ export function ToolWorkspace({
               studioChrome ? 'gap-0' : 'gap-3 px-2 sm:px-3 max-md:px-0'
             )}
           >
+            {isDirectConvertFlow ? (
+              <ConversionFlowStudioGrid
+                preview={
+                  <FlowBatchPreview
+                    title="File preview"
+                    topBanner={flowDuplicateBanner}
+                    items={files.map((item, index) => ({
+                      id: item.id,
+                      name: item.file.name,
+                      index,
+                      thumbUrl: item.preview?.status === 'ready' ? item.preview.thumbUrl : null,
+                      thumbLoading: item.preview?.status === 'loading',
+                      meta: formatBytes(item.file.size),
+                      isDuplicate: isQueueDuplicateCopy(item.id, duplicateCopyIds),
+                    }))}
+                    iconBoxClass={config.iconBoxClass}
+                    iconClass={config.iconClass}
+                    showIndex={config.allowMultiple}
+                    selectedId={focusedFileId}
+                    onSelect={setFocusedFileId}
+                    onRemove={handleRemove}
+                    onRemoveDuplicates={handleRemoveDuplicateCopies}
+                    removeDisabled={busy}
+                    draggable={config.allowMultiple && files.length > 1 && !busy}
+                    draggingId={draggedFileId}
+                    onReorderDrop={
+                      config.allowMultiple && files.length > 1 && !busy ? handleReorder : undefined
+                    }
+                  />
+                }
+                aside={
+                  <StudioFlowAsideLayout
+                    header={
+                      <StudioFlowRailHeader
+                        meta={
+                          <>
+                            {files.length} / {effectiveBatchMax} files · {formatBytes(totalBytes)}
+                          </>
+                        }
+                        actions={renderQueueToolbar()}
+                      />
+                    }
+                    footer={
+                      <StudioFlowCtaRow>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (allDone) {
+                              handleReset();
+                            } else {
+                              void handleProcess();
+                            }
+                          }}
+                          disabled={allDone ? busy : busy || pendingCount === 0}
+                          className={downloadPrimary ? flowSecondaryCtaClass : flowPrimaryCtaClass}
+                        >
+                          <HugeiconsIcon
+                            icon={busy || allDone ? RefreshIcon : File01Icon}
+                            size={15}
+                            strokeWidth={2}
+                            className={clsx('shrink-0', busy && 'animate-spin')}
+                          />
+                          {busy
+                            ? `${actionLabel}ing…`
+                            : allDone
+                              ? 'Start again'
+                              : `${actionLabel} ${pendingCount} ${pendingCount === 1 ? 'file' : 'files'}`}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDownload()}
+                          disabled={!downloadReady}
+                          aria-busy={busy}
+                          className={
+                            downloadPrimary
+                              ? flowPrimaryCtaClass
+                              : downloadReady
+                                ? flowSecondaryCtaClass
+                                : flowDownloadIdleCtaClass
+                          }
+                        >
+                          {downloadReady ? (
+                            <HugeiconsIcon
+                              icon={isBulkDownload ? Archive01Icon : Download01Icon}
+                              size={15}
+                              strokeWidth={2}
+                              className="shrink-0"
+                            />
+                          ) : busy ? (
+                            <HugeiconsIcon
+                              icon={RefreshIcon}
+                              size={15}
+                              strokeWidth={2}
+                              className="shrink-0 animate-spin opacity-70"
+                            />
+                          ) : (
+                            <HugeiconsIcon icon={File01Icon} size={15} strokeWidth={2} className="shrink-0 opacity-60" />
+                          )}
+                          {busy
+                            ? `Your ${directConvertOutputLabel} will appear here shortly`
+                            : hasOutputs
+                              ? isBulkDownload
+                                ? 'Download as ZIP'
+                                : 'Download result'
+                              : directConvertDownloadIdleHint}
+                        </button>
+                      </StudioFlowCtaRow>
+                    }
+                  >
+                    <StudioScrollArea
+                      measureKey={files.length}
+                      className="min-h-0 flex-1"
+                      style={
+                        toneStyle
+                          ? ({
+                              '--queue-scrollbar-thumb': toneStyle.scrollbarThumb,
+                              '--queue-scrollbar-thumb-hover': toneStyle.scrollbarThumbHover,
+                            } as CSSProperties)
+                          : undefined
+                      }
+                    >
+                      {renderQueueListScroll()}
+                    </StudioScrollArea>
+                  </StudioFlowAsideLayout>
+                }
+              />
+            ) : (
             <div
               className={clsx(
                 'w-full items-stretch max-md:grid-cols-1 max-md:gap-4',
@@ -2247,6 +2403,7 @@ export function ToolWorkspace({
                 </div>
               </aside>
             </div>
+            )}
             {mobileActionsInRail && footer ? (
               <MobileStudioRail
                 title={mobileRailTitle ?? 'Settings'}

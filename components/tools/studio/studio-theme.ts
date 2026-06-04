@@ -57,6 +57,13 @@ export const STUDIO_INFO_BANNER =
 export const STUDIO_INDEX_BADGE =
   'studio-shell-badge absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-sm border font-mono text-xs font-bold';
 
+/** Same shell as {@link STUDIO_INDEX_BADGE}, without corner positioning (stack overlays). */
+export const STUDIO_INDEX_BADGE_SHELL =
+  'studio-shell-badge flex h-7 w-7 items-center justify-center rounded-sm border font-mono text-xs font-bold';
+
+export const STUDIO_DUPE_BADGE =
+  'absolute right-2 top-2 z-[1] inline-flex h-7 min-w-[2.25rem] items-center justify-center rounded-sm border border-amber-500/35 bg-amber-500/15 px-1.5 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-200/95';
+
 export const STUDIO_EMPTY_STATE =
   'studio-shell-panel rounded-sm border border-dashed px-3 py-10 text-center text-sm text-muted-foreground';
 

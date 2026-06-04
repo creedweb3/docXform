@@ -25,6 +25,7 @@ import {
 } from 'react';
 
 import type { ConversionFlowFile, ConversionFlowStage } from '@/lib/conversion-flow';
+import type { DuplicateIntakeContent } from '@/lib/queue-duplicate-keys';
 
 
 
@@ -53,7 +54,7 @@ export type ConversionFlowRegistration = {
 
   onOpenFilePicker?: () => void;
 
-  duplicatePrompt?: { message: string } | null;
+  duplicatePrompt?: { content: DuplicateIntakeContent } | null;
 
   onSkipDuplicates?: () => void;
 

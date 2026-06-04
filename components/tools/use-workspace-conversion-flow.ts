@@ -7,6 +7,7 @@ import {
   type ConversionFlowRegistration,
 } from '@/components/tools/conversion-flow-provider';
 import { deriveConversionFlowStage } from '@/lib/conversion-flow';
+import type { DuplicateIntakeContent } from '@/lib/queue-duplicate-keys';
 
 type WorkspaceFlowFile = {
   id: string;
@@ -37,7 +38,7 @@ type UseWorkspaceConversionFlowArgs = {
   onReset: () => void;
   allowAddMoreFiles?: boolean;
   onOpenFilePicker?: () => void;
-  duplicatePrompt?: { message: string } | null;
+  duplicatePrompt?: { content: DuplicateIntakeContent } | null;
   onSkipDuplicates?: () => void;
   onAddDuplicates?: () => void;
 };

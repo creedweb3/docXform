@@ -1,17 +1,20 @@
 'use client';
 
 import clsx from 'clsx';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { File01Icon } from '@hugeicons/core-free-icons';
-import { StudioFlowPreviewHeader } from '@/components/tools/studio/studio-flow-chrome';
+import { Delete02Icon, File01Icon } from '@hugeicons/core-free-icons';
+import { StudioFlowDupeRemoveConfirm, StudioFlowPreviewHeader } from '@/components/tools/studio/studio-flow-chrome';
 import { StudioScrollArea } from '@/components/tools/studio/studio-ui';
+import { WORKSPACE_TOOLBAR_BTN } from '@/lib/site-design';
 import {
   STUDIO_CARD,
   STUDIO_CARD_DRAG,
   STUDIO_CARD_INNER,
+  STUDIO_DUPE_BADGE,
   STUDIO_EMPTY_STATE,
   STUDIO_INDEX_BADGE,
+  STUDIO_INDEX_BADGE_SHELL,
 } from '@/components/tools/studio/studio-theme';
 
 /** Batch grid cards: slightly shorter than {@link STUDIO_THUMB_AREA} (~15% total vs 3/4 + 4rem footer). */
@@ -25,6 +28,8 @@ export type FlowBatchPreviewItem = {
   thumbLoading?: boolean;
   index?: number;
   meta?: string;
+  /** Same filename as another queued file. */
+  isDuplicate?: boolean;
 };
 
 export function FlowBatchPreview({
@@ -35,6 +40,9 @@ export function FlowBatchPreview({
   showIndex = true,
   selectedId,
   onSelect,
+  onRemove,
+  onRemoveDuplicates,
+  removeDisabled = false,
   draggable,
   onReorderDrop,
   draggingId,
@@ -49,15 +57,55 @@ export function FlowBatchPreview({
   showIndex?: boolean;
   selectedId?: string | null;
   onSelect?: (id: string) => void;
+  onRemove?: (id: string) => void;
+  onRemoveDuplicates?: () => void;
+  removeDisabled?: boolean;
   draggable?: boolean;
   onReorderDrop?: (targetId: string) => void;
   draggingId?: string | null;
 }) {
   const interactive = Boolean(onSelect);
+  const canRemove = Boolean(onRemove) && !removeDisabled;
+  const canRemoveDupes = Boolean(onRemoveDuplicates) && !removeDisabled;
+  const duplicateCount = items.filter((item) => item.isDuplicate).length;
+  const showRemoveDupes = duplicateCount > 0 && canRemoveDupes;
+  const [dupeRemoveConfirmOpen, setDupeRemoveConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    if (duplicateCount === 0) setDupeRemoveConfirmOpen(false);
+  }, [duplicateCount]);
 
   return (
     <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-3">
-      <StudioFlowPreviewHeader title={title} />
+      <StudioFlowPreviewHeader
+        title={title}
+        action={
+          showRemoveDupes ? (
+            <button
+              type="button"
+              onClick={() => setDupeRemoveConfirmOpen(true)}
+              className={clsx(
+                WORKSPACE_TOOLBAR_BTN,
+                'h-7 px-2.5 text-[9px] tracking-[0.1em]',
+                'border-amber-500/35 text-amber-200/90 hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-100'
+              )}
+            >
+              Remove dupes
+            </button>
+          ) : undefined
+        }
+      />
+      {canRemoveDupes ? (
+        <StudioFlowDupeRemoveConfirm
+          open={dupeRemoveConfirmOpen && showRemoveDupes}
+          count={duplicateCount}
+          onCancel={() => setDupeRemoveConfirmOpen(false)}
+          onConfirm={() => {
+            onRemoveDuplicates?.();
+            setDupeRemoveConfirmOpen(false);
+          }}
+        />
+      ) : null}
       {topBanner ? <div className="w-full min-w-0 shrink-0">{topBanner}</div> : null}
       {items.length === 0 ? (
         <p className={clsx(STUDIO_EMPTY_STATE, 'flex-1')}>Add files to see them here.</p>
@@ -110,7 +158,7 @@ export function FlowBatchPreview({
                   }
                   className={clsx(
                     STUDIO_CARD,
-                    'flex h-full min-h-0 min-w-0 overflow-visible outline-none transition',
+                    'group/card flex h-full min-h-0 min-w-0 overflow-visible outline-none transition',
                     items.length === 1 ? 'w-full max-w-[12rem]' : 'w-full',
                     draggable && STUDIO_CARD_DRAG,
                     isDragging && 'opacity-50',
@@ -119,7 +167,7 @@ export function FlowBatchPreview({
                       'border-solid border-[hsl(var(--brand-copper)/0.45)] bg-[hsl(var(--brand-copper)/0.06)] shadow-[0_0_20px_-8px_hsl(var(--brand-copper)/0.35)]'
                   )}
                 >
-                  <div className={clsx(FLOW_BATCH_THUMB_AREA, 'shrink-0 overflow-hidden rounded-t-sm')}>
+                  <div className={clsx(FLOW_BATCH_THUMB_AREA, 'relative shrink-0 overflow-hidden rounded-t-sm')}>
                     {item.thumbUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={item.thumbUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -144,8 +192,63 @@ export function FlowBatchPreview({
                         )}
                       </div>
                     )}
-                    {showIndex && items.length > 1 ? (
-                      <span className={STUDIO_INDEX_BADGE}>{(item.index ?? index) + 1}</span>
+                    {(showIndex || canRemove) ? (
+                      <div className="absolute left-2 top-2 h-7 w-7">
+                        {showIndex ? (
+                          <span
+                            className={clsx(
+                              STUDIO_INDEX_BADGE_SHELL,
+                              'absolute inset-0',
+                              canRemove &&
+                                'pointer-events-none transition-opacity group-hover/card:opacity-0'
+                            )}
+                          >
+                            {(item.index ?? index) + 1}
+                          </span>
+                        ) : null}
+                        {canRemove ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemove?.(item.id);
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            aria-label={`Remove ${item.name}`}
+                            className={clsx(
+                              STUDIO_INDEX_BADGE_SHELL,
+                              'absolute inset-0 z-[1] text-muted-foreground opacity-0 pointer-events-none transition-opacity',
+                              'group-hover/card:opacity-100 group-hover/card:pointer-events-auto',
+                              'hover:text-[hsl(var(--brand-copper))] focus-visible:opacity-100 focus-visible:pointer-events-auto'
+                            )}
+                          >
+                            <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} />
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    {item.isDuplicate ? (
+                      canRemoveDupes ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDupeRemoveConfirmOpen(true);
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className={clsx(
+                            STUDIO_DUPE_BADGE,
+                            'cursor-pointer transition-colors hover:border-amber-500/50 hover:bg-amber-500/25 hover:text-amber-50'
+                          )}
+                          title="Duplicate copy — click to remove all dupes"
+                        >
+                          Dupe
+                        </button>
+                      ) : (
+                        <span className={STUDIO_DUPE_BADGE} title="Duplicate filename in queue">
+                          Dupe
+                        </span>
+                      )
                     ) : null}
                   </div>
                   <div

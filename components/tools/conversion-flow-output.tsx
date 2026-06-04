@@ -49,20 +49,24 @@ export function ConversionFlowOutputView({ registration }: ConversionFlowOutputP
     <div className="conversion-flow-output flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
       {showDuplicatePrompt ? (
         <StudioFlowDuplicatePrompt
-          message={duplicatePrompt.message}
+          content={duplicatePrompt.content}
           onSkip={onSkipDuplicates}
           onAddAgain={onAddDuplicates}
         />
       ) : null}
 
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <ConversionFlowArtifactsPanel files={files} onDownloadFile={onDownloadFile} />
+      </div>
+
       <section className="studio-shell-panel shrink-0 rounded-sm border p-4 sm:p-5">
         <p className={clsx(STUDIO_LABEL, 'mb-3 text-[hsl(var(--brand-copper))]')}>download.queue</p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col gap-2">
           <button
             type="button"
             onClick={() => onDownloadAll()}
             disabled={busy || files.every((f) => !(f.outputs?.length ?? 0))}
-            className={clsx(OUTPUT_QUEUE_ACTION, WORKSPACE_CTA_PRIMARY)}
+            className={clsx(OUTPUT_QUEUE_ACTION, WORKSPACE_CTA_PRIMARY, 'w-full min-h-12')}
           >
             <HugeiconsIcon
               icon={isBulkDownload ? Archive01Icon : Download01Icon}
@@ -71,16 +75,22 @@ export function ConversionFlowOutputView({ registration }: ConversionFlowOutputP
             />
             <span className="truncate">{isBulkDownload ? 'Download ZIP' : `Download ${outputLabel}`}</span>
           </button>
-          {allowAddMoreFiles && onOpenFilePicker ? (
-            <button
-              type="button"
-              onClick={onOpenFilePicker}
-              disabled={busy}
-              className={clsx(OUTPUT_QUEUE_ACTION, WORKSPACE_CTA_SECONDARY)}
-            >
-              Add more files
-            </button>
-          ) : (
+          <div
+            className={clsx(
+              'grid gap-2',
+              allowAddMoreFiles && onOpenFilePicker ? 'grid-cols-2' : 'grid-cols-1'
+            )}
+          >
+            {allowAddMoreFiles && onOpenFilePicker ? (
+              <button
+                type="button"
+                onClick={onOpenFilePicker}
+                disabled={busy}
+                className={clsx(OUTPUT_QUEUE_ACTION, WORKSPACE_CTA_SECONDARY)}
+              >
+                Add more files
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onReset}
@@ -90,11 +100,9 @@ export function ConversionFlowOutputView({ registration }: ConversionFlowOutputP
               <HugeiconsIcon icon={RefreshIcon} size={16} strokeWidth={2} />
               Start again
             </button>
-          )}
+          </div>
         </div>
       </section>
-
-      <ConversionFlowArtifactsPanel files={files} onDownloadFile={onDownloadFile} />
     </div>
   );
 }

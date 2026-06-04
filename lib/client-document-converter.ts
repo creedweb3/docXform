@@ -38,8 +38,13 @@ let converterPromise: Promise<WorkerBrowserConverter> | null = null;
 let converterInstance: WorkerBrowserConverter | null = null;
 let activeProgressHandler: ProgressHandler | null = null;
 let conversionQueue: Promise<void> = Promise.resolve();
+let workerScriptPreload: Promise<void> | null = null;
 
 const FALLBACK_WASM_CDN_BASE = 'https://wasm.docxform.com/wasm/';
+
+/** Matbee worker bootstrap attempts before surfacing failure (see patch-matbee-worker-timeout). */
+const WORKER_INIT_ATTEMPTS = 3;
+const WORKER_INIT_BACKOFF_MS = [0, 2_000, 4_000] as const;
 
 let connectionEligibilitySubscribed = false;
 
@@ -84,6 +89,24 @@ function emitProgress(progress: WasmLoadProgress | ClientConversionProgress) {
   });
 }
 
+/** Warm HTTP cache for the same-origin worker entry script before `new Worker()`. */
+export function primeConverterWorkerScript(force = false): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (force) workerScriptPreload = null;
+  if (!workerScriptPreload) {
+    workerScriptPreload = fetch(getBrowserWorkerJsUrl(), { cache: 'force-cache' })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Worker script HTTP ${res.status}`);
+      })
+      .catch(() => undefined);
+  }
+  return workerScriptPreload;
+}
+
+function preloadWorkerScript(force = false): Promise<void> {
+  return primeConverterWorkerScript(force);
+}
+
 function isWorkerLoadTimeoutError(error: unknown): boolean {
   const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
   return message.includes('worker load timeout');
@@ -109,6 +132,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
 
 async function resetConverter() {
   converterPromise = null;
+  workerScriptPreload = null;
 
   if (!converterInstance) {
     return;
@@ -122,6 +146,11 @@ async function resetConverter() {
   } catch {
     // Ignore cleanup failures and allow a fresh instance on next run.
   }
+}
+
+/** Drop cached converter + worker preload so warm-up can start clean (user retry). */
+export async function resetConverterSession(): Promise<void> {
+  await resetConverter();
 }
 
 /**
@@ -268,6 +297,7 @@ async function getConverter(onProgress?: ProgressHandler) {
         percent: 2,
         message: 'Probing WASM URLs (soffice.wasm / soffice.data)…',
       });
+      await preloadWorkerScript();
       const [binaryBase, converterModule] = await Promise.all([
         resolveBinaryAssetBase(),
         import('@matbee/libreoffice-converter/browser'),
@@ -289,28 +319,46 @@ async function getConverter(onProgress?: ProgressHandler) {
           onProgress: emitProgress,
           verbose: process.env.NODE_ENV === 'development',
         });
-        await withTimeout(
-          converter.initialize(),
-          converterTimeouts().initializeMs,
-          'Converter initialization'
-        );
-        return converter;
+        try {
+          await withTimeout(
+            converter.initialize(),
+            converterTimeouts().initializeMs,
+            'Converter initialization'
+          );
+          return converter;
+        } catch (error) {
+          try {
+            await converter.destroy();
+          } catch {
+            /* ignore partial teardown */
+          }
+          throw error;
+        }
       };
 
       const initializeWithWorkerRetry = async (base: string) => {
-        try {
-          return await createAndInitialize(base);
-        } catch (firstError) {
-          if (!isWorkerLoadTimeoutError(firstError)) {
-            throw firstError;
+        let lastError: unknown;
+        for (let attempt = 0; attempt < WORKER_INIT_ATTEMPTS; attempt++) {
+          if (attempt > 0) {
+            activeProgressHandler?.({
+              percent: 5 + attempt,
+              message: `Converter worker slow to start — retry ${attempt}/${WORKER_INIT_ATTEMPTS - 1}…`,
+            });
+            await preloadWorkerScript(true);
+            await new Promise((resolve) =>
+              setTimeout(resolve, WORKER_INIT_BACKOFF_MS[attempt] ?? 4_000)
+            );
           }
-          activeProgressHandler?.({
-            percent: 6,
-            message: 'Converter worker slow to start — retrying once…',
-          });
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          return await createAndInitialize(base);
+          try {
+            return await createAndInitialize(base);
+          } catch (error) {
+            lastError = error;
+            if (!isWorkerLoadTimeoutError(error) || attempt === WORKER_INIT_ATTEMPTS - 1) {
+              throw error;
+            }
+          }
         }
+        throw lastError;
       };
 
       try {
@@ -367,6 +415,13 @@ export async function warmConverter(onProgress?: ProgressHandler) {
   // Eligibility (network probe, save-data, etc.) is computed once in `DocumentConverter` before warm starts.
   // Do not await it here or every warm pays for a duplicate probe and extra "Preparing" latency.
   await getConverter(onProgress);
+}
+
+/** User-facing retry after warm/init failure — clears session state and warms again. */
+export async function retryWarmConverter(onProgress?: ProgressHandler): Promise<void> {
+  await resetConverterSession();
+  await primeConverterWorkerScript(true);
+  await warmConverter(onProgress);
 }
 
 /** True after WASM init succeeded in this tab (survives client navigations between tool pages). */
@@ -595,7 +650,7 @@ export function conversionErrorMessage(error: unknown) {
   }
 
   if (lowerMessage.includes('worker load timeout')) {
-    return 'The converter worker did not start in time. Reload the page, ensure /wasm/ assets are present (run npm run wasm:diagnose locally), or wait for the first WASM download to finish on a slow connection.';
+    return 'The converter worker did not start in time. Tap Retry loading converter below, or reload the page if this keeps happening.';
   }
 
   if (lowerMessage.includes('converter initialization')) {

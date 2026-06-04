@@ -13,9 +13,9 @@ export const CONTENT_RULE = 'content-rule block h-px w-full shrink-0 border-0';
 export const LABEL_MONO =
   'font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground';
 
-/** Primary marketing / workspace CTA */
+/** Primary marketing / workspace CTA — hover inverts so copper custom cursors stay visible on fill. */
 export const BTN_PRIMARY =
-  'bg-[hsl(var(--brand-copper))] text-[hsl(var(--brand-copper-foreground))] hover:bg-[hsl(var(--brand-copper)/0.88)]';
+  'border border-transparent bg-[hsl(var(--brand-copper))] text-[hsl(var(--brand-copper-foreground))] hover:border-[hsl(var(--brand-copper)/0.5)] hover:bg-background hover:text-[hsl(var(--brand-copper))]';
 
 export const BTN_SECONDARY =
   'border border-[hsl(var(--brand-copper)/0.35)] bg-transparent text-foreground hover:bg-[hsl(var(--brand-copper)/0.08)]';

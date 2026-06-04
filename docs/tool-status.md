@@ -1,44 +1,61 @@
 # Completion status
 
-UX / polish sign-off (not “does the engine run”).
+UX / polish sign-off (not “does the engine run”). Tools are grouped by **product tier** — see **`docs/pages-reference.md`** for what each tier means.
 
-## Done
+---
 
-- `/word-to-pdf` — Word to PDF  
-- `/pdf-to-word` — PDF to Word  
-- `/tools` — tools index  
-- `/tools/pdf-split` — PDF Split (only live utility tool)  
+## Tier 1 — Direct convert
 
-## Work in progress
+Drop → Convert. **No mode or preset UI.**
 
-**Gate:** `lib/tool-availability.ts` — index lists WIP tools; routes show coming soon UI.  
+| Route | Status |
+|-------|--------|
+| `/word-to-pdf` | Done · live |
+| `/pdf-to-word` | Done · live |
+| `/tools/pptx-to-pdf` | Done · live |
+| `/tools/docx-to-pptx` | Done · live |
+| `/tools/pdf-unlock` | Done · live |
 
-**PDF**
+---
 
-- `/tools/pdf-merge`  
-- `/tools/pdf-compress`  
-- `/tools/pdf-to-images`  
-- `/tools/pdf-rotate`  
-- `/tools/pdf-organize`  
-- `/tools/pdf-watermark`  
-- `/tools/pdf-unlock`  
-- `/tools/pdf-to-text`  
+## Tier 2 — Options only
 
-**DOCX**
+Pick from 2–4 radios/toggles → Convert. **No tabs or page grid.**
 
-- `/tools/docx-to-pptx`  
-- `/tools/docx-scrub`  
-- `/tools/docx-to-text`  
+| Route | Status |
+|-------|--------|
+| `/tools/pdf-compress` | WIP |
+| `/tools/image-compress` | WIP |
+| `/tools/image-convert` | WIP |
+| `/tools/pdf-to-text` | WIP |
+| `/tools/docx-to-text` | WIP |
+| `/tools/docx-scrub` | WIP |
+| `/tools/images-to-pdf` | WIP |
 
-**PPTX**
+---
 
-- `/tools/pptx-to-pdf`  
+## Tier 3 — Studio modes & edits
 
-**Image**
+Tabs, modes, page grid, structural edits.
 
-- `/tools/images-to-pdf`  
-- `/tools/image-convert`  
-- `/tools/image-compress`  
+| Route | Status |
+|-------|--------|
+| `/tools/pdf-split` | **Done** (only live utility tool) |
+| `/tools/pdf-merge` | WIP |
+| `/tools/pdf-rotate` | WIP |
+| `/tools/pdf-organize` | WIP |
+| `/tools/pdf-watermark` | WIP |
+| `/tools/pdf-to-images` | WIP |
+
+---
+
+## Index & shared
+
+| Route | Status |
+|-------|--------|
+| `/tools` | Done |
+
+---
 
 ## Launch a tool
 
@@ -46,5 +63,6 @@ Set `TOOL_PAGE_AVAILABLE['your-slug'] = true` in `lib/tool-availability.ts`.
 
 ## Counts
 
-**Live tool pages:** 1 (`pdf-split`)  
-**Coming soon on index:** 15  
+**Live tier 1:** 5 (Word to PDF, PDF to Word, PPTX to PDF, DOCX to PPTX, PDF Unlock)  
+**Live tier 3:** 1 (PDF Split)  
+**Coming soon on index:** 12 utility tools  

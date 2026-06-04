@@ -18,6 +18,8 @@ type QueuesState = Record<ConversionMode, QueuedFile[]>;
 const initialQueues: QueuesState = {
   'word-to-pdf': [],
   'pdf-to-word': [],
+  'pptx-to-pdf': [],
+  'docx-to-pptx': [],
 };
 
 type Store = {
